@@ -12,7 +12,7 @@ REPLACE THIS WITH SHORT DESCRIPTION OF YOUR CHANGES
 
 **Only ticked off by the PR AUTHOR**
 - [ ] I've added tests that cover any source code changes/additions made,
-alternatively I've made sure there is an issue describing what code need to be covered by tests
+Alternatively, I've ensured there is an issue describing which code needs to be covered by tests
 - [ ] All tests pass
 - [ ] New features added and changes made have up-to-date (in-code) documentation
 - [ ] I've tried my best to follow the commit message convention
