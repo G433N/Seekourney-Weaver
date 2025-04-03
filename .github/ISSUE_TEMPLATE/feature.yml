@@ -1,0 +1,25 @@
+name: Feature
+description: Issue template for to-be-implemented features
+title: "Feature: "
+labels: ["feature"]
+body:
+  - type: input
+    id: what_part
+    attributes:
+      label: What part of the program will the feature be implemented in? (frontend, main server, etc.)
+  - type: textarea
+    id: explanation
+    attributes:
+      label: Explain what the feature does
+  - type: textarea
+    id: context
+    attributes:
+      label: Design specifications and other information needed to implement the feature
+  - type: textarea
+    id: misc
+    attributes:
+      label: Add any misc info here
+  - type: markdown
+    id: extra_labels
+    attributes:
+      value: Add any relevant issue labels to help us sort the issue

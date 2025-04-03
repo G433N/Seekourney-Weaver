@@ -1,0 +1,25 @@
+name: Bug
+description: Issue template for found bugs
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: input
+    id: what_part
+    attributes:
+      label: What part of the program do you think the bug originates from? (frontend, PDF crawler, etc.)
+  - type: textarea
+    id: explanation
+    attributes:
+      label: Explain the bug
+  - type: textarea
+    id: context
+    attributes:
+      label: If it is not clear how to reproduce the bug please add more information here
+  - type: textarea
+    id: misc
+    attributes:
+      label: Add any misc info here
+  - type: markdown
+    id: extra_labels
+    attributes:
+      value: Add any relevant issue labels to help us sort the issue
