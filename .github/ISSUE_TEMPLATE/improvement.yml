@@ -1,0 +1,21 @@
+name: Improvement
+description: Issue template for suggested improvements
+title: "Improvement: "
+labels: ["improvement"]
+body:
+  - type: input
+    id: what_part
+    attributes:
+      label: What, and in what part of the program should the improvement be made? (frontend searchbar, database schema, etc.)
+  - type: textarea
+    id: explanation
+    attributes:
+      label: Explain the suggested improvement
+  - type: textarea
+    id: misc
+    attributes:
+      label: Add any misc info here
+  - type: markdown
+    id: extra_labels
+    attributes:
+      value: Add any relevant issue labels to help us sort the issue

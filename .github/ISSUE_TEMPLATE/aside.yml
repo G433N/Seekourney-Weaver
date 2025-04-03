@@ -1,0 +1,21 @@
+name: Aside
+description: Issue template for something outside the program itself
+title: "Aside: "
+labels: ["aside"]
+body:
+  - type: input
+    id: what_part
+    attributes:
+      label: What thing is the issue about (report, README, etc.)
+  - type: textarea
+    id: explanation
+    attributes:
+      label: Explain what needs to be done
+  - type: textarea
+    id: misc
+    attributes:
+      label: Add any misc info here
+  - type: markdown
+    id: extra_labels
+    attributes:
+      value: Add any relevant issue labels to help us sort the issue
