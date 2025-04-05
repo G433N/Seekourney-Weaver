@@ -60,11 +60,20 @@ func wordSplit(b byte) bool {
 
 }
 
-// WordsIter takes a string and returns an iterator that yields each word in the string.
-func WordsIter(s string) iter.Seq[string] {
-	word_iter := func(yield func(string) bool) {
+// / yieldWord yields a word from the byte slice.
+// / It takes a yield function, a byte slice, and the start and end indices of the word.
+// / It returns true if the iteration should continue, and false if it should stop.
+func yieldWord(yield func(string) bool, bytes []byte, start int, end int) bool {
+	if start != end {
+		word := string(bytes[start:end])
+		return yield(word)
+	}
 
-		bytes := []byte(s)
+	return true
+}
+
+func WordsIterBytes(bytes []byte) iter.Seq[string] {
+	word_iter := func(yield func(string) bool) {
 
 		start := 0
 		end := 0
@@ -75,11 +84,8 @@ func WordsIter(s string) iter.Seq[string] {
 			b := bytes[i]
 
 			if wordSplit(b) {
-				if start != end {
-					word := string(bytes[start:end])
-					if !yield(word) {
-						return
-					}
+				if !yieldWord(yield, bytes, start, end) {
+					return
 				}
 
 				start = i + 1
@@ -91,15 +97,16 @@ func WordsIter(s string) iter.Seq[string] {
 			end = i
 		}
 
-		if start != end {
-			word := string(bytes[start:end])
-			if !yield(word) {
-				return
-			}
+		if !yieldWord(yield, bytes, start, end) {
+			return
 		}
 	}
 
 	return word_iter
 }
 
-// Tests
+// WordsIter takes a string and returns an iterator that yields each word in the string.
+func WordsIter(s string) iter.Seq[string] {
+	bytes := []byte(s)
+	return WordsIterBytes(bytes)
+}
