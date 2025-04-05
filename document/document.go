@@ -5,7 +5,6 @@ import (
 	"indexer/timing"
 	"log"
 	"os"
-	"path/filepath"
 	"sort"
 )
 
@@ -24,11 +23,11 @@ const (
 
 // Document is a struct that represents a document
 type Document struct {
-	path   string
-	source Source
+	Path   string
+	Source Source
 
 	/// Map of words to their frequency
-	words map[string]int
+	Words map[string]int
 }
 
 // NewDocument creates a new document
@@ -36,9 +35,9 @@ type Document struct {
 // It returns a Document
 func NewDocument(path string, source Source) Document {
 	return Document{
-		path:   path,
-		source: source,
-		words:  make(map[string]int),
+		Path:   path,
+		Source: source,
+		Words:  make(map[string]int),
 	}
 }
 
@@ -47,7 +46,7 @@ func NewDocument(path string, source Source) Document {
 // It returns a Document
 func DocumentFromText(path string, source Source, text string) Document {
 	d := NewDocument(path, source)
-	d.words = indexing.IndexString(text)
+	d.Words = indexing.IndexString(text)
 	return d
 }
 
@@ -56,7 +55,7 @@ func DocumentFromText(path string, source Source, text string) Document {
 // It returns a Document
 func DocumentFromBytes(path string, source Source, b []byte) Document {
 	d := NewDocument(path, source)
-	d.words = indexing.IndexBytes(b)
+	d.Words = indexing.IndexBytes(b)
 	return d
 }
 
@@ -75,75 +74,10 @@ func DocumentFromFile(path string) (Document, error) {
 	return DocumentFromBytes(path, SourceLocal, content), nil
 }
 
-func DocumentsFromDir(path string) ([]Document, error) {
-	return documentsFromDirRec(path, make([]Document, 0))
-}
-
-func documentsFromDirRec(path string, docs []Document) ([]Document, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-
-			if entry.Name() == "." || entry.Name() == ".." || entry.Name() == ".git" {
-				continue
-			}
-
-			newDocs, err := documentsFromDirRec(path+"/"+entry.Name(), docs)
-			if err != nil {
-				return nil, err
-			}
-			docs = newDocs
-		} else {
-
-			ext := filepath.Ext(entry.Name())
-
-			if ext != ".txt" && ext != ".md" {
-				continue
-			}
-
-			doc, err := DocumentFromFile(path + "/" + entry.Name())
-			if err != nil {
-				return nil, err
-			}
-			docs = append(docs, doc)
-		}
-	}
-
-	return docs, nil
-}
-
-func ReverseMapping(d *[]Document) map[string][]string {
-
-	mapping := make(map[string][]string)
-
-	t := timing.Mesure("ReverseMapping")
-	defer t.Stop()
-
-	for _, doc := range *d {
-		for word, freq := range doc.words {
-			if freq <= 0 {
-				continue
-			}
-
-			if _, ok := mapping[word]; !ok {
-				mapping[word] = make([]string, 0)
-			}
-
-			mapping[word] = append(mapping[word], doc.path)
-		}
-	}
-
-	return mapping
-}
-
 // Misc
 
 func (d *Document) DebugPrint() {
-	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", d.path, d.source, len(d.words))
+	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", d.Path, d.Source, len(d.Words))
 }
 
 // Pair
@@ -157,7 +91,7 @@ type Pair struct {
 func (d *Document) GetWords() []Pair {
 	pairs := make([]Pair, 0)
 
-	for k, v := range d.words {
+	for k, v := range d.Words {
 		pairs = append(pairs, Pair{k, v})
 	}
 
