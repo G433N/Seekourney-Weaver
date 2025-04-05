@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+func normalizeWord(w string) string {
+	return strings.ToLower(w)
+}
+
 func IndexBytes(b []byte) map[string]int {
 	t := timing.Mesure("IndexBytes")
 	defer t.Stop()
@@ -13,7 +17,7 @@ func IndexBytes(b []byte) map[string]int {
 
 	for w := range words.WordsIter(string(b)) {
 
-		l := strings.ToLower(w)
+		l := normalizeWord(w)
 
 		wordList[l]++
 	}
