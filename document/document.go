@@ -3,7 +3,9 @@ package document
 import (
 	"indexer/indexing"
 	"indexer/timing"
+	"log"
 	"os"
+	"path/filepath"
 	"sort"
 )
 
@@ -16,6 +18,9 @@ const (
 	// SourceWeb is a web page
 	SourceWeb
 )
+
+// TODO: Split out specific indexing functions (e.g. for web pages or local files) into their own packages.
+// This package should only be responsible for the abstract document itself.
 
 // Document is a struct that represents a document
 type Document struct {
@@ -60,7 +65,7 @@ func DocumentFromBytes(path string, source Source, b []byte) Document {
 // It returns a Document
 func DocumentFromFile(path string) (Document, error) {
 
-	t := timing.Mesure("DocumentFromFile")
+	t := timing.Mesure("DocumentFromFile: " + path)
 	defer t.Stop()
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -69,6 +74,79 @@ func DocumentFromFile(path string) (Document, error) {
 
 	return DocumentFromBytes(path, SourceLocal, content), nil
 }
+
+func DocumentsFromDir(path string) ([]Document, error) {
+	return documentsFromDirRec(path, make([]Document, 0))
+}
+
+func documentsFromDirRec(path string, docs []Document) ([]Document, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+
+			if entry.Name() == "." || entry.Name() == ".." || entry.Name() == ".git" {
+				continue
+			}
+
+			newDocs, err := documentsFromDirRec(path+"/"+entry.Name(), docs)
+			if err != nil {
+				return nil, err
+			}
+			docs = newDocs
+		} else {
+
+			ext := filepath.Ext(entry.Name())
+
+			if ext != ".txt" && ext != ".md" {
+				continue
+			}
+
+			doc, err := DocumentFromFile(path + "/" + entry.Name())
+			if err != nil {
+				return nil, err
+			}
+			docs = append(docs, doc)
+		}
+	}
+
+	return docs, nil
+}
+
+func ReverseMapping(d *[]Document) map[string][]string {
+
+	mapping := make(map[string][]string)
+
+	t := timing.Mesure("ReverseMapping")
+	defer t.Stop()
+
+	for _, doc := range *d {
+		for word, freq := range doc.words {
+			if freq <= 0 {
+				continue
+			}
+
+			if _, ok := mapping[word]; !ok {
+				mapping[word] = make([]string, 0)
+			}
+
+			mapping[word] = append(mapping[word], doc.path)
+		}
+	}
+
+	return mapping
+}
+
+// Misc
+
+func (d *Document) DebugPrint() {
+	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", d.path, d.source, len(d.words))
+}
+
+// Pair
 
 type Pair struct {
 	Word string
