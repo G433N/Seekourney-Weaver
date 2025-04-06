@@ -1,10 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 const (
@@ -21,14 +23,25 @@ func main() {
 	fmt.Println("client starting")
 	client := http.Client{}
 
-	fmt.Println("## Searching: key1")
-	searchForTerms(client, []string{"key1"})
-	fmt.Println("## Adding paths")
-	addPath(client, []string{"/a/path", "/another/path"})
-	fmt.Println("## Requesting all")
-	getAll(client)
+	var command string
+	flag.StringVar(&command, "command", "default", "search, add, all or quit")
+	flag.Parse()
 
-	// shutdownServer(client)
+	// USAGE: ./client -command=<search, add, all or quit> <arg1 arg2 ... argN>
+	// EXAMPLE: ./client -command=search key1 key2
+	// EXAMPLE: ./client -command=all
+	switch command {
+	case "search":
+		searchForTerms(client, os.Args[2:])
+	case "add":
+		addPath(client, os.Args[2:])
+	case "all":
+		getAll(client)
+	case "quit":
+		shutdownServer(client)
+	default:
+		panic("Error: invalid command")
+	}
 }
 
 func checkHTTPError(err error) {
