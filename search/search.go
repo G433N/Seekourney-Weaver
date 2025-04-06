@@ -31,13 +31,13 @@ func Search(f *folder.Folder, rMap map[string][]string, query string) []SearchRe
 
 		for _, path := range paths {
 			if path == "" {
-				log.Fatalf("Path is empty")
+				log.Printf("ERROR: Path is empty\n")
 				continue
 			}
 
 			doc, ok := f.GetDoc(path)
 			if !ok {
-				log.Fatalf("Document %s not found in folder", path)
+				log.Printf("Document %s not found in folder\n", path)
 				continue
 			}
 
@@ -58,6 +58,10 @@ func Search(f *folder.Folder, rMap map[string][]string, query string) []SearchRe
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Value > results[j].Value
 	})
+
+	if len(results) < 10 {
+		return results
+	}
 
 	return results[:10] // Return top 10 results
 }

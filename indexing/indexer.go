@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+// TODO: Make the normalization configurable with a config struce and/or interface
+
 func NormalizeWord(w string) string {
 	return strings.ToLower(w)
 }
