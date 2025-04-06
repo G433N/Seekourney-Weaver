@@ -12,6 +12,10 @@ import (
 
 var Path = "config.json"
 
+// NormalizeWord is a function that normalizes a word
+// To normalize a word means to convert it to a standard format to make the indexing more efficient
+// For example, converting all words to lowercase or later stemming them
+// In the lowercase example, the word "Hello" would be converted to "hello". This would make the indexer understad them as the same word
 type NormalizeWord func(string) string
 
 type NormalizeWordID int
@@ -28,12 +32,12 @@ var NormalizeWordFunc = map[NormalizeWordID]NormalizeWord{
 	Steming: func(s string) string { panic("not implemented") },
 }
 
-// Config is a struct that contains the configuration for the server
+// Config is a struct that containf the configuration for the server
 type Config struct {
 	// ParrallelIndexing is a flag that indicates whether to use parallel indexing
 	ParrallelIndexing bool
 
-	// Folder specific settings, should be extracted to a separate struct
+	// Folder/Indexer specific settings, should be extracted to a separate struct
 
 	// WalkDirConfig is a struct that contains the configuration for the folder walker
 	// WalkDirConfig.ReturnDirs should ALWAYS be set to false
