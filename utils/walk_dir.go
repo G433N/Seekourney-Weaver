@@ -25,44 +25,44 @@ func defaultForbiddenDirs() []string {
 // It allows setting options for verbosity, returning directories, and filtering by forbidden directories and allowed file extensions.
 // If there is no allowed file extension, all files are returned.
 type WalkDirConfig struct {
-	verbose       bool
-	returnDirs    bool
-	forbiddenDirs []string
-	allowedExts   []string
+	Verbose       bool
+	ReturnDirs    bool
+	ForbiddenDirs []string
+	AllowedExts   []string
 }
 
 // NewWalkDirConfig creates a new WalkDirConfig with default values.
 func NewWalkDirConfig() *WalkDirConfig {
 	return &WalkDirConfig{
-		verbose:       false,
-		returnDirs:    false,
-		forbiddenDirs: append(alwaysForbiddenDirs(), defaultForbiddenDirs()...),
-		allowedExts:   []string{},
+		Verbose:       false,
+		ReturnDirs:    false,
+		ForbiddenDirs: append(alwaysForbiddenDirs(), defaultForbiddenDirs()...),
+		AllowedExts:   []string{},
 	}
 }
 
 // SetVerbose sets the verbose flag for the WalkDirConfig.
 func (c *WalkDirConfig) SetVerbose(verbose bool) *WalkDirConfig {
-	c.verbose = verbose
+	c.Verbose = verbose
 	return c
 }
 
 // SetReturnDirs sets the returnDirs flag for the WalkDirConfig.
 func (c *WalkDirConfig) SetReturnDirs(returnDirs bool) *WalkDirConfig {
-	c.returnDirs = returnDirs
+	c.ReturnDirs = returnDirs
 	return c
 }
 
 // SetForbiddenDirs sets the forbidden directories for the WalkDirConfig.
 func (c *WalkDirConfig) SetForbiddenDirs(dirs []string) *WalkDirConfig {
-	c.forbiddenDirs = append(alwaysForbiddenDirs(), dirs...)
+	c.ForbiddenDirs = append(alwaysForbiddenDirs(), dirs...)
 	return c
 }
 
 // SetAllowedExts sets the forbidden file extensions for the WalkDirConfig.
 // If there are no allowed file extensions, all files are returned.
 func (c *WalkDirConfig) SetAllowedExts(exts []string) *WalkDirConfig {
-	c.allowedExts = exts
+	c.AllowedExts = exts
 	return c
 }
 
@@ -84,12 +84,12 @@ func (c *WalkDirConfig) WalkDir(path string) iter.Seq[string] {
 				// Recursively walk the directory
 				subDir := path + string(os.PathSeparator) + entry.Name()
 
-				if c.verbose {
+				if c.Verbose {
 					log.Printf("Walking directory: %s\n", subDir)
 				}
 
 				if !c.isValidDir(subDir) {
-					if c.verbose {
+					if c.Verbose {
 						log.Printf("Skipping forbidden directory: %s\n", subDir)
 					}
 					continue
@@ -104,12 +104,12 @@ func (c *WalkDirConfig) WalkDir(path string) iter.Seq[string] {
 				// Yield the file path
 				filePath := path + string(os.PathSeparator) + entry.Name()
 
-				if c.verbose {
+				if c.Verbose {
 					log.Printf("Found file: %s\n", filePath)
 				}
 
 				if !c.isValidFile(filePath) {
-					if c.verbose {
+					if c.Verbose {
 						log.Printf("Skipping forbidden file: %s\n", filePath)
 					}
 					continue
@@ -128,7 +128,7 @@ func (c *WalkDirConfig) isValidDir(path string) bool {
 
 	name := filepath.Base(path)
 
-	for _, dir := range c.forbiddenDirs {
+	for _, dir := range c.ForbiddenDirs {
 		if dir == name {
 			return false
 		}
@@ -139,13 +139,13 @@ func (c *WalkDirConfig) isValidDir(path string) bool {
 // isValidFile checks if the file is valid based on the allowed file extensions.
 func (c *WalkDirConfig) isValidFile(path string) bool {
 
-	if len(c.allowedExts) == 0 {
+	if len(c.AllowedExts) == 0 {
 		return true
 	}
 
 	fileExt := filepath.Ext(path)
 
-	for _, ext := range c.allowedExts {
+	for _, ext := range c.AllowedExts {
 		if ext == fileExt {
 			return true
 		}

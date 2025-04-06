@@ -1,50 +1,22 @@
 package folder
 
 import (
+	"indexer/config"
 	"indexer/document"
-	"indexer/indexing"
 	"indexer/timing"
-	"indexer/utils"
-	"strings"
 )
 
 // Abstract collection of documents
+// The folder struct will start as a singleton, but later expanded such that we can multiple folders to sort documents into groups
 type Folder struct {
 	docs docMap
 }
-
-// FolderConfig is a configuration struct for the folder
-type FolderConfig struct {
-	walkDirConfig  *utils.WalkDirConfig
-	documentConfig *document.DocumentConfig
-	// TODO:: Document this field and make it configurable
-	async bool
-}
-
-// NewFolderConfig creates a new FolderConfig with default values
-func NewFolderConfig() *FolderConfig {
-	return &FolderConfig{
-		walkDirConfig:  utils.NewWalkDirConfig(),
-		documentConfig: document.DocumentConfigFromIndexConfig(indexing.NewIndexConfig(strings.ToLower)),
-		async:          true,
-	}
-}
-
-func FolderConfigFromConfig(walkDirConfig *utils.WalkDirConfig, documentConfig *document.DocumentConfig) *FolderConfig {
-	return &FolderConfig{
-		walkDirConfig:  walkDirConfig,
-		documentConfig: documentConfig,
-		async:          true,
-	}
-}
-
-// The folder struct will start as a singleton, but later expanded such that we can multiple folders to sort documents into groups
 
 // Type alias
 type docMap map[string]document.Document
 
 // Recursivly indexes a folder and all its subfolders
-func (c *FolderConfig) FolderFromDir(path string) (Folder, error) {
+func FolderFromDir(c *config.Config, path string) (Folder, error) {
 
 	t := timing.Mesure("FolderFromDir")
 	defer t.Stop()
@@ -52,11 +24,11 @@ func (c *FolderConfig) FolderFromDir(path string) (Folder, error) {
 	var docs docMap
 	var err error
 
-	if c.async {
-		docs, err = c.docMapFromDirAsync(path)
+	if c.ParrallelIndexing {
+		docs, err = docMapFromDirAsync(c, path)
 	} else {
 		docs, err =
-			c.docMapFromDir(path)
+			docMapFromDir(c, path)
 	}
 
 	if err != nil {
@@ -66,12 +38,12 @@ func (c *FolderConfig) FolderFromDir(path string) (Folder, error) {
 	return Folder{docs: docs}, nil
 }
 
-func (c *FolderConfig) docMapFromDir(path string) (docMap, error) {
+func docMapFromDir(c *config.Config, path string) (docMap, error) {
 
 	docs := make(docMap)
 
-	for path := range c.walkDirConfig.WalkDir(path) {
-		doc, err := c.documentConfig.DocumentFromFile(path)
+	for path := range c.WalkDirConfig.WalkDir(path) {
+		doc, err := document.DocumentFromFile(c, path)
 		if err != nil {
 			return nil, err
 		}
@@ -81,9 +53,9 @@ func (c *FolderConfig) docMapFromDir(path string) (docMap, error) {
 	return docs, nil
 }
 
-func (c *FolderConfig) docMapFromDirAsync(path string) (docMap, error) {
+func docMapFromDirAsync(c *config.Config, path string) (docMap, error) {
 
-	paths := c.walkDirConfig.WalkDir(path)
+	paths := c.WalkDirConfig.WalkDir(path)
 
 	type result struct {
 		path string
@@ -96,7 +68,7 @@ func (c *FolderConfig) docMapFromDirAsync(path string) (docMap, error) {
 
 	for path := range paths {
 		go func(path string) {
-			doc, err := c.documentConfig.DocumentFromFile(path)
+			doc, err := document.DocumentFromFile(c, path)
 			channel <- result{path: path, doc: doc, err: err}
 		}(path)
 		amount++

@@ -1,6 +1,7 @@
 package document
 
 import (
+	"indexer/config"
 	"indexer/indexing"
 	"indexer/timing"
 	"log"
@@ -17,17 +18,6 @@ const (
 	// SourceWeb is a web page
 	SourceWeb
 )
-
-type DocumentConfig struct {
-	IndexConfig *indexing.IndexConfig
-}
-
-// DocumentConfigFromIndexConfig creates a new DocumentConfig from an IndexConfig
-func DocumentConfigFromIndexConfig(indexConfig *indexing.IndexConfig) *DocumentConfig {
-	return &DocumentConfig{
-		IndexConfig: indexConfig,
-	}
-}
 
 // TODO: Split out specific indexing functions (e.g. for web pages or local files) into their own packages.
 // This package should only be responsible for the abstract document itself.
@@ -55,25 +45,25 @@ func NewDocument(path string, source Source) Document {
 // DocumentFromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func (c *DocumentConfig) DocumentFromText(path string, source Source, text string) Document {
+func DocumentFromText(c *config.Config, path string, source Source, text string) Document {
 	d := NewDocument(path, source)
-	d.Words = c.IndexConfig.IndexString(text)
+	d.Words = indexing.IndexString(c, text)
 	return d
 }
 
 // DocumentFromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func (c *DocumentConfig) DocumentFromBytes(path string, source Source, b []byte) Document {
+func DocumentFromBytes(c *config.Config, path string, source Source, b []byte) Document {
 	d := NewDocument(path, source)
-	d.Words = c.IndexConfig.IndexBytes(b)
+	d.Words = indexing.IndexBytes(c, b)
 	return d
 }
 
 // DocumentFromFile creates a new document from a file
 // It takes a path to the file
 // It returns a Document
-func (c *DocumentConfig) DocumentFromFile(path string) (Document, error) {
+func DocumentFromFile(c *config.Config, path string) (Document, error) {
 
 	t := timing.Mesure("DocumentFromFile: " + path)
 	defer t.Stop()
@@ -82,7 +72,7 @@ func (c *DocumentConfig) DocumentFromFile(path string) (Document, error) {
 		return Document{}, err
 	}
 
-	return c.DocumentFromBytes(path, SourceLocal, content), nil
+	return DocumentFromBytes(c, path, SourceLocal, content), nil
 }
 
 // Misc
@@ -92,7 +82,6 @@ func (d *Document) DebugPrint() {
 }
 
 // Pair
-
 type Pair struct {
 	Word string
 	Freq int
