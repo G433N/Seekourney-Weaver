@@ -14,7 +14,7 @@ type Folder struct {
 // FolderConfig is a configuration struct for the folder
 type FolderConfig struct {
 	walkDirConfig *utils.WalkDirConfig
-	// TODO:: Document this field
+	// TODO:: Document this field and make it configurable
 	async bool
 }
 
