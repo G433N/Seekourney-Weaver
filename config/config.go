@@ -19,13 +19,13 @@ type NormalizeWordID int
 // NormalizeWordID is an ID for the normalization function
 const (
 	ToLower NormalizeWordID = iota
-	TfIdf
+	Steming
 )
 
 // NormalizeWordFunc is a map of normalization functions
 var NormalizeWordFunc = map[NormalizeWordID]NormalizeWord{
 	ToLower: strings.ToLower,
-	TfIdf:   func(s string) string { panic("not implemented") },
+	Steming: func(s string) string { panic("not implemented") },
 }
 
 // Config is a struct that contains the configuration for the server
@@ -106,5 +106,7 @@ func Load() *Config {
 		}
 		log.Printf("Config file not found, creating new one at %s", Path)
 	}
+
+	log.Printf("Config loaded from %s", Path)
 	return c
 }

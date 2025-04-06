@@ -42,9 +42,14 @@ func testSearch(c *config.Config, folder *folder.Folder, rm map[string][]string,
 	}
 }
 
+func init() {
+	// Initialize the timing package
+	timing.Init(timing.Default())
+}
+
 func main() {
 
-	t := timing.Mesure("Main")
+	t := timing.Mesure(timing.Main)
 	defer t.Stop()
 
 	// Load config
@@ -57,10 +62,6 @@ func main() {
 
 	rm := folder.ReverseMappingLocal()
 
-	words := len(rm)
-
-	log.Printf("Words: %d\n", words)
-
 	// TODO: Automated testing
 	testSearch(config, &folder, rm, "Linear Interpolation")
 	testSearch(config, &folder, rm, "Linearly Interpolate")
@@ -68,7 +69,8 @@ func main() {
 	testSearch(config, &folder, rm, "Color Interpolation")
 	testSearch(config, &folder, rm, "Color Interpolation in 3D")
 
-	// for word, paths := range rm {
-	// 	log.Printf("Word: %s, Paths: %v\n", word, paths)
-	// }
+	files := folder.GetDocAmount()
+	words := len(rm)
+
+	log.Printf("Files: %d, Words: %d\n", files, words)
 }

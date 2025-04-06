@@ -65,7 +65,7 @@ func FromBytes(c *config.Config, path string, source Source, b []byte) Document 
 // It returns a Document
 func FromFile(c *config.Config, path string) (Document, error) {
 
-	t := timing.Mesure("DocumentFromFile: " + path)
+	t := timing.Mesure(timing.DocFromFile, path)
 	defer t.Stop()
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -103,7 +103,7 @@ func (d *Document) GetWords() []Pair {
 func (d *Document) GetWordsSorted() []Pair {
 	pairs := d.GetWords()
 
-	t := timing.Mesure("Sorting words")
+	t := timing.Mesure(timing.SortWords)
 	defer t.Stop()
 
 	sort.Slice(pairs, func(i, j int) bool { return pairs[i].Freq > pairs[j].Freq })

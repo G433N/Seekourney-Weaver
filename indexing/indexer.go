@@ -12,7 +12,7 @@ func NormalizeWord(c *config.Config, word string) string {
 }
 
 func IndexBytes(c *config.Config, b []byte) map[string]int {
-	t := timing.Mesure("IndexBytes")
+	t := timing.Mesure(timing.IndexBytes)
 	defer t.Stop()
 	wordList := make(map[string]int)
 
