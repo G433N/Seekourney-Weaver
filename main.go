@@ -1,15 +1,12 @@
 package main
 
 import (
-	"indexer/document"
+	"indexer/config"
 	"indexer/folder"
-	"indexer/indexing"
 	"indexer/search"
 	"indexer/timing"
-	"indexer/utils"
 	"log"
 	"strconv"
-	"strings"
 
 	"github.com/savioxavier/termlink"
 )
@@ -33,10 +30,10 @@ func green(text string) string {
 	return "\033[92m" + text + "\033[0m"
 }
 
-func testSearch(c *search.Config, folder *folder.Folder, rm map[string][]string, query string) {
+func testSearch(c *config.Config, folder *folder.Folder, rm map[string][]string, query string) {
 
 	// Perform search using the folder and reverse mapping
-	pairs := c.Search(folder, rm, query)
+	pairs := search.Search(c, folder, rm, query)
 
 	log.Printf("--- Search results for query '%s' ---\n", bold(italic(query)))
 	for n, result := range pairs {
@@ -47,33 +44,15 @@ func testSearch(c *search.Config, folder *folder.Folder, rm map[string][]string,
 	}
 }
 
-func testIndexConfig() *indexing.Config {
-	return indexing.NewIndexConfig(strings.ToLower)
-}
-
-// TODO: Json config
-
-func testFolderConfig(index *indexing.Config) *folder.FolderConfig {
-	documentConfig := document.DocumentConfigFromIndexConfig(index)
-	dirConfig := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
-	folderConfig := folder.FolderConfigFromConfig(dirConfig, documentConfig)
-	return folderConfig
-}
-
-func testSearchConfig(index *indexing.Config) *search.Config {
-	return search.NewSearchConfig(index)
-}
-
 func main() {
 
 	t := timing.Mesure("Main")
 	defer t.Stop()
 
-	indexConfig := testIndexConfig()
-	folderConfig := testFolderConfig(indexConfig)
-	searchConfig := testSearchConfig(indexConfig)
+	// Load config
+	config := config.Load()
 
-	folder, err := folderConfig.FolderFromDir("test_data")
+	folder, err := folder.FolderFromDir(config, "test_data")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,11 +64,11 @@ func main() {
 	log.Printf("Words: %d\n", words)
 
 	// TODO: Automated testing
-	testSearch(searchConfig, &folder, rm, "Linear Interpolation")
-	testSearch(searchConfig, &folder, rm, "Linearly Interpolate")
-	testSearch(searchConfig, &folder, rm, "Color")
-	testSearch(searchConfig, &folder, rm, "Color Interpolation")
-	testSearch(searchConfig, &folder, rm, "Color Interpolation in 3D")
+	testSearch(config, &folder, rm, "Linear Interpolation")
+	testSearch(config, &folder, rm, "Linearly Interpolate")
+	testSearch(config, &folder, rm, "Color")
+	testSearch(config, &folder, rm, "Color Interpolation")
+	testSearch(config, &folder, rm, "Color Interpolation in 3D")
 
 	// for word, paths := range rm {
 	// 	log.Printf("Word: %s, Paths: %v\n", word, paths)

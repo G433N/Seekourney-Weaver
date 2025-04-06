@@ -1,6 +1,7 @@
 package search
 
 import (
+	"indexer/config"
 	"indexer/folder"
 	"indexer/indexing"
 	"indexer/timing"
@@ -9,25 +10,12 @@ import (
 	"sort"
 )
 
-type Config = SearchConfig
-
-// SearchConfig is a configuration struct for the search
-type SearchConfig struct {
-	IndexConfig *indexing.IndexConfig
-}
-
-func NewSearchConfig(indexConfig *indexing.IndexConfig) *SearchConfig {
-	return &SearchConfig{
-		IndexConfig: indexConfig,
-	}
-}
-
 type SearchResult struct {
 	Path  string
 	Value int
 }
 
-func (c Config) Search(f *folder.Folder, rMap map[string][]string, query string) []SearchResult {
+func Search(c *config.Config, f *folder.Folder, rMap map[string][]string, query string) []SearchResult {
 
 	t := timing.Mesure("Search")
 	defer t.Stop()
@@ -35,7 +23,7 @@ func (c Config) Search(f *folder.Folder, rMap map[string][]string, query string)
 	m := make(map[string]int)
 
 	for word := range words.WordsIter(query) {
-		word = c.IndexConfig.NormWord(word)
+		word = indexing.NormalizeWord(c, word)
 		paths, ok := rMap[word]
 		if !ok {
 			log.Fatalf("Word %s not found in reverse mapping", word)
