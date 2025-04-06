@@ -30,7 +30,7 @@ func Search(c *config.Config, f *folder.Folder, rMap map[string][]string, query 
 		word = indexing.NormalizeWord(c, word)
 		paths, ok := rMap[word]
 		if !ok {
-			log.Fatalf("Word %s not found in reverse mapping", word)
+			log.Printf("Word %s not found in reverse mapping", word)
 			continue
 		}
 
