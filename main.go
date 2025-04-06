@@ -1,11 +1,11 @@
 package main
 
 import (
-	"indexer/config"
-	"indexer/folder"
-	"indexer/search"
-	"indexer/timing"
 	"log"
+	"seekourney/config"
+	"seekourney/folder"
+	"seekourney/search"
+	"seekourney/timing"
 	"strconv"
 
 	"github.com/savioxavier/termlink"

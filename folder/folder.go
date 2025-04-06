@@ -1,9 +1,9 @@
 package folder
 
 import (
-	"indexer/config"
-	"indexer/document"
-	"indexer/timing"
+	"seekourney/config"
+	"seekourney/document"
+	"seekourney/timing"
 )
 
 // Abstract collection of documents

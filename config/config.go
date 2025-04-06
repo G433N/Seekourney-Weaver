@@ -2,9 +2,9 @@ package config
 
 import (
 	"encoding/json"
-	"indexer/utils"
 	"log"
 	"os"
+	"seekourney/utils"
 	"strings"
 )
 

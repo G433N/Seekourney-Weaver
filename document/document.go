@@ -1,11 +1,11 @@
 package document
 
 import (
-	"indexer/config"
-	"indexer/indexing"
-	"indexer/timing"
 	"log"
 	"os"
+	"seekourney/config"
+	"seekourney/indexing"
+	"seekourney/timing"
 	"sort"
 )
 
