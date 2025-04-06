@@ -1,0 +1,10 @@
+docker run --rm \
+    --name go-postgres \
+    -v "$PWD/initdb.sql":/docker-entrypoint-initdb.d/initdb.sql \
+    -e POSTGRES_USER=go-postgres \
+    -e POSTGRES_PASSWORD=go-postgres \
+    -p 5433:5432 \
+    postgres 
+
+# For persistent data
+# -v "$PWD/data":/var/lib/postgresql/data \
