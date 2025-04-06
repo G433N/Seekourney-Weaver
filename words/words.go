@@ -23,7 +23,7 @@ func isASCIIAlphaNumeric(b byte) bool {
 
 // charLen returns the number of bytes in a UTF-8 character.
 // Including the first byte.
-// If the byte is not a UTF-8 character, it returns 0.
+// If the byte is not valid, it returns 0.
 // If the byte is a continuation byte, it returns -1.
 func charLen(b byte) int {
 	if isAscii(b) {
@@ -49,6 +49,7 @@ func charLen(b byte) int {
 	return 0
 }
 
+// wordSplit returns true if the byte is a word split character.
 func wordSplit(b byte) bool {
 
 	// TODO: Check if UTF-8 chars have any characters we want to splkit words with
@@ -72,6 +73,8 @@ func yieldWord(yield func(string) bool, bytes []byte, start int, end int) bool {
 	return true
 }
 
+// WordsIterBytes takes a byte slice and returns an iterator that yields each word in the slice.
+// Limited UTF-8 support.
 func WordsIterBytes(bytes []byte) iter.Seq[string] {
 	word_iter := func(yield func(string) bool) {
 
@@ -81,9 +84,9 @@ func WordsIterBytes(bytes []byte) iter.Seq[string] {
 		i := 0
 
 		for i < len(bytes) {
-			b := bytes[i]
+			c := bytes[i]
 
-			if wordSplit(b) {
+			if wordSplit(c) {
 				if !yieldWord(yield, bytes, start, end) {
 					return
 				}
@@ -92,7 +95,7 @@ func WordsIterBytes(bytes []byte) iter.Seq[string] {
 				end = i + 1
 			}
 			// Ship UTF-8 continuation bytes
-			len := charLen(b)
+			len := charLen(c)
 			i += len
 			end = i
 		}
@@ -106,6 +109,8 @@ func WordsIterBytes(bytes []byte) iter.Seq[string] {
 }
 
 // WordsIter takes a string and returns an iterator that yields each word in the string.
+// Limited UTF-8 support.
+// Internally, it converts the string to a byte slice and calls WordsIterBytes. So if you got a byte slice, use that function directly.
 func WordsIter(s string) iter.Seq[string] {
 	bytes := []byte(s)
 	return WordsIterBytes(bytes)

@@ -25,7 +25,7 @@ func FromDir(c *config.Config, path string) (Folder, error) {
 	var err error
 
 	if c.ParrallelIndexing {
-		docs, err = docMapFromDirAsync(c, path)
+		docs, err = docMapFromDirParrallel(c, path)
 	} else {
 		docs, err =
 			docMapFromDir(c, path)
@@ -38,6 +38,7 @@ func FromDir(c *config.Config, path string) (Folder, error) {
 	return Folder{docs: docs}, nil
 }
 
+// docMapFromDir indexes a folder and all its subfolders, making a map of paths to documents
 func docMapFromDir(c *config.Config, path string) (docMap, error) {
 
 	docs := make(docMap)
@@ -53,7 +54,8 @@ func docMapFromDir(c *config.Config, path string) (docMap, error) {
 	return docs, nil
 }
 
-func docMapFromDirAsync(c *config.Config, path string) (docMap, error) {
+// docMapFromDirParrallel works like docMapFromDir, but uses goroutines to index the documents in parallel
+func docMapFromDirParrallel(c *config.Config, path string) (docMap, error) {
 
 	paths := c.WalkDirConfig.WalkDir(path)
 
@@ -86,7 +88,9 @@ func docMapFromDirAsync(c *config.Config, path string) (docMap, error) {
 	return docs, nil
 }
 
+// Creates a reverse mapping of the documents in the folder, words to paths for fast searching
 func (f *Folder) ReverseMappingLocal() map[string][]string {
+	// TODO: Use a database for this in the future
 	mapping := make(map[string][]string)
 
 	t := timing.Mesure(timing.ReverseMapLocal)

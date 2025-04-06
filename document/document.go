@@ -77,6 +77,7 @@ func FromFile(c *config.Config, path string) (Document, error) {
 
 // Misc
 
+// DebugPrint prints information about the document
 func (d *Document) DebugPrint() {
 	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", d.Path, d.Source, len(d.Words))
 }

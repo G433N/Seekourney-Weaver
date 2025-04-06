@@ -15,7 +15,11 @@ type SearchResult struct {
 	Value int
 }
 
+// Search performs a search on the folder using the reverse mapping
+// It returns a slice of SearchResult sorted by value in descending order, max 10 results
 func Search(c *config.Config, f *folder.Folder, rMap map[string][]string, query string) []SearchResult {
+
+	// TODO: Support more than 10 results
 
 	t := timing.Mesure(timing.Search)
 	defer t.Stop()

@@ -2,6 +2,7 @@ package timing
 
 type WatchID = int
 
+// All the different stopwatches
 const (
 	Search WatchID = iota
 	Main
@@ -12,6 +13,7 @@ const (
 	FolderFromDir
 )
 
+// Defualt config for the stopwatches
 func Default() Config {
 	return Config{
 		Search: StopwatchInfo{
