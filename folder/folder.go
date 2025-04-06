@@ -3,8 +3,7 @@ package folder
 import (
 	"indexer/document"
 	"indexer/timing"
-	"os"
-	"path/filepath"
+	"indexer/utils"
 )
 
 // Abstract collection of documents
@@ -22,7 +21,7 @@ func FolderFromDir(path string) (Folder, error) {
 	t := timing.Mesure("FolderFromDir")
 	defer t.Stop()
 
-	docs, err := documentsFromDirRec(path, make(docMap))
+	docs, err := docMapFromDir(path)
 
 	if err != nil {
 		return Folder{}, err
@@ -31,38 +30,18 @@ func FolderFromDir(path string) (Folder, error) {
 	return Folder{docs: docs}, nil
 }
 
-func documentsFromDirRec(path string, docs docMap) (docMap, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
+func docMapFromDir(path string) (docMap, error) {
 
-	for _, entry := range entries {
-		if entry.IsDir() {
+	docs := make(docMap)
 
-			if entry.Name() == "." || entry.Name() == ".." || entry.Name() == ".git" {
-				continue
-			}
+	c := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
 
-			newDocs, err := documentsFromDirRec(path+"/"+entry.Name(), docs)
-			if err != nil {
-				return nil, err
-			}
-			docs = newDocs
-		} else {
-
-			ext := filepath.Ext(entry.Name())
-
-			if ext != ".txt" && ext != ".md" {
-				continue
-			}
-
-			doc, err := document.DocumentFromFile(path + "/" + entry.Name())
-			if err != nil {
-				return nil, err
-			}
-			docs[doc.Path] = doc
+	for path := range c.WalkDir(path) {
+		doc, err := document.DocumentFromFile(path)
+		if err != nil {
+			return nil, err
 		}
+		docs[doc.Path] = doc
 	}
 
 	return docs, nil
