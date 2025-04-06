@@ -6,23 +6,38 @@ import (
 	"indexer/timing"
 	"indexer/utils"
 	"log"
+	"strconv"
+
+	"github.com/savioxavier/termlink"
 )
 
-// func Search() []SearchResult {
-//
-//
-// }
+// TODO: All this should be moved to client side
+func bold(text string) string {
+	return "\033[1m" + text + "\033[0m"
+}
+
+func italic(text string) string {
+	return "\033[3m" + text + "\033[0m"
+}
+
+func lightBlue(text string) string {
+	return "\033[94m" + text + "\033[0m"
+}
+
+func green(text string) string {
+	return "\033[92m" + text + "\033[0m"
+}
 
 func testSearch(folder *folder.Folder, rm map[string][]string, query string) {
 	// Perform search using the folder and reverse mapping
 	pairs := search.Search(folder, rm, query)
 
-	log.Printf("--- Search results for query '%s' ---\n", query)
+	log.Printf("--- Search results for query '%s' ---\n", bold(italic(query)))
 	for n, result := range pairs {
 		path := result.Path
 		score := result.Value
-		// TODO: Make link clickable (open in default browser)
-		log.Printf("%d. Path: %s, Score: %d\n", n, path, score)
+		link := termlink.Link(path, path)
+		log.Printf("%d. Path: %s Score: %s\n", n, lightBlue(bold(link)), green(strconv.Itoa(score)))
 	}
 }
 
