@@ -13,7 +13,7 @@ $ go test ./...
 # Run application or tests on save
 
 ## Using `watchexec`
-Intall `watchexec` using your package manager.
+Install `watchexec` using your package manager.
 ```bash
 $ watchexec -e go -r go run main.go
 $ watchexec -e go -r go test ./...
