@@ -14,18 +14,22 @@ type Folder struct {
 // FolderConfig is a configuration struct for the folder
 type FolderConfig struct {
 	walkDirConfig *utils.WalkDirConfig
+	// TODO:: Document this field
+	async bool
 }
 
 // NewFolderConfig creates a new FolderConfig with default values
 func NewFolderConfig() *FolderConfig {
 	return &FolderConfig{
 		walkDirConfig: utils.NewWalkDirConfig(),
+		async:         true,
 	}
 }
 
 func FolderConfigFromDir(walkDirConfig *utils.WalkDirConfig) *FolderConfig {
 	return &FolderConfig{
 		walkDirConfig: walkDirConfig,
+		async:         true,
 	}
 }
 
@@ -34,12 +38,21 @@ func FolderConfigFromDir(walkDirConfig *utils.WalkDirConfig) *FolderConfig {
 // Type alias
 type docMap map[string]document.Document
 
+// Recursivly indexes a folder and all its subfolders
 func (c *FolderConfig) FolderFromDir(path string) (Folder, error) {
 
 	t := timing.Mesure("FolderFromDir")
 	defer t.Stop()
 
-	docs, err := c.docMapFromDir(path)
+	var docs docMap
+	var err error
+
+	if c.async {
+		docs, err = c.docMapFromDirAsync(path)
+	} else {
+		docs, err =
+			c.docMapFromDir(path)
+	}
 
 	if err != nil {
 		return Folder{}, err
@@ -58,6 +71,39 @@ func (c *FolderConfig) docMapFromDir(path string) (docMap, error) {
 			return nil, err
 		}
 		docs[doc.Path] = doc
+	}
+
+	return docs, nil
+}
+
+func (c *FolderConfig) docMapFromDirAsync(path string) (docMap, error) {
+
+	paths := c.walkDirConfig.WalkDir(path)
+
+	type result struct {
+		path string
+		doc  document.Document
+		err  error
+	}
+
+	channel := make(chan result)
+	amount := 0
+
+	for path := range paths {
+		go func(path string) {
+			doc, err := document.DocumentFromFile(path)
+			channel <- result{path: path, doc: doc, err: err}
+		}(path)
+		amount++
+	}
+
+	docs := make(docMap)
+	for range amount {
+		res := <-channel
+		if res.err != nil {
+			return nil, res.err
+		}
+		docs[res.path] = res.doc
 	}
 
 	return docs, nil
