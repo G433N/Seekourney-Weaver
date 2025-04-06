@@ -1,12 +1,12 @@
 package search
 
 import (
-	"indexer/config"
-	"indexer/folder"
-	"indexer/indexing"
-	"indexer/timing"
-	"indexer/words"
 	"log"
+	"seekourney/config"
+	"seekourney/folder"
+	"seekourney/indexing"
+	"seekourney/timing"
+	"seekourney/words"
 	"sort"
 )
 

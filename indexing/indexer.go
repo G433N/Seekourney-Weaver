@@ -1,9 +1,9 @@
 package indexing
 
 import (
-	"indexer/config"
-	"indexer/timing"
-	"indexer/words"
+	"seekourney/config"
+	"seekourney/timing"
+	"seekourney/words"
 )
 
 func NormalizeWord(c *config.Config, word string) string {

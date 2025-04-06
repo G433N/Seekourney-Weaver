@@ -1,4 +1,4 @@
-module indexer
+module seekourney
 
 go 1.23.6
 
