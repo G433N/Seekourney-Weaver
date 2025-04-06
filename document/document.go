@@ -18,6 +18,17 @@ const (
 	SourceWeb
 )
 
+type DocumentConfig struct {
+	IndexConfig *indexing.IndexConfig
+}
+
+// DocumentConfigFromIndexConfig creates a new DocumentConfig from an IndexConfig
+func DocumentConfigFromIndexConfig(indexConfig *indexing.IndexConfig) *DocumentConfig {
+	return &DocumentConfig{
+		IndexConfig: indexConfig,
+	}
+}
+
 // TODO: Split out specific indexing functions (e.g. for web pages or local files) into their own packages.
 // This package should only be responsible for the abstract document itself.
 
@@ -44,25 +55,25 @@ func NewDocument(path string, source Source) Document {
 // DocumentFromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func DocumentFromText(path string, source Source, text string) Document {
+func (c *DocumentConfig) DocumentFromText(path string, source Source, text string) Document {
 	d := NewDocument(path, source)
-	d.Words = indexing.IndexString(text)
+	d.Words = c.IndexConfig.IndexString(text)
 	return d
 }
 
 // DocumentFromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func DocumentFromBytes(path string, source Source, b []byte) Document {
+func (c *DocumentConfig) DocumentFromBytes(path string, source Source, b []byte) Document {
 	d := NewDocument(path, source)
-	d.Words = indexing.IndexBytes(b)
+	d.Words = c.IndexConfig.IndexBytes(b)
 	return d
 }
 
 // DocumentFromFile creates a new document from a file
 // It takes a path to the file
 // It returns a Document
-func DocumentFromFile(path string) (Document, error) {
+func (c *DocumentConfig) DocumentFromFile(path string) (Document, error) {
 
 	t := timing.Mesure("DocumentFromFile: " + path)
 	defer t.Stop()
@@ -71,7 +82,7 @@ func DocumentFromFile(path string) (Document, error) {
 		return Document{}, err
 	}
 
-	return DocumentFromBytes(path, SourceLocal, content), nil
+	return c.DocumentFromBytes(path, SourceLocal, content), nil
 }
 
 // Misc
