@@ -11,8 +11,6 @@ import (
 	"github.com/savioxavier/termlink"
 )
 
-// TODO: Remove dubble information in fuction names, why is it called document.Documentblbla?
-
 // TODO: All this should be moved to client side
 func bold(text string) string {
 	return "\033[1m" + text + "\033[0m"
@@ -52,7 +50,7 @@ func main() {
 	// Load config
 	config := config.Load()
 
-	folder, err := folder.FolderFromDir(config, "test_data")
+	folder, err := folder.FromDir(config, "test_data")
 	if err != nil {
 		log.Fatal(err)
 	}

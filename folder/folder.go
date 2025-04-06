@@ -16,7 +16,7 @@ type Folder struct {
 type docMap map[string]document.Document
 
 // Recursivly indexes a folder and all its subfolders
-func FolderFromDir(c *config.Config, path string) (Folder, error) {
+func FromDir(c *config.Config, path string) (Folder, error) {
 
 	t := timing.Mesure("FolderFromDir")
 	defer t.Stop()
@@ -43,7 +43,7 @@ func docMapFromDir(c *config.Config, path string) (docMap, error) {
 	docs := make(docMap)
 
 	for path := range c.WalkDirConfig.WalkDir(path) {
-		doc, err := document.DocumentFromFile(c, path)
+		doc, err := document.FromFile(c, path)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func docMapFromDirAsync(c *config.Config, path string) (docMap, error) {
 
 	for path := range paths {
 		go func(path string) {
-			doc, err := document.DocumentFromFile(c, path)
+			doc, err := document.FromFile(c, path)
 			channel <- result{path: path, doc: doc, err: err}
 		}(path)
 		amount++

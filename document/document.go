@@ -31,10 +31,10 @@ type Document struct {
 	Words map[string]int
 }
 
-// NewDocument creates a new document
+// New creates a new document
 // It takes a path, a source,
 // It returns a Document
-func NewDocument(path string, source Source) Document {
+func New(path string, source Source) Document {
 	return Document{
 		Path:   path,
 		Source: source,
@@ -42,28 +42,28 @@ func NewDocument(path string, source Source) Document {
 	}
 }
 
-// DocumentFromText creates a new document from a string
+// FromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func DocumentFromText(c *config.Config, path string, source Source, text string) Document {
-	d := NewDocument(path, source)
+func FromText(c *config.Config, path string, source Source, text string) Document {
+	d := New(path, source)
 	d.Words = indexing.IndexString(c, text)
 	return d
 }
 
-// DocumentFromBytes creates a new document from a byte slice
+// FromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func DocumentFromBytes(c *config.Config, path string, source Source, b []byte) Document {
-	d := NewDocument(path, source)
+func FromBytes(c *config.Config, path string, source Source, b []byte) Document {
+	d := New(path, source)
 	d.Words = indexing.IndexBytes(c, b)
 	return d
 }
 
-// DocumentFromFile creates a new document from a file
+// FromFile creates a new document from a file
 // It takes a path to the file
 // It returns a Document
-func DocumentFromFile(c *config.Config, path string) (Document, error) {
+func FromFile(c *config.Config, path string) (Document, error) {
 
 	t := timing.Mesure("DocumentFromFile: " + path)
 	defer t.Stop()
@@ -72,7 +72,7 @@ func DocumentFromFile(c *config.Config, path string) (Document, error) {
 		return Document{}, err
 	}
 
-	return DocumentFromBytes(c, path, SourceLocal, content), nil
+	return FromBytes(c, path, SourceLocal, content), nil
 }
 
 // Misc
