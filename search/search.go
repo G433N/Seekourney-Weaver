@@ -9,12 +9,25 @@ import (
 	"sort"
 )
 
+type Config = SearchConfig
+
+// SearchConfig is a configuration struct for the search
+type SearchConfig struct {
+	IndexConfig *indexing.IndexConfig
+}
+
+func NewSearchConfig(indexConfig *indexing.IndexConfig) *SearchConfig {
+	return &SearchConfig{
+		IndexConfig: indexConfig,
+	}
+}
+
 type SearchResult struct {
 	Path  string
 	Value int
 }
 
-func Search(f *folder.Folder, rMap map[string][]string, query string) []SearchResult {
+func (c Config) Search(f *folder.Folder, rMap map[string][]string, query string) []SearchResult {
 
 	t := timing.Mesure("Search")
 	defer t.Stop()
@@ -22,7 +35,7 @@ func Search(f *folder.Folder, rMap map[string][]string, query string) []SearchRe
 	m := make(map[string]int)
 
 	for word := range words.WordsIter(query) {
-		word = indexing.NormalizeWord(word)
+		word = c.IndexConfig.NormWord(word)
 		paths, ok := rMap[word]
 		if !ok {
 			log.Fatalf("Word %s not found in reverse mapping", word)

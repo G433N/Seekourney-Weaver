@@ -2,8 +2,10 @@ package folder
 
 import (
 	"indexer/document"
+	"indexer/indexing"
 	"indexer/timing"
 	"indexer/utils"
+	"strings"
 )
 
 // Abstract collection of documents
@@ -13,7 +15,8 @@ type Folder struct {
 
 // FolderConfig is a configuration struct for the folder
 type FolderConfig struct {
-	walkDirConfig *utils.WalkDirConfig
+	walkDirConfig  *utils.WalkDirConfig
+	documentConfig *document.DocumentConfig
 	// TODO:: Document this field and make it configurable
 	async bool
 }
@@ -21,15 +24,17 @@ type FolderConfig struct {
 // NewFolderConfig creates a new FolderConfig with default values
 func NewFolderConfig() *FolderConfig {
 	return &FolderConfig{
-		walkDirConfig: utils.NewWalkDirConfig(),
-		async:         true,
+		walkDirConfig:  utils.NewWalkDirConfig(),
+		documentConfig: document.DocumentConfigFromIndexConfig(indexing.NewIndexConfig(strings.ToLower)),
+		async:          true,
 	}
 }
 
-func FolderConfigFromDir(walkDirConfig *utils.WalkDirConfig) *FolderConfig {
+func FolderConfigFromConfig(walkDirConfig *utils.WalkDirConfig, documentConfig *document.DocumentConfig) *FolderConfig {
 	return &FolderConfig{
-		walkDirConfig: walkDirConfig,
-		async:         true,
+		walkDirConfig:  walkDirConfig,
+		documentConfig: documentConfig,
+		async:          true,
 	}
 }
 
@@ -66,7 +71,7 @@ func (c *FolderConfig) docMapFromDir(path string) (docMap, error) {
 	docs := make(docMap)
 
 	for path := range c.walkDirConfig.WalkDir(path) {
-		doc, err := document.DocumentFromFile(path)
+		doc, err := c.documentConfig.DocumentFromFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +96,7 @@ func (c *FolderConfig) docMapFromDirAsync(path string) (docMap, error) {
 
 	for path := range paths {
 		go func(path string) {
-			doc, err := document.DocumentFromFile(path)
+			doc, err := c.documentConfig.DocumentFromFile(path)
 			channel <- result{path: path, doc: doc, err: err}
 		}(path)
 		amount++
