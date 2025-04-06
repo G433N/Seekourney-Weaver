@@ -18,7 +18,7 @@ type docMap map[string]document.Document
 // Recursivly indexes a folder and all its subfolders
 func FromDir(c *config.Config, path string) (Folder, error) {
 
-	t := timing.Mesure("FolderFromDir")
+	t := timing.Mesure(timing.FolderFromDir)
 	defer t.Stop()
 
 	var docs docMap
@@ -89,7 +89,7 @@ func docMapFromDirAsync(c *config.Config, path string) (docMap, error) {
 func (f *Folder) ReverseMappingLocal() map[string][]string {
 	mapping := make(map[string][]string)
 
-	t := timing.Mesure("ReverseMappingLocal")
+	t := timing.Mesure(timing.ReverseMapLocal)
 	defer t.Stop()
 
 	for _, doc := range f.docs {
@@ -106,4 +106,8 @@ func (f *Folder) ReverseMappingLocal() map[string][]string {
 func (f *Folder) GetDoc(path string) (document.Document, bool) {
 	doc, ok := f.docs[path]
 	return doc, ok
+}
+
+func (f *Folder) GetDocAmount() int {
+	return len(f.docs)
 }

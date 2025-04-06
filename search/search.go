@@ -17,7 +17,7 @@ type SearchResult struct {
 
 func Search(c *config.Config, f *folder.Folder, rMap map[string][]string, query string) []SearchResult {
 
-	t := timing.Mesure("Search")
+	t := timing.Mesure(timing.Search)
 	defer t.Stop()
 
 	m := make(map[string]int)
