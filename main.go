@@ -7,9 +7,25 @@ import (
 	"os"
 	"sort"
 	"strings"
+
+	"example.com/client"
+	"example.com/server"
 )
 
+// Usage for running server or client: `go run . <server | client>`
 func main() {
+	// check commandline args to run server or client
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "client":
+			client.Run(os.Args[1:])
+			return
+		case "server":
+			// right now server does not take any commandline arguments
+			server.Run(os.Args[1:])
+			return
+		}
+	}
 
 	content, err := os.ReadFile("text.txt")
 	if err != nil {
