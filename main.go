@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func main() {
+func main2() {
 
 	content, err := os.ReadFile("text.txt")
 	if err != nil {

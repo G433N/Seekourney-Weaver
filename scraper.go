@@ -14,10 +14,11 @@ import (
 )
 
 const QUEUEMAXLEN = 5
-const LINKQUEUELEN = 50
+const LINKQUEUELEN = 200
 const INDEXKEY = `QueueIndex`
 
 var AllowedDomainsRegex *regexp.Regexp
+var NonAllowedRegex *regexp.Regexp
 
 // initialize a data structure to keep the scraped data
 type Context struct {
@@ -26,12 +27,12 @@ type Context struct {
 	// currently finished amount
 	finishedCounter int
 	// queue channel of links to visit
-	// TODO: filter away already visited and illegal before adding to the queue
+	// TODO: filter away already visited before adding to the queue
 	linkQueue chan string
 	// finished queue and working space
 	finished [QUEUEMAXLEN][]string
 	// queue index where to put new ones
-	queueEndIndex int
+	EmptyIndexes chan int
 	// queue index where to read from
 	finishedIndexes chan int
 }
@@ -45,7 +46,7 @@ type CollectorStruct struct {
 	collectorColly *colly.Collector
 }
 
-func main2() {
+func main() {
 	collector := collectorSetup()
 	//temp := []string{}
 
@@ -54,10 +55,12 @@ func main2() {
 	fmt.Println("Start")
 	collector.context.linkQueue <- "https://en.wikipedia.org/wiki/Cucumber"
 	VisitNextLink(collector)
-	VisitNextLink(collector)
-	readAndPrint(collector)
-	fmt.Print("\n\nhiohio\n\n\n")
 
+	VisitNextLink(collector)
+
+	readAndPrint(collector)
+
+	fmt.Print("\n\nhiohio\n\n\n")
 	readAndPrint(collector)
 
 }
@@ -76,8 +79,7 @@ func claimNewIndex(collector *CollectorStruct, url string) int {
 	lock := &collector.FinishedQueueLock
 	lock.Lock()
 	defer lock.Unlock()
-	index := collector.context.queueEndIndex
-	collector.context.queueEndIndex = (index + 1) % QUEUEMAXLEN
+	index := <-collector.context.EmptyIndexes
 	collector.context.finished[index] = []string{url}
 	return index
 }
@@ -88,9 +90,12 @@ func readFinished(collector *CollectorStruct) []string {
 	collector.context.finishedCounter--
 	countLock.Unlock()
 	FQLock := &collector.FinishedQueueLock
+
+	index := <-collector.context.finishedIndexes
+	collector.context.EmptyIndexes <- index
+
 	FQLock.Lock()
 	defer FQLock.Unlock()
-	index := <-collector.context.finishedIndexes
 	pos := &collector.context.finished[index]
 	result := *pos
 	*pos = nil
@@ -108,12 +113,17 @@ func collectorSetup() *CollectorStruct {
 	context := &collector.context
 	context.finishedCounter = 0
 	context.workingCounter = 0
-	context.queueEndIndex = 0
+	context.EmptyIndexes = make(chan int, QUEUEMAXLEN)
+	for x := range QUEUEMAXLEN {
+		context.EmptyIndexes <- x
+	}
 	context.finishedIndexes = make(chan int, QUEUEMAXLEN)
 	context.linkQueue = make(chan string, LINKQUEUELEN)
 	context.finished = [QUEUEMAXLEN][]string{}
 
-	AllowedDomainsRegex, _ = regexp.Compile(`en.wikipedia.org`)
+	AllowedDomainsRegex, _ = regexp.Compile(`^/wiki/`)
+	NonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
+
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
 	collector.collectorColly = c
 
@@ -153,7 +163,7 @@ func collectorSetup() *CollectorStruct {
 		AddLinkToQueue(e, collector)
 	})
 
-	// triggered once scraping is done (e.g., write the data to a CSV file)
+	// triggered once scraping is done
 	c.OnScraped(func(r *colly.Response) {
 		mapValue := r.Ctx.GetAny(INDEXKEY)
 		index, ok := mapValue.(int)
@@ -174,10 +184,11 @@ func collectorSetup() *CollectorStruct {
 func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 	context := collector.context
 	link := e.Attr("href")
-	if !AllowedDomainsRegex.MatchString(link) {
-		fmt.Println("non allowed domain: ", link)
+	if !AllowedDomainsRegex.MatchString(link) || NonAllowedRegex.MatchString(link) {
+		fmt.Println("non allowed link: ", link)
 		return
 	}
+	link = "https://en.wikipedia.org" + link
 	select {
 	case context.linkQueue <- link:
 	default:
