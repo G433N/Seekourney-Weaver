@@ -126,11 +126,11 @@ func imagesToTextAsync(image string, dir string, format string) []string {
 }
 
 func Run() {
-	pdftoimg("pdf/EXAMPLE.pdf", "covpdf/", "-png") //kör pdftoimg först på din pdf, lägg pdf i pdf folder och byt ut "EXAMPLE" med dess namn
-	//test := imgToText("covpdf/page-1.png")
-	//test := imagesToText("", "./covpdf/")
-	test := imagesToTextAsync("", "./covpdf/", ".png")
+	prefix := "pdftotxt/"
+	pdftoimg(prefix+"pdf/EXAMPLE.pdf", prefix+"covpdf/", "-png") //kör pdftoimg först på din pdf, lägg pdf i pdf folder och byt ut "EXAMPLE" med dess namn
+	// test := imgToText("covpdf/page-1.png")
+	test := imagesToText("", prefix+"covpdf/")
+	// test := imagesToTextAsync("", prefix+"covpdf/", ".png")
 	fmt.Println(test)
-	clearOutputDir("./covpdf/")
+	clearOutputDir(prefix + "/covpdf/")
 }
-
