@@ -57,7 +57,7 @@ func main() {
 	config := config.Load()
 
 	// Load local file config
-	localConfig := localtext.LoadOrDefault(config, "local_config.json")
+	localConfig := localtext.Load(config)
 
 	folder, err := localtext.IndexDir(localConfig, "test_data")
 	if err != nil {

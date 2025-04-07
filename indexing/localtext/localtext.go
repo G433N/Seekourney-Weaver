@@ -1,8 +1,6 @@
 package localtext
 
 import (
-	"encoding/json"
-	"log"
 	"os"
 	"seekourney/config"
 	"seekourney/document"
@@ -13,6 +11,7 @@ import (
 
 type Config struct {
 	ParrallelIndexing bool
+	// TODO: Remove this and use the global config
 	NormalizeWordFunc config.NormalizeWordID
 	WalkDirConfig     *utils.WalkDirConfig
 }
@@ -118,47 +117,13 @@ func Default(d *config.Config) *Config {
 	}
 }
 
-func LoadOrDefault(d *config.Config, path string) *Config {
-
-	c, err := Load(path)
-	if err != nil {
-		c = Default(d)
-
-		log.Printf("Local file dir config not found, creating new one at %s", path)
-		err = Save(c, path)
-		if err != nil {
-			log.Fatalf("Error saving config: %s", err)
-		}
-	} else {
-		log.Printf("Local file dir config loaded from %s", path)
-	}
-
-	return c
+func (Config) ConfigName() string {
+	return "Local Text Indexer"
 }
 
-func Load(path string) (*Config, error) {
-
-	c := &Config{}
-
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(content, c)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
-
-func Save(c *Config, path string) error {
-
-	content, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(path, content, 0644)
+func Load(c *config.Config) *Config {
+	path := "localtext.json"
+	return utils.LoadOrElse(path, func() *Config {
+		return Default(c)
+	}, func() *Config { return &Config{} })
 }
