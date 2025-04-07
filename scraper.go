@@ -7,13 +7,17 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"sync"
 
 	"github.com/gocolly/colly/v2"
 )
 
 const QUEUEMAXLEN = 5
+const LINKQUEUELEN = 50
 const INDEXKEY = `QueueIndex`
+
+var AllowedDomainsRegex *regexp.Regexp
 
 // initialize a data structure to keep the scraped data
 type Context struct {
@@ -25,11 +29,11 @@ type Context struct {
 	// TODO: filter away already visited and illegal before adding to the queue
 	linkQueue chan string
 	// finished queue and working space
-	finished *[QUEUEMAXLEN][]string
+	finished [QUEUEMAXLEN][]string
 	// queue index where to put new ones
 	queueEndIndex int
 	// queue index where to read from
-	queueStartIndex int
+	finishedIndexes chan int
 }
 
 type CollectorStruct struct {
@@ -48,23 +52,24 @@ func main2() {
 	//... scraping logic
 
 	fmt.Println("Start")
-	// open the target URL
-	err := c.Visit("https://en.wikipedia.org/wiki/Cucumber")
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("Waaa")
+	collector.context.linkQueue <- "https://en.wikipedia.org/wiki/Cucumber"
+	VisitNextLink(collector)
+	VisitNextLink(collector)
+	readAndPrint(collector)
+	fmt.Print("\n\nhiohio\n\n\n")
 
-	c.Wait()
-	close(scrapedLinks)
-	for elem := range scrapedLinks {
-		fmt.Println("hihi", elem)
-	}
-	fmt.Println("done")
+	readAndPrint(collector)
 
 }
 func collectorRepopulateQueue(collector *CollectorStruct) {
 
+}
+
+func readAndPrint(collector *CollectorStruct) {
+	stringSlice := readFinished(collector)
+	for _, text := range stringSlice {
+		fmt.Println(text)
+	}
 }
 
 func claimNewIndex(collector *CollectorStruct, url string) int {
@@ -75,6 +80,21 @@ func claimNewIndex(collector *CollectorStruct, url string) int {
 	collector.context.queueEndIndex = (index + 1) % QUEUEMAXLEN
 	collector.context.finished[index] = []string{url}
 	return index
+}
+
+func readFinished(collector *CollectorStruct) []string {
+	countLock := &collector.CounterLock
+	countLock.Lock()
+	collector.context.finishedCounter--
+	countLock.Unlock()
+	FQLock := &collector.FinishedQueueLock
+	FQLock.Lock()
+	defer FQLock.Unlock()
+	index := <-collector.context.finishedIndexes
+	pos := &collector.context.finished[index]
+	result := *pos
+	*pos = nil
+	return result
 }
 
 func writeToWorkspace(collector *CollectorStruct, index int, text string) {
@@ -89,9 +109,11 @@ func collectorSetup() *CollectorStruct {
 	context.finishedCounter = 0
 	context.workingCounter = 0
 	context.queueEndIndex = 0
-	context.queueStartIndex = 0
-	context.linkQueue = make(chan string, 100)
+	context.finishedIndexes = make(chan int, QUEUEMAXLEN)
+	context.linkQueue = make(chan string, LINKQUEUELEN)
+	context.finished = [QUEUEMAXLEN][]string{}
 
+	AllowedDomainsRegex, _ = regexp.Compile(`en.wikipedia.org`)
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
 	collector.collectorColly = c
 
@@ -128,42 +150,60 @@ func collectorSetup() *CollectorStruct {
 
 	// Find and visit all links
 	c.OnHTML(`a[href*="/wiki/"]`, func(e *colly.HTMLElement) {
-		FollowLink(e, collector)
+		AddLinkToQueue(e, collector)
 	})
 
 	// triggered once scraping is done (e.g., write the data to a CSV file)
 	c.OnScraped(func(r *colly.Response) {
-		//finished <- temp
-		//temp = []string{}
-		scrapedLinks <- r.Request.URL.Path
-		fmt.Println(r.Request.URL, " scraped!")
+		mapValue := r.Ctx.GetAny(INDEXKEY)
+		index, ok := mapValue.(int)
+		if !ok {
+			log.Fatal("couldn't find index")
+		}
+		lock := &collector.CounterLock
+		lock.Lock()
+		context.workingCounter--
+		context.finishedCounter++
+		lock.Unlock()
+		context.finishedIndexes <- index
+
 	})
-	return c
+	return collector
 }
 
-func FollowLink(e *colly.HTMLElement, collector *CollectorStruct) {
-	counterLock := &collector.CounterLock
-	counterLock.Lock()
-	if *counter <= 0 {
-		counterLock.Unlock()
-		return
-	}
-
+func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
+	context := collector.context
 	link := e.Attr("href")
-	err := e.Request.Visit(link)
-	if err == nil {
-		*counter -= 1
-		counterLock.Unlock()
+	if !AllowedDomainsRegex.MatchString(link) {
+		fmt.Println("non allowed domain: ", link)
 		return
 	}
-	counterLock.Unlock()
-
-	switch err.Error() {
-	case `Forbidden domain`:
-		fmt.Println(err, link)
-	case `URL already visited`:
-		fmt.Println(err, link)
+	select {
+	case context.linkQueue <- link:
 	default:
-		fmt.Println(err)
+		fmt.Println("linkQueue full skipped link: ", link)
+	}
+
+}
+
+func VisitNextLink(collector *CollectorStruct) {
+	lock := &collector.CounterLock
+	for {
+		link := <-collector.context.linkQueue
+		err := collector.collectorColly.Visit(link)
+		if err == nil {
+			lock.Lock()
+			collector.context.workingCounter++
+			lock.Unlock()
+			break
+		}
+		switch err.Error() {
+		case `Forbidden domain`:
+			fmt.Println(err, link)
+		case `URL already visited`:
+			fmt.Println(err, link)
+		default:
+			fmt.Println(err)
+		}
 	}
 }
