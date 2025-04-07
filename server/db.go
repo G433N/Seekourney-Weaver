@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"database/sql"
@@ -18,13 +18,14 @@ func connectToDB() *sql.DB {
 	for range retries {
 		db, _ := sql.Open("postgres", psqlconn)
 		if err := db.Ping(); err == nil {
-			fmt.Println("\nDatabase ready!")
+			fmt.Println("\nDatabase ready")
 			return db
 		}
 		time.Sleep(500 * time.Millisecond)
 		fmt.Print(".")
 	}
-	panic("Could not connect to database")
+	fmt.Print("\n")
+	panic("Could not connect to database, check docker.log for more info")
 }
 
 func checkSQLError(err error) {

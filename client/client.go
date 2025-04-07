@@ -1,7 +1,6 @@
-package main
+package client
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,28 +18,22 @@ const (
 	all       = "/all"
 )
 
-func main() {
-	fmt.Println("client starting")
+// args are formatted as commandline arguments would be (client <command> [<args>])
+func Run(args []string) {
 	client := http.Client{}
 
-	var command string
-	flag.StringVar(&command, "command", "default", "search, add, all or quit")
-	flag.Parse()
-
-	// USAGE: ./client -command=<search, add, all or quit> <arg1 arg2 ... argN>
-	// EXAMPLE: ./client -command=search key1 key2
-	// EXAMPLE: ./client -command=all
-	switch command {
+	switch args[1] {
 	case "search":
-		searchForTerms(client, os.Args[2:])
+		searchForTerms(client, os.Args[3:])
 	case "add":
-		addPath(client, os.Args[2:])
+		addPath(client, os.Args[3:])
 	case "all":
 		getAll(client)
 	case "quit":
 		shutdownServer(client)
 	default:
-		panic("Error: invalid command")
+		fmt.Println("usage:\tclient <search | add | all | quit> [<args>]")
+		os.Exit(1)
 	}
 }
 

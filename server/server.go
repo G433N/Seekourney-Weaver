@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -28,18 +28,10 @@ const (
 	emptyJSON              = "{}"
 )
 
-/*
-DATABASE SCHEMA
-	id: id
-	path: string "/some/path"
-	path_type: "web" or "text"
-	dict: jsonb {"string": number (int)}
-*/
-
 // runs an example server, can be accessed for example by
 // curl 'http://localhost:8080/search?q=key1'
 
-func main() {
+func Run(args []string) {
 	container := exec.Command("/bin/bash", dockerStart)
 
 	outfile, err := os.Create(dockerOutput)
