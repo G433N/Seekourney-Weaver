@@ -40,9 +40,9 @@ func testSearch(c *config.Config, folder *folder.Folder, rm utils.ReverseMap, qu
 	log.Printf("--- Search results for query '%s' ---\n", bold(italic(query)))
 	for n, result := range pairs {
 		path := string(result.Path)
-		score := int(result.Value)
+		score := float64(result.Value)
 		link := termlink.Link(path, path)
-		log.Printf("%d. Path: %s Score: %s\n", n, lightBlue(bold(link)), green(strconv.Itoa(score)))
+		log.Printf("%d. Path: %s Score: %s\n", n, lightBlue(bold(link)), green(strconv.FormatFloat(score, 'f', 6, 64)))
 	}
 }
 

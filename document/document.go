@@ -111,3 +111,19 @@ func (doc *Document) GetWordsSorted() []Pair {
 	sort.Slice(pairs, func(i, j int) bool { return pairs[i].Freq > pairs[j].Freq })
 	return pairs
 }
+
+func (d *Document) GetWordCount() int {
+	sum := 0
+	for _, v := range d.Words {
+		sum += int(v)
+	}
+	return sum
+}
+
+func (d *Document) CalculateTf(word utils.Word) float64 {
+	if _, ok := d.Words[word]; !ok {
+		return 0
+	}
+	return float64(d.Words[word]) / float64(d.GetWordCount())
+
+}

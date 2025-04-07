@@ -3,6 +3,7 @@ package folder
 import (
 	"iter"
 	"log"
+	"math"
 	"seekourney/document"
 	"seekourney/normalize"
 	"seekourney/timing"
@@ -76,4 +77,17 @@ func (folder *Folder) GetDoc(path utils.Path) (document.Document, bool) {
 
 func (folder *Folder) GetDocAmount() int {
 	return len(folder.docs)
+}
+
+func (f *Folder) CalculateIdf(word utils.Word) float64 {
+
+	popularity := float64(0)
+
+	for _, doc := range f.docs {
+		if _, ok := doc.Words[word]; ok {
+			popularity++
+		}
+	}
+
+	return math.Log2(float64(len(f.docs)) / (popularity + 1))
 }

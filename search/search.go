@@ -16,6 +16,39 @@ type SearchResult struct {
 	Value utils.Score
 }
 
+func tfIdf(f *folder.Folder, rm utils.ReverseMap, word utils.Word) utils.ScoreMap {
+
+	paths, ok := rm[word]
+	if !ok {
+		log.Printf("Word %s not found in reverse mapping", word)
+		return make(utils.ScoreMap)
+	}
+
+	scoreMap := make(utils.ScoreMap)
+
+	idf := f.CalculateIdf(word)
+
+	for _, path := range paths {
+		if path == "" {
+			log.Printf("ERROR: Path is empty\n")
+			continue
+		}
+
+		doc, ok := f.GetDoc(path)
+		if !ok {
+			log.Printf("Document %s not found in folder\n", path)
+			continue
+		}
+
+		// freq = 0 if not found
+		tf := doc.CalculateTf(word)
+		scoreMap[path] += utils.Score(tf * idf)
+	}
+
+	return scoreMap
+
+}
+
 // / scoreWord takes a folder, a reverse mapping and a word
 // It returns a map of document paths and their corresponding score of the word
 // Higher score means more relevant document
@@ -58,7 +91,7 @@ func search(normalize normalize.Normalizer, folder *folder.Folder, rm utils.Reve
 	for word := range words.WordsIter(query) {
 		word = normalize.Word(word)
 
-		res := scoreWord(folder, rm, word)
+		res := tfIdf(folder, rm, word)
 
 		for path, value := range res {
 			result[path] += value
@@ -71,17 +104,16 @@ func search(normalize normalize.Normalizer, folder *folder.Folder, rm utils.Reve
 // searchParrallel is a parallel version of the search function, currently slower
 func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm utils.ReverseMap, query string) utils.ScoreMap {
 
-	// TODO: This is currently slower than the normal search function, I think caching is faster / Marcus
 	result := make(utils.ScoreMap)
-
 	channel := make(chan utils.ScoreMap)
+
 	amount := 0
 
 	for word := range words.WordsIter(query) {
 		amount++
 		go func(word utils.Word) {
 			word = normalize.Word(word)
-			channel <- scoreWord(folder, rm, word)
+			channel <- tfIdf(folder, rm, word)
 		}(word)
 	}
 
