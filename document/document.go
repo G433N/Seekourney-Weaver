@@ -2,7 +2,6 @@ package document
 
 import (
 	"log"
-	"os"
 	"seekourney/config"
 	"seekourney/indexing"
 	"seekourney/timing"
@@ -45,34 +44,19 @@ func New(path string, source Source) Document {
 // FromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func FromText(c *config.Config, path string, source Source, text string) Document {
+func FromText(funcId config.NormalizeWordID, path string, source Source, text string) Document {
 	d := New(path, source)
-	d.Words = indexing.IndexString(c, text)
+	d.Words = indexing.IndexString(funcId, text)
 	return d
 }
 
 // FromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func FromBytes(c *config.Config, path string, source Source, b []byte) Document {
+func FromBytes(funcId config.NormalizeWordID, path string, source Source, b []byte) Document {
 	d := New(path, source)
-	d.Words = indexing.IndexBytes(c, b)
+	d.Words = indexing.IndexBytes(funcId, b)
 	return d
-}
-
-// FromFile creates a new document from a file
-// It takes a path to the file
-// It returns a Document
-func FromFile(c *config.Config, path string) (Document, error) {
-
-	t := timing.Mesure(timing.DocFromFile, path)
-	defer t.Stop()
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return Document{}, err
-	}
-
-	return FromBytes(c, path, SourceLocal, content), nil
 }
 
 // Misc

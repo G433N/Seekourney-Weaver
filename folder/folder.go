@@ -1,91 +1,29 @@
 package folder
 
 import (
-	"seekourney/config"
 	"seekourney/document"
 	"seekourney/timing"
 )
 
+// Type alias
+type DocMap map[string]document.Document
+
 // Abstract collection of documents
 // The folder struct will start as a singleton, but later expanded such that we can multiple folders to sort documents into groups
 type Folder struct {
-	docs docMap
+	docs DocMap
 }
 
-// Type alias
-type docMap map[string]document.Document
-
-// Recursivly indexes a folder and all its subfolders
-func FromDir(c *config.Config, path string) (Folder, error) {
-
-	t := timing.Mesure(timing.FolderFromDir)
-	defer t.Stop()
-
-	var docs docMap
-	var err error
-
-	if c.ParrallelIndexing {
-		docs, err = docMapFromDirParrallel(c, path)
-	} else {
-		docs, err =
-			docMapFromDir(c, path)
+// New creates a new folder
+func New(docs DocMap) Folder {
+	return Folder{
+		docs: docs,
 	}
-
-	if err != nil {
-		return Folder{}, err
-	}
-
-	return Folder{docs: docs}, nil
 }
 
-// docMapFromDir indexes a folder and all its subfolders, making a map of paths to documents
-func docMapFromDir(c *config.Config, path string) (docMap, error) {
-
-	docs := make(docMap)
-
-	for path := range c.WalkDirConfig.WalkDir(path) {
-		doc, err := document.FromFile(c, path)
-		if err != nil {
-			return nil, err
-		}
-		docs[doc.Path] = doc
-	}
-
-	return docs, nil
-}
-
-// docMapFromDirParrallel works like docMapFromDir, but uses goroutines to index the documents in parallel
-func docMapFromDirParrallel(c *config.Config, path string) (docMap, error) {
-
-	paths := c.WalkDirConfig.WalkDir(path)
-
-	type result struct {
-		path string
-		doc  document.Document
-		err  error
-	}
-
-	channel := make(chan result)
-	amount := 0
-
-	for path := range paths {
-		go func(path string) {
-			doc, err := document.FromFile(c, path)
-			channel <- result{path: path, doc: doc, err: err}
-		}(path)
-		amount++
-	}
-
-	docs := make(docMap)
-	for range amount {
-		res := <-channel
-		if res.err != nil {
-			return nil, res.err
-		}
-		docs[res.path] = res.doc
-	}
-
-	return docs, nil
+// Creates an empty folder
+func Default() Folder {
+	return New(make(DocMap))
 }
 
 // Creates a reverse mapping of the documents in the folder, words to paths for fast searching

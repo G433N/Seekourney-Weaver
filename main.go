@@ -4,6 +4,7 @@ import (
 	"log"
 	"seekourney/config"
 	"seekourney/folder"
+	"seekourney/indexing/localtext"
 	"seekourney/search"
 	"seekourney/timing"
 	"strconv"
@@ -55,7 +56,10 @@ func main() {
 	// Load config
 	config := config.Load()
 
-	folder, err := folder.FromDir(config, "test_data")
+	// Load local file config
+	localConfig := localtext.LoadOrDefault(config, "local_config.json")
+
+	folder, err := localtext.IndexDir(localConfig, "test_data")
 	if err != nil {
 		log.Fatal(err)
 	}
