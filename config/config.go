@@ -37,6 +37,9 @@ type Config struct {
 	// ParrallelIndexing is a flag that indicates whether to use parallel indexing
 	ParrallelIndexing bool
 
+	// ParrallelSearching is a flag that indicates whether to use parallel searching
+	ParrallelSearching bool
+
 	// Folder/Indexer specific settings, should be extracted to a separate struct
 
 	// WalkDirConfig is a struct that contains the configuration for the folder walker
@@ -51,9 +54,10 @@ type Config struct {
 func New(walkDirConfig *utils.WalkDirConfig) *Config {
 
 	return &Config{
-		ParrallelIndexing: true,
-		WalkDirConfig:     walkDirConfig,
-		NormalizeWordFunc: ToLower,
+		ParrallelIndexing:  true,
+		ParrallelSearching: true,
+		WalkDirConfig:      walkDirConfig,
+		NormalizeWordFunc:  ToLower,
 	}
 }
 

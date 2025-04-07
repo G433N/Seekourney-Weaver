@@ -1,5 +1,6 @@
 {
   "ParrallelIndexing": true,
+  "ParrallelSearching": false,
   "WalkDirConfig": {
     "Verbose": false,
     "ReturnDirs": false,
