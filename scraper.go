@@ -65,6 +65,15 @@ func main() {
 
 }
 func collectorRepopulateQueue(collector *CollectorStruct) {
+	context := &collector.context
+	countLock := &collector.CounterLock
+	countLock.Lock()
+	amountFilled := context.finishedCounter + context.workingCounter
+	amountEmpty := QUEUEMAXLEN - amountFilled
+	for range amountEmpty {
+		VisitNextLink(collector)
+	}
+	countLock.Unlock()
 
 }
 
@@ -197,15 +206,14 @@ func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 
 }
 
+// should only be called while having the counter lock
 func VisitNextLink(collector *CollectorStruct) {
-	lock := &collector.CounterLock
 	for {
 		link := <-collector.context.linkQueue
 		err := collector.collectorColly.Visit(link)
 		if err == nil {
-			lock.Lock()
+
 			collector.context.workingCounter++
-			lock.Unlock()
 			break
 		}
 		switch err.Error() {
