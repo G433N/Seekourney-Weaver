@@ -26,25 +26,29 @@ var NonAllowedRegex *regexp.Regexp
 type Context struct {
 	// currently working on amount
 	workingCounter int
-	// currently finished amount
+	// currently finished amount should be in sync with len(finishedIndexes)
 	finishedCounter int
-	// queue channel of links to visit
-	// TODO: filter away already visited before adding to the queue
+	// buffered queue channel of links scraped from previously visited sites
 	linkQueue chan string
-	// finished queue and working space
-	finished [QUEUEMAXLEN][]string
-	// queue index where to put new ones
+	// worspace for the collectors async requests
+	// each request gets their own index and append the text they recieve to the slice
+	Workspace [QUEUEMAXLEN][]string
+	// channel of indexes in the 'workspace' array ready to be assigned to a request
+	// (buffer of size 'QUEUEMAXLEN')
 	EmptyIndexes chan int
-	// queue index where to read from
+	//  channel of indexes in the 'workspace' array ready to be read
+	// (buffer of size 'QUEUEMAXLEN')
 	finishedIndexes chan int
 }
 
 type CollectorStruct struct {
-	FinishedQueueLock sync.Mutex
-	LinkQueueLock     sync.Mutex
-	CounterLock       sync.Mutex
+	// mutex used to sync changes to the two counters in context
+	CounterLock sync.Mutex
 
-	context        Context
+	// struct holding all cotext to make the inteface with the collector as simple as possible
+	context Context
+
+	// the colly collector used for webb scraping and formatting
 	collectorColly *colly.Collector
 }
 
@@ -88,11 +92,8 @@ func readAndPrint(collector *CollectorStruct) {
 }
 
 func claimNewIndex(collector *CollectorStruct, url string) int {
-	lock := &collector.FinishedQueueLock
-	lock.Lock()
-	defer lock.Unlock()
 	index := <-collector.context.EmptyIndexes
-	collector.context.finished[index] = []string{url}
+	collector.context.Workspace[index] = []string{url}
 	return index
 }
 
@@ -101,21 +102,18 @@ func readFinished(collector *CollectorStruct) []string {
 	countLock.Lock()
 	collector.context.finishedCounter--
 	countLock.Unlock()
-	FQLock := &collector.FinishedQueueLock
 
 	index := <-collector.context.finishedIndexes
 	collector.context.EmptyIndexes <- index
 
-	FQLock.Lock()
-	defer FQLock.Unlock()
-	pos := &collector.context.finished[index]
+	pos := &collector.context.Workspace[index]
 	result := *pos
 	*pos = nil
 	return result
 }
 
 func writeToWorkspace(collector *CollectorStruct, index int, text string) {
-	path := &collector.context.finished[index]
+	path := &collector.context.Workspace[index]
 	*path = append(*path, text)
 }
 
@@ -131,7 +129,7 @@ func collectorSetup() *CollectorStruct {
 	}
 	context.finishedIndexes = make(chan int, QUEUEMAXLEN)
 	context.linkQueue = make(chan string, LINKQUEUELEN)
-	context.finished = [QUEUEMAXLEN][]string{}
+	context.Workspace = [QUEUEMAXLEN][]string{}
 
 	ShortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
 	NonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
@@ -198,6 +196,9 @@ func collectorSetup() *CollectorStruct {
 }
 
 func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
+
+	// TODO: filter away already visited before adding to the queue
+
 	context := collector.context
 	link := e.Attr("href")
 	if !ShortendLinkRegex.MatchString(link) || NonAllowedRegex.MatchString(link) {
