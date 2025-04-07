@@ -24,9 +24,9 @@ func Run(args []string) {
 
 	switch args[1] {
 	case "search":
-		searchForTerms(client, os.Args[3:])
+		searchForTerms(client, args[2:])
 	case "add":
-		addPath(client, os.Args[3:])
+		addPath(client, args[2:])
 	case "all":
 		getAll(client)
 	case "quit":
