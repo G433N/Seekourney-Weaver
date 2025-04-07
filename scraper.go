@@ -13,11 +13,13 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
+const DEBUG = false
+
 const QUEUEMAXLEN = 5
 const LINKQUEUELEN = 200
 const INDEXKEY = `QueueIndex`
 
-var AllowedDomainsRegex *regexp.Regexp
+var ShortendLinkRegex *regexp.Regexp
 var NonAllowedRegex *regexp.Regexp
 
 // initialize a data structure to keep the scraped data
@@ -46,21 +48,22 @@ type CollectorStruct struct {
 	collectorColly *colly.Collector
 }
 
+func debugPrint(a ...any) {
+	if DEBUG {
+		fmt.Println(a...)
+	}
+}
+
 func main() {
 	collector := collectorSetup()
-	//temp := []string{}
 
-	//... scraping logic
-
-	fmt.Println("Start")
 	collector.context.linkQueue <- "https://en.wikipedia.org/wiki/Cucumber"
-	VisitNextLink(collector)
-
-	VisitNextLink(collector)
+	collectorRepopulateQueue(collector)
 
 	readAndPrint(collector)
 
-	fmt.Print("\n\nhiohio\n\n\n")
+	readAndPrint(collector)
+
 	readAndPrint(collector)
 
 }
@@ -130,7 +133,7 @@ func collectorSetup() *CollectorStruct {
 	context.linkQueue = make(chan string, LINKQUEUELEN)
 	context.finished = [QUEUEMAXLEN][]string{}
 
-	AllowedDomainsRegex, _ = regexp.Compile(`^/wiki/`)
+	ShortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
 	NonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
 
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
@@ -140,18 +143,22 @@ func collectorSetup() *CollectorStruct {
 
 	// called before an HTTP request is triggered
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting: ", r.URL)
+		debugPrint("Visiting: ", r.URL)
 	})
 
 	// triggered when the scraper encounters an error
 	c.OnError(func(_ *colly.Response, err error) {
-		fmt.Println("Something went wrong: ", err)
+		debugPrint("Something went wrong: ", err)
 	})
 
 	// fired when the server responds
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Page visited: ", r.Request.URL)
-		index := claimNewIndex(collector, r.Request.URL.EscapedPath())
+		url := r.Request.URL.EscapedPath()
+		debugPrint("Page visited: ", r.Request.URL)
+		if ShortendLinkRegex.MatchString(url) {
+			url = "https://en.wikipedia.org" + url
+		}
+		index := claimNewIndex(collector, url)
 		r.Ctx.Put(INDEXKEY, index)
 	})
 
@@ -193,15 +200,15 @@ func collectorSetup() *CollectorStruct {
 func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 	context := collector.context
 	link := e.Attr("href")
-	if !AllowedDomainsRegex.MatchString(link) || NonAllowedRegex.MatchString(link) {
-		fmt.Println("non allowed link: ", link)
+	if !ShortendLinkRegex.MatchString(link) || NonAllowedRegex.MatchString(link) {
+		debugPrint("non allowed link: ", link)
 		return
 	}
 	link = "https://en.wikipedia.org" + link
 	select {
 	case context.linkQueue <- link:
 	default:
-		fmt.Println("linkQueue full skipped link: ", link)
+		debugPrint("linkQueue full skipped link: ", link)
 	}
 
 }
@@ -218,11 +225,11 @@ func VisitNextLink(collector *CollectorStruct) {
 		}
 		switch err.Error() {
 		case `Forbidden domain`:
-			fmt.Println(err, link)
+			debugPrint(err, link)
 		case `URL already visited`:
-			fmt.Println(err, link)
+			debugPrint(err, link)
 		default:
-			fmt.Println(err)
+			debugPrint(err)
 		}
 	}
 }
