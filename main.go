@@ -2,6 +2,9 @@ package main
 
 import (
 	"github.com/savioxavier/termlink"
+	"fmt"
+	pdftotext "seelourney/pdftotxt"
+	"seekourney/words"
 	"log"
 	"os"
 	"seekourney/client"
@@ -66,6 +69,9 @@ func main() {
 		}
 	}
 
+
+	pdftotext.Run()
+
 	t := timing.Measure(timing.Main)
 	defer t.Stop()
 
@@ -92,6 +98,12 @@ func main() {
 		"curl",
 		"math",
 	}
+
+	return
+
+	content, err := os.ReadFile("text.txt")
+	if err != nil {
+		log.Fatal(err)
 
 	// TODO: Automated testing
 	for _, query := range queries {

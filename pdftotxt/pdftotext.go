@@ -1,4 +1,5 @@
 package pdftotext
+
 import "os/exec"
 import "os"
 import "fmt"
@@ -13,17 +14,17 @@ var cond = sync.NewCond(&sync.Mutex{})
 
 //converts one pdf to images, replace exec.command later
 func pdftoimg(pdf string, outputDir string, imgFormat string) {
-	_, err := exec.Command("pdftoppm", imgFormat, pdf, outputDir + "page").CombinedOutput()
+	_, err := exec.Command("pdftoppm", imgFormat, pdf, outputDir+"page").CombinedOutput()
 	if err != nil {
-        fmt.Println("Error running pdftoppm:", err)
-    }
+		fmt.Println("Error running pdftoppm:", err)
+	}
 }
 
 func clearOutputDir(outputDir string) {
-	exec.Command("rm", "-rf", outputDir + "*page-*")
+	exec.Command("rm", "-rf", outputDir+"*page-*")
 }
 
-func imgToText(image string)string {
+func imgToText(image string) string {
 	ocr, err := ocr.New()
 	if err != nil {
 		fmt.Println(err)
@@ -35,7 +36,7 @@ func imgToText(image string)string {
 	return extractedText
 }
 
-func imagesToText(image string, dir string)[] string{
+func imagesToText(image string, dir string) []string {
 
 	regex, err := regexp.Compile(image + "page-.*")
 	var txt []string
@@ -44,11 +45,11 @@ func imagesToText(image string, dir string)[] string{
 		return txt
 	}
 
-	walkHelper := func(path string, info os.FileInfo, err error) error{
-		if regex.MatchString(info.Name()) { 
+	walkHelper := func(path string, info os.FileInfo, err error) error {
+		if regex.MatchString(info.Name()) {
 			txt = append(txt, imgToText(path))
 		}
-		if err != nil{
+		if err != nil {
 			fmt.Println("something went wrong when accessing file " + info.Name())
 			return err
 		}
@@ -64,7 +65,7 @@ func imagesToText(image string, dir string)[] string{
 	return txt
 }
 
-func imagesToTextAsync(image string, dir string, format string)[] string{
+func imagesToTextAsync(image string, dir string, format string) []string {
 
 	regex, err := regexp.Compile(image + "page-.*")
 	var txt []string
@@ -81,7 +82,7 @@ func imagesToTextAsync(image string, dir string, format string)[] string{
 
 	var wg sync.WaitGroup
 
-	walkHelperHelper := func(path string, info os.FileInfo, wg *sync.WaitGroup) error{
+	walkHelperHelper := func(path string, info os.FileInfo, wg *sync.WaitGroup) error {
 		if regex.MatchString(info.Name()) {
 			id := idRegex.FindStringSubmatch(info.Name())[1]
 			idInt, erro := strconv.Atoi(id)
@@ -95,7 +96,7 @@ func imagesToTextAsync(image string, dir string, format string)[] string{
 				cond.Wait()
 			}
 			txt = append(txt, toAppend)
-			currentPage++ 
+			currentPage++
 			cond.Broadcast()
 			cond.L.Unlock()
 		}
@@ -107,7 +108,7 @@ func imagesToTextAsync(image string, dir string, format string)[] string{
 		return nil
 	}
 
-	walkHelper := func(path string, info os.FileInfo, err error) error{
+	walkHelper := func(path string, info os.FileInfo, err error) error {
 		wg.Add(1)
 		go walkHelperHelper(path, info, &wg)
 		return nil
@@ -124,8 +125,7 @@ func imagesToTextAsync(image string, dir string, format string)[] string{
 	return txt
 }
 
-
-func main(){
+func Run() {
 	pdftoimg("pdf/EXAMPLE.pdf", "covpdf/", "-png") //kör pdftoimg först på din pdf, lägg pdf i pdf folder och byt ut "EXAMPLE" med dess namn
 	//test := imgToText("covpdf/page-1.png")
 	//test := imagesToText("", "./covpdf/")
@@ -133,3 +133,4 @@ func main(){
 	fmt.Println(test)
 	clearOutputDir("./covpdf/")
 }
+
