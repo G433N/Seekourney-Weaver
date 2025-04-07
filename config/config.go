@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"seekourney/utils"
 	"strings"
 )
 
@@ -35,6 +34,7 @@ var NormalizeWordFunc = map[NormalizeWordID]NormalizeWord{
 // Config is a struct that containf the configuration for the server
 type Config struct {
 	// ParrallelIndexing is a flag that indicates whether to use parallel indexing
+	// This is the default setting
 	ParrallelIndexing bool
 
 	// ParrallelSearching is a flag that indicates whether to use parallel searching
@@ -42,29 +42,24 @@ type Config struct {
 
 	// Folder/Indexer specific settings, should be extracted to a separate struct
 
-	// WalkDirConfig is a struct that contains the configuration for the folder walker
-	// WalkDirConfig.ReturnDirs should ALWAYS be set to false
-	WalkDirConfig *utils.WalkDirConfig
-
 	// NormalizeWordFunc is a function that normalizes words
+	// This is the default setting
 	NormalizeWordFunc NormalizeWordID
 }
 
 // New creates a new config
-func New(walkDirConfig *utils.WalkDirConfig) *Config {
+func New() *Config {
 
 	return &Config{
 		ParrallelIndexing:  true,
 		ParrallelSearching: true,
-		WalkDirConfig:      walkDirConfig,
 		NormalizeWordFunc:  ToLower,
 	}
 }
 
 // Default creates a new config with default values
 func Default() *Config {
-	dirConfig := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
-	return New(dirConfig)
+	return New()
 }
 
 // ToFile writes the config to a file

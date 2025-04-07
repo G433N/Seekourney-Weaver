@@ -51,11 +51,11 @@ func scoreWord(f *folder.Folder, rm map[string][]string, word string) map[string
 // search takes a folder, a reverse mapping and a query
 // It returns a map of document paths and their corresponding score of the query
 // Higher score means more relevant document
-func search(c *config.Config, f *folder.Folder, rm map[string][]string, query string) map[string]int {
+func search(funcId config.NormalizeWordID, f *folder.Folder, rm map[string][]string, query string) map[string]int {
 	m := make(map[string]int)
 
 	for word := range words.WordsIter(query) {
-		word = indexing.NormalizeWord(c, word)
+		word = indexing.NormalizeWord(funcId, word)
 
 		res := scoreWord(f, rm, word)
 
@@ -68,7 +68,7 @@ func search(c *config.Config, f *folder.Folder, rm map[string][]string, query st
 }
 
 // searchParrallel is a parallel version of the search function, currently slower
-func searchParrallel(c *config.Config, f *folder.Folder, rm map[string][]string, query string) map[string]int {
+func searchParrallel(funcId config.NormalizeWordID, f *folder.Folder, rm map[string][]string, query string) map[string]int {
 
 	// TODO: This is currently slower than the normal search function, I think caching is faster / Marcus
 	m := make(map[string]int)
@@ -79,7 +79,7 @@ func searchParrallel(c *config.Config, f *folder.Folder, rm map[string][]string,
 	for word := range words.WordsIter(query) {
 		amount++
 		go func(word string) {
-			word = indexing.NormalizeWord(c, word)
+			word = indexing.NormalizeWord(funcId, word)
 			channel <- scoreWord(f, rm, word)
 		}(word)
 	}
@@ -106,9 +106,9 @@ func Search(c *config.Config, f *folder.Folder, rm map[string][]string, query st
 	var m map[string]int
 
 	if c.ParrallelSearching {
-		m = searchParrallel(c, f, rm, query)
+		m = searchParrallel(c.NormalizeWordFunc, f, rm, query)
 	} else {
-		m = search(c, f, rm, query)
+		m = search(c.NormalizeWordFunc, f, rm, query)
 	}
 
 	// Convert map to slice of SearchResult

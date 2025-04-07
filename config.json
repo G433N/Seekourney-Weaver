@@ -1,28 +1,5 @@
 {
   "ParrallelIndexing": true,
   "ParrallelSearching": false,
-  "WalkDirConfig": {
-    "Verbose": false,
-    "ReturnDirs": false,
-    "ForbiddenDirs": [
-      ".",
-      "..",
-      ".git",
-      ".svn",
-      ".hg",
-      ".idea",
-      ".vscode"
-    ],
-    "AllowedExts": [
-      ".txt",
-      ".md",
-      ".json",
-      ".xml",
-      ".html",
-      "htm",
-      ".xhtml",
-      ".csv"
-    ]
-  },
   "NormalizeWordFunc": 0
 }
