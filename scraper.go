@@ -6,27 +6,42 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
-	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/v2"
 )
+
+const QUEUEMAXLEN = 5
+const INDEXKEY = `QueueIndex`
 
 // initialize a data structure to keep the scraped data
 type Context struct {
-	counter      int
-	scrapedLinks chan string
-	finished     chan []string
-	linkQueue    chan string
-	maxAmount    int
+	// currently working on amount
+	workingCounter int
+	// currently finished amount
+	finishedCounter int
+	// queue channel of links to visit
+	// TODO: filter away already visited and illegal before adding to the queue
+	linkQueue chan string
+	// finished queue and working space
+	finished *[QUEUEMAXLEN][]string
+	// queue index where to put new ones
+	queueEndIndex int
+	// queue index where to read from
+	queueStartIndex int
 }
 
 type CollectorStruct struct {
-	ContextLock sync.Mutex
-	context     Context
-	collector   colly.Collector
+	FinishedQueueLock sync.Mutex
+	LinkQueueLock     sync.Mutex
+	CounterLock       sync.Mutex
+
+	context        Context
+	collectorColly *colly.Collector
 }
 
-func main() {
+func main2() {
 	collector := collectorSetup()
 	//temp := []string{}
 
@@ -52,14 +67,34 @@ func collectorRepopulateQueue(collector *CollectorStruct) {
 
 }
 
-func collectorSetup() CollectorStruct {
-	var counterLock sync.Mutex
-	var counter = 5
-	//linkQueue := make(chan string, 100)
-	//finished := make(chan []string, 100)
-	scrapedLinks := make(chan string, 100)
+func claimNewIndex(collector *CollectorStruct, url string) int {
+	lock := &collector.FinishedQueueLock
+	lock.Lock()
+	defer lock.Unlock()
+	index := collector.context.queueEndIndex
+	collector.context.queueEndIndex = (index + 1) % QUEUEMAXLEN
+	collector.context.finished[index] = []string{url}
+	return index
+}
+
+func writeToWorkspace(collector *CollectorStruct, index int, text string) {
+	path := &collector.context.finished[index]
+	*path = append(*path, text)
+}
+
+func collectorSetup() *CollectorStruct {
+	collector := &CollectorStruct{}
+	collector.context = Context{}
+	context := &collector.context
+	context.finishedCounter = 0
+	context.workingCounter = 0
+	context.queueEndIndex = 0
+	context.queueStartIndex = 0
+	context.linkQueue = make(chan string, 100)
 
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
+	collector.collectorColly = c
+
 	c.Async = true
 
 	// called before an HTTP request is triggered
@@ -75,18 +110,25 @@ func collectorSetup() CollectorStruct {
 	// fired when the server responds
 	c.OnResponse(func(r *colly.Response) {
 		fmt.Println("Page visited: ", r.Request.URL)
+		index := claimNewIndex(collector, r.Request.URL.EscapedPath())
+		r.Ctx.Put(INDEXKEY, index)
 	})
 
 	// triggered when a CSS selector matches an element
 	c.OnHTML("p, div.mw-heading", func(e *colly.HTMLElement) {
 		// printing all URLs associated with the <p> tag on the page
-		//fmt.Println(e.Text)
+		mapValue := e.Response.Ctx.GetAny(INDEXKEY)
+		index, ok := mapValue.(int)
+		if !ok {
+			log.Fatal("couldn't find index")
+		}
+		writeToWorkspace(collector, index, e.Text)
 
 	})
 
 	// Find and visit all links
 	c.OnHTML(`a[href*="/wiki/"]`, func(e *colly.HTMLElement) {
-		FollowLink(e, &counter, &counterLock)
+		FollowLink(e, collector)
 	})
 
 	// triggered once scraping is done (e.g., write the data to a CSV file)
@@ -99,7 +141,8 @@ func collectorSetup() CollectorStruct {
 	return c
 }
 
-func FollowLink(e *colly.HTMLElement, counter *int, counterLock *sync.Mutex) {
+func FollowLink(e *colly.HTMLElement, collector *CollectorStruct) {
+	counterLock := &collector.CounterLock
 	counterLock.Lock()
 	if *counter <= 0 {
 		counterLock.Unlock()
