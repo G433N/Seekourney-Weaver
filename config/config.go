@@ -1,9 +1,7 @@
 package config
 
 import (
-	"encoding/json"
-	"log"
-	"os"
+	"seekourney/utils"
 	"strings"
 )
 
@@ -43,7 +41,7 @@ type Config struct {
 	// Folder/Indexer specific settings, should be extracted to a separate struct
 
 	// NormalizeWordFunc is a function that normalizes words
-	// This is the default setting
+	// TODO: This should be a global setting, should probably sent over http to index worker
 	NormalizeWordFunc NormalizeWordID
 }
 
@@ -62,54 +60,16 @@ func Default() *Config {
 	return New()
 }
 
-// ToFile writes the config to a file
-func ToFile(path string, c *Config) error {
-
-	contents, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(path, contents, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// FromFile reads the config from a file
-func FromFile(path string) (*Config, error) {
-
-	contents, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	c := &Config{}
-
-	err = json.Unmarshal(contents, c)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
+func (c Config) ConfigName() string {
+	return "Global config"
 }
 
 // Load loads the config from a file, or creates a new one if it doesn't exist
 func Load() *Config {
-	c, err := FromFile(Path)
-	if err != nil {
-		c = Default()
 
-		err := ToFile(Path, c)
-
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
-		log.Printf("Config file not found, creating new one at %s", Path)
-	}
-
-	log.Printf("Config loaded from %s", Path)
-	return c
+	return utils.LoadOrElse(Path, func() *Config {
+		return New()
+	}, func() *Config {
+		return &Config{}
+	})
 }
