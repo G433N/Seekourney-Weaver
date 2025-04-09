@@ -60,7 +60,7 @@ func main() {
 	collector := collectorSetup()
 
 	RequestVisitToSite(collector, "https://en.wikipedia.org/wiki/Cucumber")
-	go collectorRepopulateQueue(collector)
+	go collectorRepopulate(collector)
 
 	readAndPrint(collector)
 
@@ -69,7 +69,7 @@ func main() {
 	readAndPrint(collector)
 
 }
-func collectorRepopulateQueue(collector *CollectorStruct) {
+func collectorRepopulate(collector *CollectorStruct) {
 	context := &collector.Context
 	countLock := &collector.CounterLock
 	countLock.Lock()
@@ -80,6 +80,27 @@ func collectorRepopulateQueue(collector *CollectorStruct) {
 	}
 	countLock.Unlock()
 
+}
+
+// returns the amount that didnt fit
+// that will say if you have 2 empty spots and inputs 4 to be repopulated it will return 2
+// so will will return 0 if everything went well
+func collectorRepopulateFixedNumber(collector *CollectorStruct, n int) int {
+	amountDidntFit := 0
+	context := &collector.Context
+	countLock := &collector.CounterLock
+	countLock.Lock()
+	amountFilled := context.FinishedCounter + context.WorkingCounter
+	amountEmpty := QUEUEMAXLEN - amountFilled
+	if amountEmpty < n {
+		amountDidntFit = n - amountEmpty
+		n = amountEmpty
+	}
+	for range n {
+		VisitNextLink(collector)
+	}
+	countLock.Unlock()
+	return amountDidntFit
 }
 
 func readAndPrint(collector *CollectorStruct) {
