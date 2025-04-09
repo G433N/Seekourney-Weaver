@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
-	"indexer/words"
 	"log"
 	"os"
+	"seekourney/client"
+	"seekourney/server"
+	"seekourney/words"
 	"sort"
 	"strings"
-
-	"example.com/client"
-	"example.com/server"
 )
 
 // Usage for running server or client: `go run . <server | client>`
