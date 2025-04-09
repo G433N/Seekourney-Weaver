@@ -10,16 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-
-	_ "github.com/lib/pq"
-)
-
-// Used for database enumerable type, can be either 'web' or 'file'
-type PathType string
-
-const (
-	pathTypeWeb  PathType = "web"
-	pathTypeFile PathType = "file"
 )
 
 const (
@@ -136,9 +126,8 @@ func handleSearch(serverParams serverFuncParams, keys []string) {
 }
 
 func handleAdd(serverParams serverFuncParams, paths []string) {
-	fmt.Println(paths)
 	for _, path := range paths {
-		_, err := insertRow(serverParams.db, path, pathTypeFile, emptyJSON)
+		_, err := insertRow(serverParams.db, Page{path: path, pathType: pathTypeFile})
 		if err != nil {
 			fmt.Fprintf(serverParams.writer, "SQL failed: %s\n", err)
 		}
