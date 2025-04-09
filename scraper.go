@@ -1,5 +1,26 @@
 package main
 
+/*
+Function name
+desc.
+
+newline continued desc.
+
+# Parameters:
+  - param1 type
+
+desc.
+
+  - param2 type
+
+...
+
+# Returns:
+  - type
+
+desc.
+*/
+
 import (
 	"fmt"
 	"log"
@@ -30,7 +51,7 @@ type Context struct {
 	PriorityLinkQueue chan string
 	// worspace for the collectors async requests
 	// each request gets their own index and append the text they recieve to the slice
-	Workspace [QUEUEMAXLEN][]string
+	WorkspaceBuffer [QUEUEMAXLEN][]string
 	// channel of indexes in the 'workspace' array ready to be assigned to a request
 	// (buffer of size 'QUEUEMAXLEN')
 	EmptyIndexes chan int
@@ -69,6 +90,19 @@ func main() {
 	readAndPrint(collector)
 
 }
+
+/*
+collectorRepopulate
+is used to request the scraper to scrape enough websites to fill the buffer.
+
+It will block until it has enough links in the queue for all its requests.
+Is safe to run in a seperate go rutine.
+
+# Parameters:
+  - collector *CollectorStruct
+
+The struct containin the scraper and all used context.
+*/
 func collectorRepopulate(collector *CollectorStruct) {
 	context := &collector.Context
 	countLock := &collector.CounterLock
@@ -82,9 +116,31 @@ func collectorRepopulate(collector *CollectorStruct) {
 
 }
 
-// returns the amount that didnt fit
-// that will say if you have 2 empty spots and inputs 4 to be repopulated it will return 2
-// so will will return 0 if everything went well
+/*
+collectorRepopulateFixedNumber
+is used to request the scraper to scrape a specified amount of websites.
+
+The scraper is using a fixed sized buffer
+which means that it isnt always possible to fit the amount of requests made.
+Therefore it will return the amount of requests that didnt get prossesed.
+
+It will block until it has enough links in the queue for all its requests.
+Is safe to run in a seperate go rutine.
+
+# Parameters:
+  - collector *CollectorStruct
+
+The struct containing the scraper and all used context.
+
+  - n int
+
+The amount of sites to scrape.
+
+# Returns:
+  - int
+
+The amount of requests that couldn't be fullfilled.
+*/
 func collectorRepopulateFixedNumber(collector *CollectorStruct, n int) int {
 	amountDidntFit := 0
 	context := &collector.Context
@@ -103,6 +159,15 @@ func collectorRepopulateFixedNumber(collector *CollectorStruct, n int) int {
 	return amountDidntFit
 }
 
+/*
+readAndPrint
+reads the first avaliable fully scraped site and prints the content.
+
+# Parameters:
+  - collector *CollectorStruct
+
+The struct containing the scraper and all used context.
+*/
 func readAndPrint(collector *CollectorStruct) {
 	stringSlice := readFinished(collector)
 	for _, text := range stringSlice {
@@ -110,32 +175,110 @@ func readAndPrint(collector *CollectorStruct) {
 	}
 }
 
+/*
+claimNewIndex
+claims and initialises a space in the worspace buffer.
+
+# Parameters:
+  - collector *CollectorStruct
+
+The struct containing the scraper and all used context.
+
+  - url string
+
+The url that the worker is speaking with and is used to initialise the slice.
+
+# Returns:
+  - int
+
+The index of the claimed space in the buffer
+*/
 func claimNewIndex(collector *CollectorStruct, url string) int {
 	index := <-collector.Context.EmptyIndexes
-	collector.Context.Workspace[index] = []string{url}
+	collector.Context.WorkspaceBuffer[index] = []string{url}
 	return index
 }
 
+/*
+readFinished
+retrieves a fully scraped page and returns it.
+
+# Parameters:
+  - collector *CollectorStruct
+
+The struct containing the scraper and all used context.
+
+# Returns:
+  - []string
+
+The slice containing the text from the scraped page.
+*/
 func readFinished(collector *CollectorStruct) []string {
+	// removes 1 from finished
 	countLock := &collector.CounterLock
 	countLock.Lock()
+	// can currently become negative by this which
+	// isn't a case deeply explored but should work fine
+	// TODO: test for cases where FinishedCounter becomes negative
 	collector.Context.FinishedCounter--
 	countLock.Unlock()
 
+	// waits for a Workspace to finish
 	index := <-collector.Context.FinishedIndexes
+
+	// retrieves the content and empties out the workspace
+	pos := &collector.Context.WorkspaceBuffer[index]
+	PageText := *pos
+	*pos = nil
+
+	// adds the index to the list of unused/empty workspaces
 	collector.Context.EmptyIndexes <- index
 
-	pos := &collector.Context.Workspace[index]
-	result := *pos
-	*pos = nil
-	return result
+	return PageText
 }
 
+/*
+writeToWorkspace
+appends text to the specified workspace.
+
+# Parameters:
+  - collector *CollectorStruct
+
+The struct containing the scraper and all used context.
+
+  - index int
+
+The index or ID of the workspace to use.
+
+  - text string
+
+The text to appended.
+*/
 func writeToWorkspace(collector *CollectorStruct, index int, text string) {
-	path := &collector.Context.Workspace[index]
+	path := &collector.Context.WorkspaceBuffer[index]
 	*path = append(*path, text)
 }
 
+/*
+Function name
+desc.
+
+newline continued desc.
+
+# Parameters:
+  - param1 type
+
+desc.
+
+  - param2 type
+
+...
+
+# Returns:
+  - type
+
+desc.
+*/
 func collectorSetup() *CollectorStruct {
 	collector := &CollectorStruct{}
 	collector.Context = Context{}
@@ -149,7 +292,7 @@ func collectorSetup() *CollectorStruct {
 	context.FinishedIndexes = make(chan int, QUEUEMAXLEN)
 	context.LinkQueue = make(chan string, LINKQUEUELEN)
 	context.PriorityLinkQueue = make(chan string, LINKQUEUELEN)
-	context.Workspace = [QUEUEMAXLEN][]string{}
+	context.WorkspaceBuffer = [QUEUEMAXLEN][]string{}
 
 	ShortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
 	NonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
@@ -215,6 +358,26 @@ func collectorSetup() *CollectorStruct {
 	return collector
 }
 
+/*
+Function name
+desc.
+
+newline continued desc.
+
+# Parameters:
+  - param1 type
+
+desc.
+
+  - param2 type
+
+...
+
+# Returns:
+  - type
+
+desc.
+*/
 func AddScrapedLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 
 	// TODO: filter away already visited before adding to the queue
@@ -234,11 +397,54 @@ func AddScrapedLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 
 }
 
+/*
+Function name
+desc.
+
+newline continued desc.
+
+# Parameters:
+  - param1 type
+
+desc.
+
+  - param2 type
+
+...
+
+# Returns:
+  - type
+
+desc.
+*/
 func RequestVisitToSite(collector *CollectorStruct, link string) {
+	if len(collector.Context.LinkQueue) == 0 {
+		collector.Context.LinkQueue <- link
+		return
+	}
 	collector.Context.PriorityLinkQueue <- link
 }
 
-// should only be called while having the counter lock
+/*
+Function name
+desc.
+
+should only be called while having the counter lock
+
+# Parameters:
+  - param1 type
+
+desc.
+
+  - param2 type
+
+...
+
+# Returns:
+  - type
+
+desc.
+*/
 func VisitNextLink(collector *CollectorStruct) {
 	for {
 		var link string
