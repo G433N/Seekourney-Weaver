@@ -2,8 +2,8 @@ package document
 
 import (
 	"log"
-	"seekourney/config"
 	"seekourney/indexing"
+	"seekourney/normalize"
 	"seekourney/timing"
 	"sort"
 )
@@ -44,18 +44,18 @@ func New(path string, source Source) Document {
 // FromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func FromText(funcId config.NormalizeWordID, path string, source Source, text string) Document {
+func FromText(normalize normalize.Normalizer, path string, source Source, text string) Document {
 	doc := New(path, source)
-	doc.Words = indexing.IndexString(funcId, text)
+	doc.Words = indexing.IndexString(normalize, text)
 	return doc
 }
 
 // FromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func FromBytes(funcId config.NormalizeWordID, path string, source Source, b []byte) Document {
+func FromBytes(normalize normalize.Normalizer, path string, source Source, b []byte) Document {
 	doc := New(path, source)
-	doc.Words = indexing.IndexBytes(funcId, b)
+	doc.Words = indexing.IndexBytes(normalize, b)
 	return doc
 }
 
