@@ -35,7 +35,7 @@ func IndexFile(c *Config, path string) (Document, error) {
 }
 
 // Recursivly indexes a dictonary and all its subfolders
-func IndexDir(c *Config, path string) (Folder, error) {
+func IndexDir(config *Config, path string) (Folder, error) {
 
 	t := timing.Mesure(timing.FolderFromDir)
 	defer t.Stop()
@@ -43,11 +43,11 @@ func IndexDir(c *Config, path string) (Folder, error) {
 	var docs folder.DocMap
 	var err error
 
-	if c.ParrallelIndexing {
-		docs, err = docMapFromDirParrallel(c, path)
+	if config.ParrallelIndexing {
+		docs, err = docMapFromDirParallel(config, path)
 	} else {
 		docs, err =
-			docMapFromDir(c, path)
+			docMapFromDir(config, path)
 	}
 
 	if err != nil {
@@ -58,12 +58,12 @@ func IndexDir(c *Config, path string) (Folder, error) {
 }
 
 // docMapFromDir indexes a folder and all its subfolders, making a map of paths to documents
-func docMapFromDir(c *Config, path string) (folder.DocMap, error) {
+func docMapFromDir(config *Config, path string) (folder.DocMap, error) {
 
 	docs := make(folder.DocMap)
 
-	for path := range c.WalkDirConfig.WalkDir(path) {
-		doc, err := IndexFile(c, path)
+	for path := range config.WalkDirConfig.WalkDir(path) {
+		doc, err := IndexFile(config, path)
 		if err != nil {
 			return nil, err
 		}
@@ -73,10 +73,10 @@ func docMapFromDir(c *Config, path string) (folder.DocMap, error) {
 	return docs, nil
 }
 
-// docMapFromDirParrallel works like docMapFromDir, but uses goroutines to index the documents in parallel
-func docMapFromDirParrallel(c *Config, path string) (folder.DocMap, error) {
+// docMapFromDirParallel works like docMapFromDir, but uses goroutines to index the documents in parallel
+func docMapFromDirParallel(config *Config, path string) (folder.DocMap, error) {
 
-	paths := c.WalkDirConfig.WalkDir(path)
+	paths := config.WalkDirConfig.WalkDir(path)
 
 	type result struct {
 		path string
@@ -89,7 +89,7 @@ func docMapFromDirParrallel(c *Config, path string) (folder.DocMap, error) {
 
 	for path := range paths {
 		go func(path string) {
-			doc, err := IndexFile(c, path)
+			doc, err := IndexFile(config, path)
 			channel <- result{path: path, doc: doc, err: err}
 		}(path)
 		amount++
@@ -107,13 +107,13 @@ func docMapFromDirParrallel(c *Config, path string) (folder.DocMap, error) {
 	return docs, nil
 }
 
-func Default(d *config.Config) *Config {
+func Default(config *config.Config) *Config {
 
 	w := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
 	return &Config{
 		WalkDirConfig:     w,
-		NormalizeWordFunc: d.NormalizeWordFunc,
-		ParrallelIndexing: d.ParrallelIndexing,
+		NormalizeWordFunc: config.NormalizeWordFunc,
+		ParrallelIndexing: config.ParrallelIndexing,
 	}
 }
 
@@ -121,9 +121,9 @@ func (Config) ConfigName() string {
 	return "Local Text Indexer"
 }
 
-func Load(c *config.Config) *Config {
+func Load(config *config.Config) *Config {
 	path := "localtext.json"
 	return utils.LoadOrElse(path, func() *Config {
-		return Default(c)
+		return Default(config)
 	}, func() *Config { return &Config{} })
 }

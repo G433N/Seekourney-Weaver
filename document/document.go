@@ -45,25 +45,25 @@ func New(path string, source Source) Document {
 // It takes a path, a source, and a string to index
 // It returns a Document
 func FromText(funcId config.NormalizeWordID, path string, source Source, text string) Document {
-	d := New(path, source)
-	d.Words = indexing.IndexString(funcId, text)
-	return d
+	doc := New(path, source)
+	doc.Words = indexing.IndexString(funcId, text)
+	return doc
 }
 
 // FromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
 func FromBytes(funcId config.NormalizeWordID, path string, source Source, b []byte) Document {
-	d := New(path, source)
-	d.Words = indexing.IndexBytes(funcId, b)
-	return d
+	doc := New(path, source)
+	doc.Words = indexing.IndexBytes(funcId, b)
+	return doc
 }
 
 // Misc
 
 // DebugPrint prints information about the document
-func (d *Document) DebugPrint() {
-	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", d.Path, d.Source, len(d.Words))
+func (doc *Document) DebugPrint() {
+	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", doc.Path, doc.Source, len(doc.Words))
 }
 
 // Pair
@@ -73,10 +73,10 @@ type Pair struct {
 }
 
 // GetWords returns a slice of pairs of words and their frequency
-func (d *Document) GetWords() []Pair {
+func (doc *Document) GetWords() []Pair {
 	pairs := make([]Pair, 0)
 
-	for k, v := range d.Words {
+	for k, v := range doc.Words {
 		pairs = append(pairs, Pair{k, v})
 	}
 
@@ -85,8 +85,8 @@ func (d *Document) GetWords() []Pair {
 
 // GetWordsSorted returns a slice of pairs of words and their frequency
 // sorted by frequency in descending order
-func (d *Document) GetWordsSorted() []Pair {
-	pairs := d.GetWords()
+func (doc *Document) GetWordsSorted() []Pair {
+	pairs := doc.GetWords()
 
 	t := timing.Mesure(timing.SortWords)
 	defer t.Stop()

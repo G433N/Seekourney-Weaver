@@ -27,14 +27,14 @@ func Default() Folder {
 }
 
 // Creates a reverse mapping of the documents in the folder, words to paths for fast searching
-func (f *Folder) ReverseMappingLocal() map[string][]string {
+func (folder *Folder) ReverseMappingLocal() map[string][]string {
 	// TODO: Use a database for this in the future
 	mapping := make(map[string][]string)
 
 	t := timing.Mesure(timing.ReverseMapLocal)
 	defer t.Stop()
 
-	for _, doc := range f.docs {
+	for _, doc := range folder.docs {
 		for word := range doc.Words {
 			mapping[word] = append(mapping[word], doc.Path)
 		}
@@ -45,11 +45,11 @@ func (f *Folder) ReverseMappingLocal() map[string][]string {
 
 // GetDoc returns the document at the given path
 // It returns the document and a boolean indicating if it was found
-func (f *Folder) GetDoc(path string) (document.Document, bool) {
-	doc, ok := f.docs[path]
+func (folder *Folder) GetDoc(path string) (document.Document, bool) {
+	doc, ok := folder.docs[path]
 	return doc, ok
 }
 
-func (f *Folder) GetDocAmount() int {
-	return len(f.docs)
+func (folder *Folder) GetDocAmount() int {
+	return len(folder.docs)
 }
