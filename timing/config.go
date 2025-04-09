@@ -10,7 +10,7 @@ const (
 	SortWords
 	DocFromFile
 	ReverseMapLocal
-	FolderFromDir
+	FolderFromIter
 )
 
 // Defualt config for the stopwatches
@@ -40,7 +40,7 @@ func Default() Config {
 			print: true,
 			name:  "Reverse Map Local",
 		},
-		FolderFromDir: StopwatchInfo{
+		FolderFromIter: StopwatchInfo{
 			print: true,
 			name:  "Folder From Dir",
 		},
