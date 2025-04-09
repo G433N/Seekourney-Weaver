@@ -37,21 +37,21 @@ func Mesure(id int, cxt ...string) *Stopwatch {
 		log.Fatalf("Context have to many arguments: Max 1, got %d", len(cxt))
 	}
 
-	if v, ok := config[id]; !ok || !v.active {
+	if info, ok := config[id]; !ok || !info.active {
 		return &Stopwatch{id: id}
 	}
 
-	s := &Stopwatch{
+	sw := &Stopwatch{
 		start: time.Now(),
 		id:    id,
 	}
 
 	if len(cxt) > 0 {
-		s.text = "(" + cxt[0] + ")"
+		sw.text = "(" + cxt[0] + ")"
 	}
 
-	log.Printf("Started mesuring %s %s\n", s.getName(), s.text)
-	return s
+	log.Printf("Started mesuring %s %s\n", sw.getName(), sw.text)
+	return sw
 }
 
 // Stop the stopwatch
@@ -77,7 +77,7 @@ func (s *Stopwatch) getName() string {
 }
 
 // Init initializes the timing package
-func Init(c Config) {
+func Init(conf Config) {
 	log.Printf("Timing package initialized")
-	config = c
+	config = conf
 }

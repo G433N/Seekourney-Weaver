@@ -15,46 +15,46 @@ type ConfigData interface {
 // It takes a path to the file and a function that returns an empty config
 func Load[C any](path string, empty func() *C) (*C, error) {
 
-	var c *C = empty()
+	var config *C = empty()
 
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(content, c)
+	err = json.Unmarshal(content, config)
 	if err != nil {
 		log.Printf("Error loading config: %s", err)
 		return nil, err
 	}
 
-	return c, nil
+	return config, nil
 
 }
 
 // LoadOrElse loads a config from a file or creates a new one if it doesn't exist
 // It takes a path to the file, a function that returns an empty config, and a function that creates a new config
-func LoadOrElse[C ConfigData](path string, f func() *C, empty func() *C) *C {
+func LoadOrElse[C ConfigData](path string, new func() *C, empty func() *C) *C {
 
-	c, err := Load(path, empty)
+	config, err := Load(path, empty)
 	if err != nil {
-		c = f()
-		log.Printf("\"%s\" config not found, creating new one at %s", (*c).ConfigName(), path)
-		err = Save(c, path)
+		config = new()
+		log.Printf("\"%s\" config not found, creating new one at %s", (*config).ConfigName(), path)
+		err = Save(config, path)
 		if err != nil {
 			log.Fatalf("Error saving config: %s", err)
 		}
 	} else {
-		log.Printf("\"%s\" config loaded from %s", (*c).ConfigName(), path)
+		log.Printf("\"%s\" config loaded from %s", (*config).ConfigName(), path)
 	}
 
-	return c
+	return config
 }
 
 // Save saves a config to a file
-func Save[C any](c *C, path string) error {
+func Save[C any](config *C, path string) error {
 
-	content, err := json.Marshal(c)
+	content, err := json.Marshal(config)
 	if err != nil {
 		return err
 	}
