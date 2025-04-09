@@ -1,24 +1,19 @@
 package indexing
 
 import (
-	"seekourney/config"
+	"seekourney/normalize"
 	"seekourney/timing"
 	"seekourney/words"
 )
 
-func NormalizeWord(funcId config.NormalizeWordID, word string) string {
-	normilize := config.NormalizeWordFunc[funcId]
-	return normilize(word)
-}
-
-func IndexBytes(funcId config.NormalizeWordID, chars []byte) map[string]int {
+func IndexBytes(normalize normalize.Normalizer, chars []byte) map[string]int {
 	sw := timing.Mesure(timing.IndexBytes)
 	defer sw.Stop()
 	wordList := make(map[string]int)
 
 	for word := range words.WordsIter(string(chars)) {
 
-		norm := NormalizeWord(funcId, word)
+		norm := normalize.Word(word)
 
 		wordList[norm]++
 	}
@@ -27,7 +22,7 @@ func IndexBytes(funcId config.NormalizeWordID, chars []byte) map[string]int {
 }
 
 // IndexString takes a string and returns a map of words to their frequency.
-func IndexString(funcId config.NormalizeWordID, str string) map[string]int {
+func IndexString(funcId normalize.Normalizer, str string) map[string]int {
 	chars := []byte(str)
 	return IndexBytes(funcId, chars)
 }

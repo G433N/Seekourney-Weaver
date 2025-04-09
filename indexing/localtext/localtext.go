@@ -5,6 +5,7 @@ import (
 	"seekourney/config"
 	"seekourney/document"
 	"seekourney/folder"
+	"seekourney/normalize"
 	"seekourney/timing"
 	"seekourney/utils"
 )
@@ -12,7 +13,7 @@ import (
 type Config struct {
 	ParrallelIndexing bool
 	// TODO: Remove this and use the global config
-	NormalizeWordFunc config.NormalizeWordID
+	NormalizeWordFunc normalize.Normalizer
 	WalkDirConfig     *utils.WalkDirConfig
 }
 
@@ -112,7 +113,7 @@ func Default(config *config.Config) *Config {
 	w := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
 	return &Config{
 		WalkDirConfig:     w,
-		NormalizeWordFunc: config.NormalizeWordFunc,
+		NormalizeWordFunc: config.Normalizer,
 		ParrallelIndexing: config.ParrallelIndexing,
 	}
 }

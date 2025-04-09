@@ -4,7 +4,7 @@ import (
 	"log"
 	"seekourney/config"
 	"seekourney/folder"
-	"seekourney/indexing"
+	"seekourney/normalize"
 	"seekourney/timing"
 	"seekourney/words"
 	"sort"
@@ -51,11 +51,11 @@ func scoreWord(folder *folder.Folder, rm map[string][]string, word string) map[s
 // search takes a folder, a reverse mapping and a query
 // It returns a map of document paths and their corresponding score of the query
 // Higher score means more relevant document
-func search(funcId config.NormalizeWordID, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
+func search(normalize normalize.Normalizer, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
 	result := make(map[string]int)
 
 	for word := range words.WordsIter(query) {
-		word = indexing.NormalizeWord(funcId, word)
+		word = normalize.Word(word)
 
 		res := scoreWord(folder, rm, word)
 
@@ -68,7 +68,7 @@ func search(funcId config.NormalizeWordID, folder *folder.Folder, rm map[string]
 }
 
 // searchParrallel is a parallel version of the search function, currently slower
-func searchParrallel(funcId config.NormalizeWordID, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
+func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
 
 	// TODO: This is currently slower than the normal search function, I think caching is faster / Marcus
 	result := make(map[string]int)
@@ -79,7 +79,7 @@ func searchParrallel(funcId config.NormalizeWordID, folder *folder.Folder, rm ma
 	for word := range words.WordsIter(query) {
 		amount++
 		go func(word string) {
-			word = indexing.NormalizeWord(funcId, word)
+			word = normalize.Word(word)
 			channel <- scoreWord(folder, rm, word)
 		}(word)
 	}
@@ -106,9 +106,9 @@ func Search(config *config.Config, f *folder.Folder, rm map[string][]string, que
 	var searchResult map[string]int
 
 	if config.ParrallelSearching {
-		searchResult = searchParrallel(config.NormalizeWordFunc, f, rm, query)
+		searchResult = searchParrallel(config.Normalizer, f, rm, query)
 	} else {
-		searchResult = search(config.NormalizeWordFunc, f, rm, query)
+		searchResult = search(config.Normalizer, f, rm, query)
 	}
 
 	// Convert map to slice of SearchResult
