@@ -25,11 +25,11 @@ var NonAllowedRegex *regexp.Regexp
 // initialize a data structure to keep the scraped data
 type Context struct {
 	// currently working on amount
-	workingCounter int
+	WorkingCounter int
 	// currently finished amount should be in sync with len(finishedIndexes)
-	finishedCounter int
+	FinishedCounter int
 	// buffered queue channel of links scraped from previously visited sites
-	linkQueue chan string
+	LinkQueue chan string
 	// worspace for the collectors async requests
 	// each request gets their own index and append the text they recieve to the slice
 	Workspace [QUEUEMAXLEN][]string
@@ -38,7 +38,7 @@ type Context struct {
 	EmptyIndexes chan int
 	//  channel of indexes in the 'workspace' array ready to be read
 	// (buffer of size 'QUEUEMAXLEN')
-	finishedIndexes chan int
+	FinishedIndexes chan int
 }
 
 type CollectorStruct struct {
@@ -46,10 +46,10 @@ type CollectorStruct struct {
 	CounterLock sync.Mutex
 
 	// struct holding all cotext to make the inteface with the collector as simple as possible
-	context Context
+	Context Context
 
 	// the colly collector used for webb scraping and formatting
-	collectorColly *colly.Collector
+	CollectorColly *colly.Collector
 }
 
 func debugPrint(a ...any) {
@@ -72,10 +72,10 @@ func main() {
 
 }
 func collectorRepopulateQueue(collector *CollectorStruct) {
-	context := &collector.context
+	context := &collector.Context
 	countLock := &collector.CounterLock
 	countLock.Lock()
-	amountFilled := context.finishedCounter + context.workingCounter
+	amountFilled := context.FinishedCounter + context.WorkingCounter
 	amountEmpty := QUEUEMAXLEN - amountFilled
 	for range amountEmpty {
 		VisitNextLink(collector)
@@ -92,50 +92,50 @@ func readAndPrint(collector *CollectorStruct) {
 }
 
 func claimNewIndex(collector *CollectorStruct, url string) int {
-	index := <-collector.context.EmptyIndexes
-	collector.context.Workspace[index] = []string{url}
+	index := <-collector.Context.EmptyIndexes
+	collector.Context.Workspace[index] = []string{url}
 	return index
 }
 
 func readFinished(collector *CollectorStruct) []string {
 	countLock := &collector.CounterLock
 	countLock.Lock()
-	collector.context.finishedCounter--
+	collector.Context.FinishedCounter--
 	countLock.Unlock()
 
-	index := <-collector.context.finishedIndexes
-	collector.context.EmptyIndexes <- index
+	index := <-collector.Context.FinishedIndexes
+	collector.Context.EmptyIndexes <- index
 
-	pos := &collector.context.Workspace[index]
+	pos := &collector.Context.Workspace[index]
 	result := *pos
 	*pos = nil
 	return result
 }
 
 func writeToWorkspace(collector *CollectorStruct, index int, text string) {
-	path := &collector.context.Workspace[index]
+	path := &collector.Context.Workspace[index]
 	*path = append(*path, text)
 }
 
 func collectorSetup() *CollectorStruct {
 	collector := &CollectorStruct{}
-	collector.context = Context{}
-	context := &collector.context
-	context.finishedCounter = 0
-	context.workingCounter = 0
+	collector.Context = Context{}
+	context := &collector.Context
+	context.FinishedCounter = 0
+	context.WorkingCounter = 0
 	context.EmptyIndexes = make(chan int, QUEUEMAXLEN)
 	for x := range QUEUEMAXLEN {
 		context.EmptyIndexes <- x
 	}
-	context.finishedIndexes = make(chan int, QUEUEMAXLEN)
-	context.linkQueue = make(chan string, LINKQUEUELEN)
+	context.FinishedIndexes = make(chan int, QUEUEMAXLEN)
+	context.LinkQueue = make(chan string, LINKQUEUELEN)
 	context.Workspace = [QUEUEMAXLEN][]string{}
 
 	ShortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
 	NonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
 
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
-	collector.collectorColly = c
+	collector.CollectorColly = c
 
 	c.Async = true
 
@@ -174,7 +174,7 @@ func collectorSetup() *CollectorStruct {
 
 	// Find and visit all links
 	c.OnHTML(`a[href*="/wiki/"]`, func(e *colly.HTMLElement) {
-		AddLinkToQueue(e, collector)
+		AddScrapedLinkToQueue(e, collector)
 	})
 
 	// triggered once scraping is done
@@ -186,20 +186,20 @@ func collectorSetup() *CollectorStruct {
 		}
 		lock := &collector.CounterLock
 		lock.Lock()
-		context.workingCounter--
-		context.finishedCounter++
+		context.WorkingCounter--
+		context.FinishedCounter++
 		lock.Unlock()
-		context.finishedIndexes <- index
+		context.FinishedIndexes <- index
 
 	})
 	return collector
 }
 
-func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
+func AddScrapedLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 
 	// TODO: filter away already visited before adding to the queue
 
-	context := collector.context
+	context := collector.Context
 	link := e.Attr("href")
 	if !ShortendLinkRegex.MatchString(link) || NonAllowedRegex.MatchString(link) {
 		debugPrint("non allowed link: ", link)
@@ -207,7 +207,7 @@ func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 	}
 	link = "https://en.wikipedia.org" + link
 	select {
-	case context.linkQueue <- link:
+	case context.LinkQueue <- link:
 	default:
 		debugPrint("linkQueue full skipped link: ", link)
 	}
@@ -217,11 +217,11 @@ func AddLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 // should only be called while having the counter lock
 func VisitNextLink(collector *CollectorStruct) {
 	for {
-		link := <-collector.context.linkQueue
-		err := collector.collectorColly.Visit(link)
+			link = <-collector.Context.LinkQueue
+		err := collector.CollectorColly.Visit(link)
 		if err == nil {
 
-			collector.context.workingCounter++
+			collector.Context.WorkingCounter++
 			break
 		}
 		switch err.Error() {
