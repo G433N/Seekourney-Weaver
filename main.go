@@ -59,10 +59,8 @@ func main() {
 	// Load local file config
 	localConfig := localtext.Load(config)
 
-	folder, err := localtext.IndexDir(localConfig, "test_data")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// TODO: Later when documents comes over the network, we can still use the same code. since it is an iterator
+	folder := folder.FromIter(config.Normalizer, localConfig.IndexDir("test_data"))
 
 	rm := folder.ReverseMappingLocal()
 

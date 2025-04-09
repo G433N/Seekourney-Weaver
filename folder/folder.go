@@ -1,7 +1,10 @@
 package folder
 
 import (
+	"iter"
+	"log"
 	"seekourney/document"
+	"seekourney/normalize"
 	"seekourney/timing"
 )
 
@@ -26,13 +29,33 @@ func Default() Folder {
 	return New(make(DocMap))
 }
 
+func FromIter(normalize normalize.Normalizer, docs iter.Seq2[string, document.UnnormalizedDocument]) Folder {
+	folder := Default()
+
+	sw := timing.Mesure(timing.FolderFromIter)
+	defer sw.Stop()
+
+	for path, doc := range docs {
+
+		_, ok := folder.docs[path]
+
+		if ok {
+			log.Printf("Got a duplicate path %s. Ignorning ", path)
+		} else {
+			folder.docs[path] = document.Normalize(doc, normalize)
+		}
+	}
+
+	return folder
+}
+
 // Creates a reverse mapping of the documents in the folder, words to paths for fast searching
 func (folder *Folder) ReverseMappingLocal() map[string][]string {
 	// TODO: Use a database for this in the future
 	mapping := make(map[string][]string)
 
-	t := timing.Mesure(timing.ReverseMapLocal)
-	defer t.Stop()
+	sw := timing.Mesure(timing.ReverseMapLocal)
+	defer sw.Stop()
 
 	for _, doc := range folder.docs {
 		for word := range doc.Words {

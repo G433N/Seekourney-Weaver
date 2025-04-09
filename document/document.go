@@ -26,15 +26,21 @@ type Document struct {
 	Path   string
 	Source Source
 
-	/// Map of words to their frequency
+	/// Map of normalized words to their frequency
 	Words map[string]int
 }
+
+// UnnormalizedDocument is a Document that is not normalized
+type UnnormalizedDocument Document
+
+type FreqMap map[string]int
+type UnnormalizedFreqMap FreqMap
 
 // New creates a new document
 // It takes a path, a source,
 // It returns a Document
-func New(path string, source Source) Document {
-	return Document{
+func New(path string, source Source) UnnormalizedDocument {
+	return UnnormalizedDocument{
 		Path:   path,
 		Source: source,
 		Words:  make(map[string]int),
@@ -44,19 +50,35 @@ func New(path string, source Source) Document {
 // FromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func FromText(normalize normalize.Normalizer, path string, source Source, text string) Document {
+func FromText(path string, source Source, text string) UnnormalizedDocument {
 	doc := New(path, source)
-	doc.Words = indexing.IndexString(normalize, text)
+	doc.Words = indexing.IndexString(text)
 	return doc
 }
 
 // FromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func FromBytes(normalize normalize.Normalizer, path string, source Source, b []byte) Document {
+func FromBytes(path string, source Source, bytes []byte) UnnormalizedDocument {
 	doc := New(path, source)
-	doc.Words = indexing.IndexBytes(normalize, b)
+	doc.Words = indexing.IndexBytes(bytes)
 	return doc
+}
+
+func Normalize(doc UnnormalizedDocument, normalizer normalize.Normalizer) Document {
+
+	freqMap := make(FreqMap)
+
+	for k, v := range doc.Words {
+		k = normalizer.Word(k)
+		freqMap[k] += v
+	}
+
+	return Document{
+		Path:   doc.Path,
+		Source: doc.Source,
+		Words:  freqMap,
+	}
 }
 
 // Misc
