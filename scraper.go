@@ -1,9 +1,5 @@
 package main
 
-// Start test https://en.wikipedia.org/wiki/Cucumber
-
-// End goal https://tracklock.gg/players/120846718
-
 import (
 	"fmt"
 	"log"
@@ -30,6 +26,8 @@ type Context struct {
 	FinishedCounter int
 	// buffered queue channel of links scraped from previously visited sites
 	LinkQueue chan string
+	// buffered queue channel of links inputed to the scraper
+	PriorityLinkQueue chan string
 	// worspace for the collectors async requests
 	// each request gets their own index and append the text they recieve to the slice
 	Workspace [QUEUEMAXLEN][]string
@@ -61,8 +59,8 @@ func debugPrint(a ...any) {
 func main() {
 	collector := collectorSetup()
 
-	collector.context.linkQueue <- "https://en.wikipedia.org/wiki/Cucumber"
-	collectorRepopulateQueue(collector)
+	RequestVisitToSite(collector, "https://en.wikipedia.org/wiki/Cucumber")
+	go collectorRepopulateQueue(collector)
 
 	readAndPrint(collector)
 
@@ -129,6 +127,7 @@ func collectorSetup() *CollectorStruct {
 	}
 	context.FinishedIndexes = make(chan int, QUEUEMAXLEN)
 	context.LinkQueue = make(chan string, LINKQUEUELEN)
+	context.PriorityLinkQueue = make(chan string, LINKQUEUELEN)
 	context.Workspace = [QUEUEMAXLEN][]string{}
 
 	ShortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
@@ -214,10 +213,19 @@ func AddScrapedLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
 
 }
 
+func RequestVisitToSite(collector *CollectorStruct, link string) {
+	collector.Context.PriorityLinkQueue <- link
+}
+
 // should only be called while having the counter lock
 func VisitNextLink(collector *CollectorStruct) {
 	for {
+		var link string
+		select {
+		case link = <-collector.Context.PriorityLinkQueue:
+		default:
 			link = <-collector.Context.LinkQueue
+		}
 		err := collector.CollectorColly.Visit(link)
 		if err == nil {
 
