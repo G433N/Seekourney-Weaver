@@ -5,7 +5,26 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/lib/pq"
 )
+
+// Used for database enumerable type, can be either 'web' or 'file'
+type PathType string
+
+const (
+	pathTypeWeb  PathType = "web"
+	pathTypeFile PathType = "file"
+)
+
+type JSONString string
+
+type Page struct {
+	// id       int64
+	path     string
+	pathType PathType
+	// dict     JSONString
+}
 
 // Attempts to connect to the database, will retry every half second for
 // 5 seconds in case the docker container is still starting up.
@@ -38,14 +57,16 @@ func checkSQLError(err error) {
 	}
 }
 
-func insertRow(
-	db *sql.DB,
-	path string,
-	pathType PathType,
-	dictJSON string) (sql.Result, error) {
-	insertStmt := `INSERT INTO "paths"("path", "type", "dict") values($1, $2, $3)`
-	return db.Exec(insertStmt, path, pathType, dictJSON)
+func insertRow(db *sql.DB, page Page) (sql.Result, error) {
+	insert := `INSERT INTO "page"("path", "type") values($1, $2)`
+	fmt.Printf("%s (%s)\n", insert, page.path)
+	return db.Exec(insert, page.path, page.pathType)
 }
+
+// func insertRowWithJSON(db *sql.DB, page Page) (sql.Result, error) {
+// 	insertStmt := `INSERT INTO "page"("path", "type", "dict") values($1, $2, $3)`
+// 	return db.Exec(insertStmt, page.path, page.pathType, page.dict)
+// }
 
 // Writes the contents of database rows to the given writer
 func writeRows(writer io.Writer, rows *sql.Rows) {
@@ -66,30 +87,15 @@ func writeRows(writer io.Writer, rows *sql.Rows) {
 // Querys the database for rows containing ALL the given keys.
 // Writes output to writer
 func queryJSONKeysAll(db *sql.DB, writer io.Writer, keys []string) {
+	query := `SELECT * FROM page WHERE dict ?& $1`
+
 	if len(keys) == 0 {
-		panic(`Must enter at least one key to search`)
+		panic(`No keys given`)
 	}
 
-	// Create a string of query params of correct amount in form "$1, $2, ..."
-	// Really would like a one liner for this but still new to Go
-	paramsString := ""
-	for i := range len(keys) {
-		paramsString += fmt.Sprintf("$%d, ", i+1)
-	}
-	// Cut off last ", "
-	paramsString = paramsString[0 : len(paramsString)-2]
+	fmt.Printf("%s (%s)\n", query, keys)
 
-	query := fmt.Sprintf(`SELECT * FROM paths WHERE dict ?& ARRAY[%s]`,
-		paramsString)
-
-	keysAny := make([]any, len(keys))
-	for i, key := range keys {
-		keysAny[i] = key
-	}
-
-	fmt.Printf("%s (%s)\n", query, keysAny)
-
-	rows, err := db.Query(query, keysAny...)
+	rows, err := db.Query(query, pq.StringArray(keys))
 	checkSQLError(err)
 	defer rows.Close()
 
@@ -99,7 +105,7 @@ func queryJSONKeysAll(db *sql.DB, writer io.Writer, keys []string) {
 // Querys the database for all rows.
 // Writes output to writer
 func queryAll(db *sql.DB, writer io.Writer) {
-	query := `SELECT * FROM paths`
+	query := `SELECT * FROM page`
 
 	fmt.Printf("%s\n", query)
 
