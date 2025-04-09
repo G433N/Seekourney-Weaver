@@ -10,39 +10,39 @@ const (
 	SortWords
 	DocFromFile
 	ReverseMapLocal
-	FolderFromDir
+	FolderFromIter
 )
 
 // Defualt config for the stopwatches
 func Default() Config {
 	return Config{
 		Search: StopwatchInfo{
-			active: true,
-			name:   "Search",
+			print: true,
+			name:  "Search",
 		},
 		Main: StopwatchInfo{
-			active: true,
-			name:   "Main",
+			print: true,
+			name:  "Main",
 		},
 		IndexBytes: StopwatchInfo{
-			active: false,
-			name:   "Indexing Bytes",
+			print: false,
+			name:  "Indexing Bytes",
 		},
 		SortWords: StopwatchInfo{
-			active: true,
-			name:   "Sorting Words",
+			print: true,
+			name:  "Sorting Words",
 		},
 		DocFromFile: StopwatchInfo{
-			active: false,
-			name:   "Document From File",
+			print: false,
+			name:  "Document From File",
 		},
 		ReverseMapLocal: StopwatchInfo{
-			active: true,
-			name:   "Reverse Map Local",
+			print: true,
+			name:  "Reverse Map Local",
 		},
-		FolderFromDir: StopwatchInfo{
-			active: true,
-			name:   "Folder From Dir",
+		FolderFromIter: StopwatchInfo{
+			print: true,
+			name:  "Folder From Dir",
 		},
 	}
 }

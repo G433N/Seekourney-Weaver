@@ -1,33 +1,26 @@
 package indexing
 
 import (
-	"seekourney/config"
 	"seekourney/timing"
 	"seekourney/words"
 )
 
-func NormalizeWord(funcId config.NormalizeWordID, word string) string {
-	f := config.NormalizeWordFunc[funcId]
-	return f(word)
-}
-
-func IndexBytes(funcId config.NormalizeWordID, b []byte) map[string]int {
-	t := timing.Mesure(timing.IndexBytes)
-	defer t.Stop()
+// Indexer is a function that takes a string and returns a map of words to their frequency.
+func IndexBytes(chars []byte) map[string]int {
+	sw := timing.Mesure(timing.IndexBytes)
+	defer sw.Stop()
 	wordList := make(map[string]int)
 
-	for w := range words.WordsIter(string(b)) {
+	for word := range words.WordsIter(string(chars)) {
 
-		l := NormalizeWord(funcId, w)
-
-		wordList[l]++
+		wordList[word]++
 	}
 
 	return wordList
 }
 
 // IndexString takes a string and returns a map of words to their frequency.
-func IndexString(funcId config.NormalizeWordID, s string) map[string]int {
-	b := []byte(s)
-	return IndexBytes(funcId, b)
+func IndexString(str string) map[string]int {
+	chars := []byte(str)
+	return IndexBytes(chars)
 }

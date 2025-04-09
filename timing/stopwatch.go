@@ -8,8 +8,8 @@ import (
 // StopwatchInfo is a struct that represents the information of a stopwatch
 // It contains the name of the stopwatch and whether it is active or not
 type StopwatchInfo struct {
-	active bool
-	name   string
+	print bool
+	name  string
 }
 
 // Config is a map of stopwatch ids to their information
@@ -37,35 +37,33 @@ func Mesure(id int, cxt ...string) *Stopwatch {
 		log.Fatalf("Context have to many arguments: Max 1, got %d", len(cxt))
 	}
 
-	if v, ok := config[id]; !ok || !v.active {
-		return &Stopwatch{id: id}
-	}
-
-	s := &Stopwatch{
+	sw := &Stopwatch{
 		start: time.Now(),
 		id:    id,
 	}
 
-	if len(cxt) > 0 {
-		s.text = "(" + cxt[0] + ")"
+	if info, ok := config[id]; ok && info.print {
+		if len(cxt) > 0 {
+			sw.text = "(" + cxt[0] + ")"
+		}
+		log.Printf("Started mesuring %s %s\n", sw.getName(), sw.text)
 	}
 
-	log.Printf("Started mesuring %s %s\n", s.getName(), s.text)
-	return s
+	return sw
 }
 
 // Stop the stopwatch
 // It will print the elapsed time and the context string
 // If the stopwatch is not active, it will do nothing
 // It is recommended to use a defer statement to stop the stopwatch
-func (s *Stopwatch) Stop() {
-
-	if v, ok := config[s.id]; !ok || !v.active {
-		return
-	}
+func (s *Stopwatch) Stop() time.Duration {
 
 	elapsed := time.Since(s.start)
-	log.Printf("%s took %s %s\n", s.getName(), elapsed, s.text)
+	if v, ok := config[s.id]; ok && v.print {
+		log.Printf("%s took %s %s\n", s.getName(), elapsed, s.text)
+	}
+
+	return elapsed
 }
 
 // Gets the name of the stopwatch
@@ -77,7 +75,7 @@ func (s *Stopwatch) getName() string {
 }
 
 // Init initializes the timing package
-func Init(c Config) {
+func Init(conf Config) {
 	log.Printf("Timing package initialized")
-	config = c
+	config = conf
 }

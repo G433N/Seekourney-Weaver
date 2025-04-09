@@ -4,7 +4,7 @@ import (
 	"log"
 	"seekourney/config"
 	"seekourney/folder"
-	"seekourney/indexing"
+	"seekourney/normalize"
 	"seekourney/timing"
 	"seekourney/words"
 	"sort"
@@ -18,7 +18,7 @@ type SearchResult struct {
 // / scoreWord takes a folder, a reverse mapping and a word
 // It returns a map of document paths and their corresponding score of the word
 // Higher score means more relevant document
-func scoreWord(f *folder.Folder, rm map[string][]string, word string) map[string]int {
+func scoreWord(folder *folder.Folder, rm map[string][]string, word string) map[string]int {
 
 	paths, ok := rm[word]
 	if !ok {
@@ -26,7 +26,7 @@ func scoreWord(f *folder.Folder, rm map[string][]string, word string) map[string
 		return make(map[string]int)
 	}
 
-	m := make(map[string]int)
+	result := make(map[string]int)
 
 	for _, path := range paths {
 		if path == "" {
@@ -34,7 +34,7 @@ func scoreWord(f *folder.Folder, rm map[string][]string, word string) map[string
 			continue
 		}
 
-		doc, ok := f.GetDoc(path)
+		doc, ok := folder.GetDoc(path)
 		if !ok {
 			log.Printf("Document %s not found in folder\n", path)
 			continue
@@ -42,36 +42,36 @@ func scoreWord(f *folder.Folder, rm map[string][]string, word string) map[string
 
 		// freq = 0 if not found
 		freq := doc.Words[word]
-		m[path] += freq
+		result[path] += freq
 	}
 
-	return m
+	return result
 }
 
 // search takes a folder, a reverse mapping and a query
 // It returns a map of document paths and their corresponding score of the query
 // Higher score means more relevant document
-func search(funcId config.NormalizeWordID, f *folder.Folder, rm map[string][]string, query string) map[string]int {
-	m := make(map[string]int)
+func search(normalize normalize.Normalizer, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
+	result := make(map[string]int)
 
 	for word := range words.WordsIter(query) {
-		word = indexing.NormalizeWord(funcId, word)
+		word = normalize.Word(word)
 
-		res := scoreWord(f, rm, word)
+		res := scoreWord(folder, rm, word)
 
 		for path, value := range res {
-			m[path] += value
+			result[path] += value
 		}
 	}
 
-	return m
+	return result
 }
 
 // searchParrallel is a parallel version of the search function, currently slower
-func searchParrallel(funcId config.NormalizeWordID, f *folder.Folder, rm map[string][]string, query string) map[string]int {
+func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
 
 	// TODO: This is currently slower than the normal search function, I think caching is faster / Marcus
-	m := make(map[string]int)
+	result := make(map[string]int)
 
 	channel := make(chan map[string]int)
 	amount := 0
@@ -79,41 +79,41 @@ func searchParrallel(funcId config.NormalizeWordID, f *folder.Folder, rm map[str
 	for word := range words.WordsIter(query) {
 		amount++
 		go func(word string) {
-			word = indexing.NormalizeWord(funcId, word)
-			channel <- scoreWord(f, rm, word)
+			word = normalize.Word(word)
+			channel <- scoreWord(folder, rm, word)
 		}(word)
 	}
 
 	for range amount {
 		res := <-channel
 		for path, value := range res {
-			m[path] += value
+			result[path] += value
 		}
 	}
 
-	return m
+	return result
 }
 
 // Search performs a search on the folder using the reverse mapping
 // It returns a slice of SearchResult sorted by value in descending order, max 10 results
-func Search(c *config.Config, f *folder.Folder, rm map[string][]string, query string) []SearchResult {
+func Search(config *config.Config, f *folder.Folder, rm map[string][]string, query string) []SearchResult {
 
 	// TODO: Support more than 10 results
 
 	t := timing.Mesure(timing.Search)
 	defer t.Stop()
 
-	var m map[string]int
+	var searchResult map[string]int
 
-	if c.ParrallelSearching {
-		m = searchParrallel(c.NormalizeWordFunc, f, rm, query)
+	if config.ParrallelSearching {
+		searchResult = searchParrallel(config.Normalizer, f, rm, query)
 	} else {
-		m = search(c.NormalizeWordFunc, f, rm, query)
+		searchResult = search(config.Normalizer, f, rm, query)
 	}
 
 	// Convert map to slice of SearchResult
-	results := make([]SearchResult, 0, len(m))
-	for path, value := range m {
+	results := make([]SearchResult, 0, len(searchResult))
+	for path, value := range searchResult {
 		results = append(results, SearchResult{Path: path, Value: value})
 	}
 

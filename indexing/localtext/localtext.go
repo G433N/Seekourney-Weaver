@@ -1,6 +1,8 @@
 package localtext
 
 import (
+	"iter"
+	"log"
 	"os"
 	"seekourney/config"
 	"seekourney/document"
@@ -12,17 +14,16 @@ import (
 type Config struct {
 	ParrallelIndexing bool
 	// TODO: Remove this and use the global config
-	NormalizeWordFunc config.NormalizeWordID
-	WalkDirConfig     *utils.WalkDirConfig
+	WalkDirConfig *utils.WalkDirConfig
 }
 
 type Folder = folder.Folder
-type Document = document.Document
+type Document = document.UnnormalizedDocument
 
 // IndexFile creates a new document from a file
 // It takes a path to the file
 // It returns a Document
-func IndexFile(c *Config, path string) (Document, error) {
+func IndexFile(path string) (Document, error) {
 
 	t := timing.Mesure(timing.DocFromFile, path)
 	defer t.Stop()
@@ -31,89 +32,86 @@ func IndexFile(c *Config, path string) (Document, error) {
 		return Document{}, err
 	}
 
-	return document.FromBytes(c.NormalizeWordFunc, path, document.SourceLocal, content), nil
+	return document.FromBytes(path, document.SourceLocal, content), nil
 }
 
-// Recursivly indexes a dictonary and all its subfolders
-func IndexDir(c *Config, path string) (Folder, error) {
+// IndexIter iterates over a sequence of paths and indexes them
+func IndexIter(paths iter.Seq[string]) iter.Seq2[string, Document] {
 
-	t := timing.Mesure(timing.FolderFromDir)
-	defer t.Stop()
+	return func(yield func(string, Document) bool) {
 
-	var docs folder.DocMap
-	var err error
+		for path := range paths {
+			doc, err := IndexFile(path)
+			if err != nil {
+				log.Printf("Error indexing file: %s, %s", path, err)
+				continue
+			}
 
-	if c.ParrallelIndexing {
-		docs, err = docMapFromDirParrallel(c, path)
-	} else {
-		docs, err =
-			docMapFromDir(c, path)
-	}
-
-	if err != nil {
-		return folder.Default(), err
-	}
-
-	return folder.New(docs), nil
-}
-
-// docMapFromDir indexes a folder and all its subfolders, making a map of paths to documents
-func docMapFromDir(c *Config, path string) (folder.DocMap, error) {
-
-	docs := make(folder.DocMap)
-
-	for path := range c.WalkDirConfig.WalkDir(path) {
-		doc, err := IndexFile(c, path)
-		if err != nil {
-			return nil, err
+			if !yield(path, doc) {
+				return
+			}
 		}
-		docs[doc.Path] = doc
 	}
-
-	return docs, nil
 }
 
-// docMapFromDirParrallel works like docMapFromDir, but uses goroutines to index the documents in parallel
-func docMapFromDirParrallel(c *Config, path string) (folder.DocMap, error) {
-
-	paths := c.WalkDirConfig.WalkDir(path)
+// IndexIterParallel iterates over a sequence of paths and indexes them in parallel
+func IndexIterParallel(paths iter.Seq[string]) iter.Seq2[string, Document] {
 
 	type result struct {
 		path string
-		doc  document.Document
+		doc  document.UnnormalizedDocument
 		err  error
 	}
 
 	channel := make(chan result)
 	amount := 0
 
+	// Start a goroutine for each path
 	for path := range paths {
+
 		go func(path string) {
-			doc, err := IndexFile(c, path)
+			doc, err := IndexFile(path)
 			channel <- result{path: path, doc: doc, err: err}
 		}(path)
 		amount++
 	}
 
-	docs := make(folder.DocMap)
-	for range amount {
-		res := <-channel
-		if res.err != nil {
-			return nil, res.err
+	return func(yield func(string, Document) bool) {
+
+		// Wait for all goroutines to finish
+		for range amount {
+			res := <-channel
+			if res.err != nil {
+				log.Printf("Error indexing file: %s, %s", res.path, res.err)
+				continue
+			}
+
+			if !yield(res.path, res.doc) {
+				return
+			}
 		}
-		docs[res.path] = res.doc
 	}
 
-	return docs, nil
 }
 
-func Default(d *config.Config) *Config {
+// Recursivly indexes a dictonary and all its subfolders
+func (config *Config) IndexDir(path string) iter.Seq2[string, Document] {
+
+	walk := config.WalkDirConfig.WalkDir(path)
+
+	if config.ParrallelIndexing {
+		return IndexIterParallel(walk)
+	}
+
+	return IndexIter(walk)
+}
+
+func Default(config *config.Config) *Config {
 
 	w := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
 	return &Config{
 		WalkDirConfig:     w,
-		NormalizeWordFunc: d.NormalizeWordFunc,
-		ParrallelIndexing: d.ParrallelIndexing,
+		ParrallelIndexing: config.ParrallelIndexing,
 	}
 }
 
@@ -121,9 +119,9 @@ func (Config) ConfigName() string {
 	return "Local Text Indexer"
 }
 
-func Load(c *config.Config) *Config {
+func Load(config *config.Config) *Config {
 	path := "localtext.json"
 	return utils.LoadOrElse(path, func() *Config {
-		return Default(c)
+		return Default(config)
 	}, func() *Config { return &Config{} })
 }
