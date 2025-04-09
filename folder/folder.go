@@ -5,7 +5,7 @@ import (
 	"seekourney/timing"
 )
 
-// Type alias
+// Type alias where key is the file path
 type DocMap map[string]document.Document
 
 // Abstract collection of documents
@@ -24,6 +24,19 @@ func New(docs DocMap) Folder {
 // Creates an empty folder
 func Default() Folder {
 	return New(make(DocMap))
+}
+
+// Adds a document to the folder
+func (folder *Folder) AddDoc(path string, doc document.Document) {
+	folder.docs[path] = doc
+}
+
+// Removes a document from the folder
+// Returns the document (if it was removed) and bool indicating if it was removed
+func (folder *Folder) RemoveDoc(path string) (document.Document, bool) {
+	doc, ok := folder.GetDoc(path)
+	delete(folder.docs, path) // Does nothing if entry does not exist.
+	return doc, ok
 }
 
 // Creates a reverse mapping of the documents in the folder, words to paths for fast searching
