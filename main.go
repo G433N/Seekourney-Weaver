@@ -7,6 +7,7 @@ import (
 	"seekourney/indexing/localtext"
 	"seekourney/search"
 	"seekourney/timing"
+	"seekourney/utils"
 	"strconv"
 
 	"github.com/savioxavier/termlink"
@@ -29,15 +30,15 @@ func green(text string) string {
 	return "\033[92m" + text + "\033[0m"
 }
 
-func testSearch(c *config.Config, folder *folder.Folder, rm map[string][]string, query string) {
+func testSearch(c *config.Config, folder *folder.Folder, rm utils.ReverseMap, query string) {
 
 	// Perform search using the folder and reverse mapping
 	pairs := search.Search(c, folder, rm, query)
 
 	log.Printf("--- Search results for query '%s' ---\n", bold(italic(query)))
 	for n, result := range pairs {
-		path := result.Path
-		score := result.Value
+		path := string(result.Path)
+		score := int(result.Value)
 		link := termlink.Link(path, path)
 		log.Printf("%d. Path: %s Score: %s\n", n, lightBlue(bold(link)), green(strconv.Itoa(score)))
 	}
@@ -50,7 +51,7 @@ func init() {
 
 func main() {
 
-	t := timing.Mesure(timing.Main)
+	t := timing.Measure(timing.Main)
 	defer t.Stop()
 
 	// Load config

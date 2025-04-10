@@ -1,6 +1,9 @@
 package normalize
 
-import "strings"
+import (
+	"seekourney/utils"
+	"strings"
+)
 
 // NormalizeWord is a function that normalizes a word
 // To normalize a word means to convert it to a standard format to make the indexing more efficient
@@ -13,14 +16,14 @@ type Normalizer int
 
 const (
 	ToLower Normalizer = iota
-	Steming
+	Stemming
 )
 
-func (norm Normalizer) Word(str string) string {
+func (norm Normalizer) Word(str utils.Word) utils.Word {
 	switch norm {
 	case ToLower:
-		return strings.ToLower(str)
-	case Steming:
+		return utils.Word(strings.ToLower(string(str)))
+	case Stemming:
 		panic("not implemented")
 	}
 	return str

@@ -5,6 +5,7 @@ import (
 	"seekourney/indexing"
 	"seekourney/normalize"
 	"seekourney/timing"
+	"seekourney/utils"
 	"sort"
 )
 
@@ -18,39 +19,33 @@ const (
 	SourceWeb
 )
 
-// TODO: Split out specific indexing functions (e.g. for web pages or local files) into their own packages.
-// This package should only be responsible for the abstract document itself.
-
 // Document is a struct that represents a document
 type Document struct {
-	Path   string
+	Path   utils.Path
 	Source Source
 
 	/// Map of normalized words to their frequency
-	Words map[string]int
+	Words utils.FrequencyMap
 }
 
 // UnnormalizedDocument is a Document that is not normalized
 type UnnormalizedDocument Document
 
-type FreqMap map[string]int
-type UnnormalizedFreqMap FreqMap
-
 // New creates a new document
 // It takes a path, a source,
 // It returns a Document
-func New(path string, source Source) UnnormalizedDocument {
+func New(path utils.Path, source Source) UnnormalizedDocument {
 	return UnnormalizedDocument{
 		Path:   path,
 		Source: source,
-		Words:  make(map[string]int),
+		Words:  make(utils.FrequencyMap),
 	}
 }
 
 // FromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func FromText(path string, source Source, text string) UnnormalizedDocument {
+func FromText(path utils.Path, source Source, text string) UnnormalizedDocument {
 	doc := New(path, source)
 	doc.Words = indexing.IndexString(text)
 	return doc
@@ -59,7 +54,7 @@ func FromText(path string, source Source, text string) UnnormalizedDocument {
 // FromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func FromBytes(path string, source Source, bytes []byte) UnnormalizedDocument {
+func FromBytes(path utils.Path, source Source, bytes []byte) UnnormalizedDocument {
 	doc := New(path, source)
 	doc.Words = indexing.IndexBytes(bytes)
 	return doc
@@ -67,7 +62,7 @@ func FromBytes(path string, source Source, bytes []byte) UnnormalizedDocument {
 
 func Normalize(doc UnnormalizedDocument, normalizer normalize.Normalizer) Document {
 
-	freqMap := make(FreqMap)
+	freqMap := make(utils.FrequencyMap)
 
 	for k, v := range doc.Words {
 		k = normalizer.Word(k)
@@ -90,8 +85,8 @@ func (doc *Document) DebugPrint() {
 
 // Pair
 type Pair struct {
-	Word string
-	Freq int
+	Word utils.Word
+	Freq utils.Frequency
 }
 
 // GetWords returns a slice of pairs of words and their frequency
@@ -110,7 +105,7 @@ func (doc *Document) GetWords() []Pair {
 func (doc *Document) GetWordsSorted() []Pair {
 	pairs := doc.GetWords()
 
-	t := timing.Mesure(timing.SortWords)
+	t := timing.Measure(timing.SortWords)
 	defer t.Stop()
 
 	sort.Slice(pairs, func(i, j int) bool { return pairs[i].Freq > pairs[j].Freq })

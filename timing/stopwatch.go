@@ -30,12 +30,8 @@ type Stopwatch struct {
 
 // Start a stopwatch
 // Id is the id of the stopwatch type, specified in the Init(c Config) function
-// Cxt is an optional context string that will be printed with the stopwatch
-func Mesure(id int, cxt ...string) *Stopwatch {
-
-	if len(cxt) > 1 {
-		log.Fatalf("Context have to many arguments: Max 1, got %d", len(cxt))
-	}
+// Cxt is an optional context string(s) that will be printed with the stopwatch
+func Measure(id int, cxt ...string) *Stopwatch {
 
 	sw := &Stopwatch{
 		start: time.Now(),
@@ -44,7 +40,11 @@ func Mesure(id int, cxt ...string) *Stopwatch {
 
 	if info, ok := config[id]; ok && info.print {
 		if len(cxt) > 0 {
-			sw.text = "(" + cxt[0] + ")"
+			sw.text = "("
+			for _, s := range cxt {
+				sw.text += s
+			}
+			sw.text += ")"
 		}
 		log.Printf("Started mesuring %s %s\n", sw.getName(), sw.text)
 	}

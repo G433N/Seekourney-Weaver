@@ -6,27 +6,28 @@ import (
 	"seekourney/folder"
 	"seekourney/normalize"
 	"seekourney/timing"
+	"seekourney/utils"
 	"seekourney/words"
 	"sort"
 )
 
 type SearchResult struct {
-	Path  string
-	Value int
+	Path  utils.Path
+	Value utils.Score
 }
 
 // / scoreWord takes a folder, a reverse mapping and a word
 // It returns a map of document paths and their corresponding score of the word
 // Higher score means more relevant document
-func scoreWord(folder *folder.Folder, rm map[string][]string, word string) map[string]int {
+func scoreWord(folder *folder.Folder, rm utils.ReverseMap, word utils.Word) utils.ScoreMap {
 
 	paths, ok := rm[word]
 	if !ok {
 		log.Printf("Word %s not found in reverse mapping", word)
-		return make(map[string]int)
+		return make(utils.ScoreMap)
 	}
 
-	result := make(map[string]int)
+	result := make(utils.ScoreMap)
 
 	for _, path := range paths {
 		if path == "" {
@@ -42,7 +43,7 @@ func scoreWord(folder *folder.Folder, rm map[string][]string, word string) map[s
 
 		// freq = 0 if not found
 		freq := doc.Words[word]
-		result[path] += freq
+		result[path] += utils.Score(freq)
 	}
 
 	return result
@@ -51,8 +52,8 @@ func scoreWord(folder *folder.Folder, rm map[string][]string, word string) map[s
 // search takes a folder, a reverse mapping and a query
 // It returns a map of document paths and their corresponding score of the query
 // Higher score means more relevant document
-func search(normalize normalize.Normalizer, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
-	result := make(map[string]int)
+func search(normalize normalize.Normalizer, folder *folder.Folder, rm utils.ReverseMap, query string) utils.ScoreMap {
+	result := make(utils.ScoreMap)
 
 	for word := range words.WordsIter(query) {
 		word = normalize.Word(word)
@@ -68,17 +69,17 @@ func search(normalize normalize.Normalizer, folder *folder.Folder, rm map[string
 }
 
 // searchParrallel is a parallel version of the search function, currently slower
-func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm map[string][]string, query string) map[string]int {
+func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm utils.ReverseMap, query string) utils.ScoreMap {
 
 	// TODO: This is currently slower than the normal search function, I think caching is faster / Marcus
-	result := make(map[string]int)
+	result := make(utils.ScoreMap)
 
-	channel := make(chan map[string]int)
+	channel := make(chan utils.ScoreMap)
 	amount := 0
 
 	for word := range words.WordsIter(query) {
 		amount++
-		go func(word string) {
+		go func(word utils.Word) {
 			word = normalize.Word(word)
 			channel <- scoreWord(folder, rm, word)
 		}(word)
@@ -96,14 +97,14 @@ func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm m
 
 // Search performs a search on the folder using the reverse mapping
 // It returns a slice of SearchResult sorted by value in descending order, max 10 results
-func Search(config *config.Config, f *folder.Folder, rm map[string][]string, query string) []SearchResult {
+func Search(config *config.Config, f *folder.Folder, rm utils.ReverseMap, query string) []SearchResult {
 
 	// TODO: Support more than 10 results
 
-	t := timing.Mesure(timing.Search)
+	t := timing.Measure(timing.Search)
 	defer t.Stop()
 
-	var searchResult map[string]int
+	var searchResult utils.ScoreMap
 
 	if config.ParrallelSearching {
 		searchResult = searchParrallel(config.Normalizer, f, rm, query)

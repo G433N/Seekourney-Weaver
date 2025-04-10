@@ -59,16 +59,16 @@ func (config *WalkDirConfig) SetAllowedExts(exts []string) *WalkDirConfig {
 }
 
 // WalkDir returns a sequence of file paths in the given directory and its subdirectories.
-func (config *WalkDirConfig) WalkDir(path string) iter.Seq[string] {
+func (config *WalkDirConfig) WalkDir(path Path) iter.Seq[Path] {
 
-	return func(yield func(string) bool) {
+	return func(yield func(Path) bool) {
 		config.walkDirIter(yield, path)
 	}
 }
 
 // walkDirIter is a helper function that recursively walks the directory and yields file paths.
-func (config *WalkDirConfig) walkDirIter(yield func(string) bool, path string) {
-	entries, err := os.ReadDir(path)
+func (config *WalkDirConfig) walkDirIter(yield func(Path) bool, path Path) {
+	entries, err := os.ReadDir(string(path))
 
 	if err != nil {
 		log.Println("Error reading directory:", err)
@@ -79,14 +79,14 @@ func (config *WalkDirConfig) walkDirIter(yield func(string) bool, path string) {
 
 		if entry.IsDir() {
 			// Recursively walk the directory
-			subDir := path + string(os.PathSeparator) + entry.Name()
+			subDir := path + Path(os.PathSeparator) + Path(entry.Name())
 
 			if !config.forEachDir(yield, subDir) {
 				return // Stop iteration if yield returns false
 			}
 
 		} else {
-			filePath := path + string(os.PathSeparator) + entry.Name()
+			filePath := path + Path(os.PathSeparator) + Path(entry.Name())
 			if !config.forEachFile(yield, filePath) {
 				return // Stop iteration if yield returns false
 			}
@@ -95,7 +95,7 @@ func (config *WalkDirConfig) walkDirIter(yield func(string) bool, path string) {
 }
 
 // forEachDir yields each file in the directory and its subdirectories.
-func (config *WalkDirConfig) forEachDir(yield func(string) bool, dirPath string) bool {
+func (config *WalkDirConfig) forEachDir(yield func(Path) bool, dirPath Path) bool {
 
 	if config.Verbose {
 		log.Printf("Found directory: %s\n", dirPath)
@@ -118,7 +118,7 @@ func (config *WalkDirConfig) forEachDir(yield func(string) bool, dirPath string)
 }
 
 // forEachFile yields a file if it is valid based on the allowed file extensions.
-func (config *WalkDirConfig) forEachFile(yield func(string) bool, filePath string) bool {
+func (config *WalkDirConfig) forEachFile(yield func(Path) bool, filePath Path) bool {
 
 	if config.Verbose {
 		log.Printf("Found file: %s\n", filePath)
@@ -135,9 +135,9 @@ func (config *WalkDirConfig) forEachFile(yield func(string) bool, filePath strin
 }
 
 // isValidDir checks if the directory is valid based on the forbidden directories.
-func (config *WalkDirConfig) isValidDir(path string) bool {
+func (config *WalkDirConfig) isValidDir(path Path) bool {
 
-	name := filepath.Base(path)
+	name := filepath.Base(string(path))
 
 	for _, dir := range config.ForbiddenDirs {
 		if dir == name {
@@ -148,13 +148,13 @@ func (config *WalkDirConfig) isValidDir(path string) bool {
 }
 
 // isValidFile checks if the file is valid based on the allowed file extensions.
-func (config *WalkDirConfig) isValidFile(path string) bool {
+func (config *WalkDirConfig) isValidFile(path Path) bool {
 
 	if len(config.AllowedExts) == 0 {
 		return true
 	}
 
-	fileExt := filepath.Ext(path)
+	fileExt := filepath.Ext(string(path))
 
 	for _, ext := range config.AllowedExts {
 		if ext == fileExt {

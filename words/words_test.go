@@ -1,10 +1,15 @@
 package words
 
-import "testing"
+import (
+	"seekourney/utils"
+	"testing"
+)
+
+type word = utils.Word
 
 func TestWordsIter(t *testing.T) {
 	s := "Hello World! test gamertag123"
-	expected := []string{"Hello", "World", "test", "gamertag123"}
+	expected := []word{"Hello", "World", "test", "gamertag123"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -29,7 +34,7 @@ func TestWordsIterEmpty(t *testing.T) {
 func TestWordsIterSingleWord(t *testing.T) {
 
 	s := "Hello"
-	expected := []string{"Hello"}
+	expected := []word{"Hello"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -45,7 +50,7 @@ func TestWordsIterSingleWord(t *testing.T) {
 
 func TestWordsIterPunctionation(t *testing.T) {
 	s := "Hello!...."
-	expected := []string{"Hello"}
+	expected := []word{"Hello"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -61,7 +66,7 @@ func TestWordsIterPunctionation(t *testing.T) {
 
 func TestWordsNewLine(t *testing.T) {
 	s := "Hello\nWorld!"
-	expected := []string{"Hello", "World"}
+	expected := []word{"Hello", "World"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -77,7 +82,7 @@ func TestWordsNewLine(t *testing.T) {
 
 func TestWordsIterMultipleSpaces(t *testing.T) {
 	s := "   Hello    World!   "
-	expected := []string{"Hello", "World"}
+	expected := []word{"Hello", "World"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -93,7 +98,7 @@ func TestWordsIterMultipleSpaces(t *testing.T) {
 
 func TestWordsIterMultipleLines(t *testing.T) {
 	s := "Hello\n\nWorld!\n"
-	expected := []string{"Hello", "World"}
+	expected := []word{"Hello", "World"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -109,7 +114,7 @@ func TestWordsIterMultipleLines(t *testing.T) {
 
 func TestWordsIterNummeric(t *testing.T) {
 	s := "str123ing 456"
-	expected := []string{"str123ing", "456"}
+	expected := []word{"str123ing", "456"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -125,7 +130,7 @@ func TestWordsIterNummeric(t *testing.T) {
 
 func TestWordsIterUTF8(t *testing.T) {
 	s := "Hello 世界"
-	expected := []string{"Hello", "世界"}
+	expected := []word{"Hello", "世界"}
 
 	i := 0
 	for w := range WordsIter(s) {
@@ -141,7 +146,7 @@ func TestWordsIterUTF8(t *testing.T) {
 
 func TestWordsIterParenthesis(t *testing.T) {
 	s := "(Hello (World))"
-	expected := []string{"Hello", "World"}
+	expected := []word{"Hello", "World"}
 
 	i := 0
 	for w := range WordsIter(s) {

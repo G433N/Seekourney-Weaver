@@ -17,28 +17,29 @@ type Config struct {
 	WalkDirConfig *utils.WalkDirConfig
 }
 
-type Folder = folder.Folder
-type Document = document.UnnormalizedDocument
+// Can't name this folder since it conflicts with the folder package
+type fold = folder.Folder
+type doc = document.UnnormalizedDocument
 
 // IndexFile creates a new document from a file
 // It takes a path to the file
 // It returns a Document
-func IndexFile(path string) (Document, error) {
+func IndexFile(path utils.Path) (doc, error) {
 
-	t := timing.Mesure(timing.DocFromFile, path)
+	t := timing.Measure(timing.DocFromFile, string(path))
 	defer t.Stop()
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(string(path))
 	if err != nil {
-		return Document{}, err
+		return doc{}, err
 	}
 
 	return document.FromBytes(path, document.SourceLocal, content), nil
 }
 
 // IndexIter iterates over a sequence of paths and indexes them
-func IndexIter(paths iter.Seq[string]) iter.Seq2[string, Document] {
+func IndexIter(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 
-	return func(yield func(string, Document) bool) {
+	return func(yield func(utils.Path, doc) bool) {
 
 		for path := range paths {
 			doc, err := IndexFile(path)
@@ -55,10 +56,10 @@ func IndexIter(paths iter.Seq[string]) iter.Seq2[string, Document] {
 }
 
 // IndexIterParallel iterates over a sequence of paths and indexes them in parallel
-func IndexIterParallel(paths iter.Seq[string]) iter.Seq2[string, Document] {
+func IndexIterParallel(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 
 	type result struct {
-		path string
+		path utils.Path
 		doc  document.UnnormalizedDocument
 		err  error
 	}
@@ -69,14 +70,14 @@ func IndexIterParallel(paths iter.Seq[string]) iter.Seq2[string, Document] {
 	// Start a goroutine for each path
 	for path := range paths {
 
-		go func(path string) {
+		go func(path utils.Path) {
 			doc, err := IndexFile(path)
 			channel <- result{path: path, doc: doc, err: err}
 		}(path)
 		amount++
 	}
 
-	return func(yield func(string, Document) bool) {
+	return func(yield func(utils.Path, doc) bool) {
 
 		// Wait for all goroutines to finish
 		for range amount {
@@ -95,7 +96,7 @@ func IndexIterParallel(paths iter.Seq[string]) iter.Seq2[string, Document] {
 }
 
 // Recursivly indexes a dictonary and all its subfolders
-func (config *Config) IndexDir(path string) iter.Seq2[string, Document] {
+func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 
 	walk := config.WalkDirConfig.WalkDir(path)
 

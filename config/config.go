@@ -7,7 +7,7 @@ import (
 
 // TODO: Ensure that the config file is valid, currently this is a silent error
 
-var Path = "config.json"
+const path = "config.json"
 
 // Config is a struct that containf the configuration for the server
 type Config struct {
@@ -46,7 +46,7 @@ func (c Config) ConfigName() string {
 // Load loads the config from a file, or creates a new one if it doesn't exist
 func Load() *Config {
 
-	return utils.LoadOrElse(Path, func() *Config {
+	return utils.LoadOrElse(path, func() *Config {
 		return New()
 	}, func() *Config {
 		return &Config{}
