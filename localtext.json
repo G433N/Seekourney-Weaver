@@ -19,7 +19,7 @@
       ".json",
       ".xml",
       ".html",
-      "htm",
+      ".htm",
       ".xhtml",
       ".csv"
     ]

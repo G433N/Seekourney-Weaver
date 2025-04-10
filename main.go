@@ -65,15 +65,30 @@ func main() {
 
 	rm := folder.ReverseMappingLocal()
 
+	queries := []string{
+		"Linear Interpolation",
+		"Linearly Interpolate",
+		"Color",
+		"Color Interpolation",
+		"Color Interpolation in 3D",
+		"macro",
+		"neovim",
+		"mozilla",
+		"curl",
+		"math",
+	}
+
 	// TODO: Automated testing
-	testSearch(config, &folder, rm, "Linear Interpolation")
-	testSearch(config, &folder, rm, "Linearly Interpolate")
-	testSearch(config, &folder, rm, "Color")
-	testSearch(config, &folder, rm, "Color Interpolation")
-	testSearch(config, &folder, rm, "Color Interpolation in 3D")
+	for _, query := range queries {
+		testSearch(config, &folder, rm, query)
+	}
 
 	files := folder.GetDocAmount()
 	words := len(rm)
 
 	log.Printf("Files: %d, Words: %d\n", files, words)
+
+	if files == 0 {
+		log.Println("No files found, run make downloadTestFiles to download test files")
+	}
 }
