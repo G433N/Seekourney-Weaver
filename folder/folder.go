@@ -26,12 +26,12 @@ func New(docs DocMap) Folder {
 }
 
 // Creates an empty folder
-func Default() Folder {
+func EmptyFolder() Folder {
 	return New(make(DocMap))
 }
 
 func FromIter(normalize normalize.Normalizer, docs iter.Seq2[utils.Path, document.UnnormalizedDocument]) Folder {
-	folder := Default()
+	folder := EmptyFolder()
 
 	sw := timing.Measure(timing.FolderFromIter)
 	defer sw.Stop()
