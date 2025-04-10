@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	serverAddress    = ":8080"
-	dockerStart      = "./docker-start"
-	dockerOutputFile = "./docker.log"
-	host             = "localhost"
-	port             = 5433
-	containerName    = "go-postgres"
-	user             = "go-postgres"
-	password         = "go-postgres"
-	dbname           = "go-postgres"
-	emptyJSON        = "{}"
+	serverAddress       = ":8080"
+	containerStart      = "./docker-start"
+	containerOutputFile = "./docker.log"
+	host                = "localhost"
+	port                = 5433
+	containerName       = "go-postgres"
+	user                = "go-postgres"
+	password            = "go-postgres"
+	dbname              = "go-postgres"
+	emptyJSON           = "{}"
 )
 
 // Used to params used by server query handler functions
@@ -32,12 +32,12 @@ type serverFuncParams struct {
 	db     *sql.DB
 }
 
-// Starts the docker container using the command defined in dockerStart.
+// Starts the database container using the command defined in containerStart.
 // Blocks until the container is closed
-func startDocker() {
-	container := exec.Command("/bin/sh", dockerStart)
+func startContainer() {
+	container := exec.Command("/bin/sh", containerStart)
 
-	outfile, err := os.Create(dockerOutputFile)
+	outfile, err := os.Create(containerOutputFile)
 	checkIOError(err)
 	container.Stdout = outfile
 	container.Stderr = outfile
@@ -46,8 +46,9 @@ func startDocker() {
 	outfile.Close()
 }
 
-// Stops the docker container, will finish the command started by startDocker()
-func stopDocker() {
+// Stops the database container, will finish the command started by
+// startContainer()
+func stopContainer() {
 	err := exec.Command("docker", "stop", "--signal", "SIGTERM",
 		containerName).Run()
 
@@ -75,7 +76,7 @@ query under the key 'p'
 /quit - Shuts down the server
 */
 func Run(args []string) {
-	go startDocker()
+	go startContainer()
 
 	db := connectToDB()
 
@@ -144,7 +145,7 @@ func handleQuit(serverParams serverFuncParams) {
 	fmt.Fprintf(serverParams.writer, "Shutting down\n")
 
 	serverParams.db.Close()
-	stopDocker()
+	stopContainer()
 
 	// This needs to be called as a goroutine because the handler needs to return
 	// before the server can shutdown
