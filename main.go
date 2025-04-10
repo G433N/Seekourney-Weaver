@@ -2,15 +2,13 @@ package main
 
 import (
 	"github.com/savioxavier/termlink"
-	"fmt"
-	pdftotext "seelourney/pdftotxt"
-	"seekourney/words"
 	"log"
 	"os"
 	"seekourney/client"
 	"seekourney/config"
 	"seekourney/folder"
 	"seekourney/indexing/localtext"
+	pdftotext "seekourney/pdftotxt"
 	"seekourney/search"
 	"seekourney/server"
 	"seekourney/timing"
@@ -56,6 +54,10 @@ func init() {
 
 // Usage for running server or client: `go run . <server | client>`
 func main() {
+
+	t := timing.Measure(timing.Main)
+	defer t.Stop()
+
 	// check commandline args to run server or client
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
@@ -66,14 +68,11 @@ func main() {
 			// right now server does not take any commandline arguments
 			server.Run(os.Args[1:])
 			return
+		case "pdf":
+			pdftotext.Run()
+			return
 		}
 	}
-
-
-	pdftotext.Run()
-
-	t := timing.Measure(timing.Main)
-	defer t.Stop()
 
 	// Load config
 	config := config.Load()
@@ -99,12 +98,6 @@ func main() {
 		"math",
 	}
 
-	return
-
-	content, err := os.ReadFile("text.txt")
-	if err != nil {
-		log.Fatal(err)
-
 	// TODO: Automated testing
 	for _, query := range queries {
 		testSearch(config, &folder, rm, query)
@@ -118,4 +111,5 @@ func main() {
 	if files == 0 {
 		log.Println("No files found, run make downloadTestFiles to download test files")
 	}
+
 }
