@@ -115,16 +115,21 @@ func recoverSQLError(writer io.Writer) {
 	}
 }
 
+// Handles an /all request, queries all rows in database and writes output to
+// response writer
 func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
 	queryAll(serverParams.db, serverParams.writer)
 }
 
+// Handles a /search request, queries database for rows containing ALL keys and
+// wrties output to response writer
 func handleSearch(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
 	queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
 }
 
+// Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
 	for _, path := range paths {
 		_, err := insertRow(serverParams.db, Page{path: path, pathType: pathTypeFile})
@@ -134,6 +139,7 @@ func handleAdd(serverParams serverFuncParams, paths []string) {
 	}
 }
 
+// Handles a /quit request, cleanly shutsdown the database container and server
 func handleQuit(serverParams serverFuncParams) {
 	fmt.Fprintf(serverParams.writer, "Shutting down\n")
 
