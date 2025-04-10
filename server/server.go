@@ -35,7 +35,7 @@ type serverFuncParams struct {
 // Starts the docker container using the command defined in dockerStart.
 // Blocks until the container is closed
 func startDocker() {
-	container := exec.Command("/bin/bash", dockerStart)
+	container := exec.Command("/bin/sh", dockerStart)
 
 	outfile, err := os.Create(dockerOutputFile)
 	checkIOError(err)
