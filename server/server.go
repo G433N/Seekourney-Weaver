@@ -120,20 +120,28 @@ func recoverSQLError(writer io.Writer) {
 // response writer
 func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
-	queryAll(serverParams.db, serverParams.writer)
+	rows := queryAll(serverParams.db)
+	writeRows(serverParams.writer, rows)
+	rows.Close()
 }
 
 // Handles a /search request, queries database for rows containing ALL keys and
 // wrties output to response writer
 func handleSearch(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
-	queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
+	rows := queryJSONKeysAll(serverParams.db, keys)
+	writeRows(serverParams.writer, rows)
+	rows.Close()
 }
 
 // Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
 	for _, path := range paths {
-		_, err := insertRow(serverParams.db, Page{path: path, pathType: pathTypeFile})
+		_, err := insertRow(serverParams.db, Page{
+			path:     path,
+			pathType: PathTypeFile,
+			dict:     emptyJSON,
+		})
 		if err != nil {
 			fmt.Fprintf(serverParams.writer, "SQL failed: %s\n", err)
 		}
