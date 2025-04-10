@@ -21,7 +21,13 @@ const (
 
 // Prints a usage string and terminates
 func argumentError() {
-	fmt.Println("usage:\tclient <search | add | all | quit> [<args>]")
+	fmt.Println("usage: client <command> [<args>]")
+	fmt.Println()
+	fmt.Println("available commands")
+	fmt.Println("  all                 request all pages in database")
+	fmt.Println("  search [key ...]    request all pages containing keys")
+	fmt.Println("  add    [path ...]   add paths to database")
+	fmt.Println("  quit                request the server to shutdown")
 	os.Exit(1)
 }
 
