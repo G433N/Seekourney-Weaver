@@ -3,15 +3,16 @@ package folder
 import (
 	"reflect" // map equality
 	"seekourney/document"
+	"seekourney/normalize"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var ( // Can't use const here
-	testDocAlpha document.Document = document.New("These are", 42)
-	testDocBeta  document.Document = document.New("some bogus", 43)
-	testDocGamma document.Document = document.New("file paths", 44)
+	testDocAlpha document.Document = document.New("These are", 42).Normalize(normalize.ToLower)
+	testDocBeta  document.Document = document.New("some bogus", 43).Normalize(normalize.ToLower)
+	testDocGamma document.Document = document.New("file paths", 44).Normalize(normalize.ToLower)
 	// testDocDelta   document.Document = document.New("not important", 45)
 	// testDocEpsilon document.Document = document.New("for testing", 46)
 )
@@ -23,7 +24,7 @@ func TestAddRemoveDoc(t *testing.T) {
 	docMap[testDocGamma.Path] = testDocGamma
 	expected := New(docMap)
 
-	result := Default()
+	result := EmptyFolder()
 	result.AddDoc(testDocBeta.Path, testDocBeta)
 	result.AddDoc(testDocGamma.Path, testDocGamma)
 	result.AddDoc(testDocAlpha.Path, testDocAlpha)
