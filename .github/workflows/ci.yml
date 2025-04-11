@@ -43,4 +43,4 @@ jobs:
     - name: Backend Linting
       uses: golangci/golangci-lint-action@v7
       with:
-        version: 'v7.0'
+        version: 'v2.0'
