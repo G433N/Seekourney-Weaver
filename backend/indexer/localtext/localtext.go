@@ -33,7 +33,7 @@ func IndexFile(path utils.Path) (doc, error) {
 		return doc{}, err
 	}
 
-	return indexing.DocFromBytes(path, indexing.SourceLocal, content), nil
+	return indexing.DocFromBytes(path, utils.SourceLocal, content), nil
 }
 
 // IndexIter iterates over a sequence of paths and indexes them

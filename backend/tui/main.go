@@ -1,11 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"seekourney/tui/format"
+	"seekourney/utils"
+	"seekourney/utils/timing"
 )
 
 // Strings for building URLs in HTTP requests
@@ -29,6 +33,11 @@ func argumentError() {
 	fmt.Println("  add    [path ...]   add paths to database")
 	fmt.Println("  quit                request the server to shutdown")
 	os.Exit(1)
+}
+
+func init() {
+	// Initialize the timing package
+	timing.Init(timing.Default())
 }
 
 // main takes an array of arguments args as input and calls different functions
@@ -74,13 +83,22 @@ func printResponse(response *http.Response) {
 }
 
 func searchForTerms(terms []string) {
+
+	sw := timing.Measure(timing.Search)
+	defer sw.Stop()
+
 	values := url.Values{}
 	for _, term := range terms {
 		values.Add(searchKey, term)
 	}
 	response, err := http.Get(link + search + values.Encode())
 	checkHTTPError(err)
-	printResponse(response)
+
+	bytes, _ := io.ReadAll(response.Body)
+	result := utils.SearchResponse{}
+	json.Unmarshal(bytes, &result)
+
+	format.PrintSearchResponse(result)
 }
 
 func addPath(paths []string) {

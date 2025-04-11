@@ -5,20 +5,10 @@ import (
 	"seekourney/utils"
 )
 
-type Source int
-
-const (
-	// Source is the source of the document
-	// SourceLocal is a local file
-	SourceLocal Source = iota
-	// SourceWeb is a web page
-	SourceWeb
-)
-
 // Document is a struct that represents a document
 type UnnormalizedDocument struct {
 	Path   utils.Path
-	Source Source
+	Source utils.Source
 
 	/// Map of normalized words to their frequency
 	Words utils.FrequencyMap
@@ -27,7 +17,7 @@ type UnnormalizedDocument struct {
 // DocNew creates a new document
 // It takes a path, a source,
 // It returns a Document
-func DocNew(path utils.Path, source Source) UnnormalizedDocument {
+func DocNew(path utils.Path, source utils.Source) UnnormalizedDocument {
 	return UnnormalizedDocument{
 		Path:   path,
 		Source: source,
@@ -38,7 +28,7 @@ func DocNew(path utils.Path, source Source) UnnormalizedDocument {
 // DocFromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func DocFromText(path utils.Path, source Source, text string) UnnormalizedDocument {
+func DocFromText(path utils.Path, source utils.Source, text string) UnnormalizedDocument {
 	doc := DocNew(path, source)
 	doc.Words = IndexString(text)
 	return doc
@@ -47,7 +37,7 @@ func DocFromText(path utils.Path, source Source, text string) UnnormalizedDocume
 // DocFromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func DocFromBytes(path utils.Path, source Source, bytes []byte) UnnormalizedDocument {
+func DocFromBytes(path utils.Path, source utils.Source, bytes []byte) UnnormalizedDocument {
 	doc := DocNew(path, source)
 	doc.Words = IndexBytes(bytes)
 	return doc
