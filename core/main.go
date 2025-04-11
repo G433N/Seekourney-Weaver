@@ -8,7 +8,7 @@ import (
 	"seekourney/core/folder"
 	"seekourney/core/search"
 	"seekourney/core/server"
-	"seekourney/indexing/localtext"
+	"seekourney/indexer/localtext"
 	"seekourney/utils"
 	"seekourney/utils/timing"
 	"strconv"
