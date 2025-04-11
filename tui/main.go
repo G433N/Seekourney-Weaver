@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"fmt"
@@ -31,14 +31,16 @@ func argumentError() {
 	os.Exit(1)
 }
 
-// Run takes an array of arguments args as input and calls different functions
+// main takes an array of arguments args as input and calls different functions
 // to send a HTTP request to the server
 // The first element in args is ignored.
 // The second element in args is the command.
 // The rest of the elements are for commands that require extra arguments.
 // If no valid command is found in the first element, the program terminates.
 // args are formatted like commandline arguments ("client", command, args)
-func Run(args []string) {
+func main() {
+
+	args := os.Args
 
 	if len(args) < 2 {
 		argumentError()
