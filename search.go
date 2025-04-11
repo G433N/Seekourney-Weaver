@@ -44,10 +44,7 @@ func testSearch(c *config.Config, folder *folder.Folder, rm utils.ReverseMap, qu
 	}
 }
 
-func AutomaticSearch() {
-	t := timing.Measure(timing.Main)
-	defer t.Stop()
-
+func setup() (*config.Config, folder.Folder, utils.ReverseMap) {
 	// Load config
 	config := config.Load()
 
@@ -58,6 +55,45 @@ func AutomaticSearch() {
 	folder := folder.FromIter(config.Normalizer, localConfig.IndexDir("test_data"))
 
 	rm := folder.ReverseMappingLocal()
+
+	return config, folder, rm
+}
+
+func finish(folder folder.Folder, rm utils.ReverseMap) {
+	files := folder.GetDocAmount()
+	words := len(rm)
+
+	log.Printf("Files: %d, Words: %d\n", files, words)
+
+	if files == 0 {
+		log.Println("No files found, run make downloadTestFiles to download test files")
+	}
+}
+
+func ManualSearch(queries []string) {
+
+	t := timing.Measure(timing.Main)
+	defer t.Stop()
+
+	config, folder, rm := setup()
+
+	if len(queries) == 0 {
+		log.Println("No query provided")
+		return
+	}
+
+	for _, query := range queries {
+		testSearch(config, &folder, rm, query)
+	}
+
+	finish(folder, rm)
+}
+
+func AutomaticSearch() {
+	t := timing.Measure(timing.Main)
+	defer t.Stop()
+
+	config, folder, rm := setup()
 
 	queries := []string{
 		"Linear Interpolation",
@@ -77,12 +113,5 @@ func AutomaticSearch() {
 		testSearch(config, &folder, rm, query)
 	}
 
-	files := folder.GetDocAmount()
-	words := len(rm)
-
-	log.Printf("Files: %d, Words: %d\n", files, words)
-
-	if files == 0 {
-		log.Println("No files found, run make downloadTestFiles to download test files")
-	}
+	finish(folder, rm)
 }

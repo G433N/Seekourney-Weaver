@@ -22,6 +22,8 @@ func main() {
 		case "server":
 			// right now server does not take any commandline arguments
 			server.Run(os.Args[1:])
+		case "search":
+			ManualSearch(os.Args[2:])
 		}
 	} else {
 		AutomaticSearch()
