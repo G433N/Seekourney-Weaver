@@ -2,19 +2,13 @@ package pdftotext
 
 import (
 	"fmt"
+	"github.com/tiagomelo/go-ocr/ocr"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"seekourney/timing"
-	"strconv"
-	"sync"
-
-	"github.com/tiagomelo/go-ocr/ocr"
 )
-
-var currentPage = 1
-var cond = sync.NewCond(&sync.Mutex{})
 
 // converts one pdf to images, replace exec.command later
 func pdftoimg(pdf string, outputDir string, imgFormat string) {
@@ -82,7 +76,7 @@ func imagesToText(image string, dir string) []string {
 	return txt
 }
 
-func imagesToTextAsync(image string, dir string, format string) []string {
+func imagesToTextAsync(image string, dir string) []string {
 
 	regex, err := regexp.Compile(image + "page-.*")
 	var txt []string
@@ -91,46 +85,17 @@ func imagesToTextAsync(image string, dir string, format string) []string {
 		return txt
 	}
 
-	idRegex, err := regexp.Compile(image + "page-(\\d+)\\" + format)
-	if err != nil {
-		fmt.Println("regex is kill", err)
-		return txt
-	}
-
-	var wg sync.WaitGroup
-
-	channel := make(chan string, 100)
+	channel := make(chan string)
 	amount := 0
 
-	walkHelperHelper := func(path string, info os.FileInfo, wg *sync.WaitGroup) error {
-		if regex.MatchString(info.Name()) {
-			id := idRegex.FindStringSubmatch(info.Name())[1]
-			idInt, erro := strconv.Atoi(id)
-			if erro != nil {
-				fmt.Println("strconv fail", erro)
-				return erro
-			}
-			toAppend := imgToText(path)
-			cond.L.Lock()
-			for currentPage != idInt {
-				cond.Wait()
-			}
-			txt = append(txt, toAppend)
-			currentPage++
-			cond.Broadcast()
-			cond.L.Unlock()
-		}
-		if err != nil {
-			fmt.Println("something went wrong when accessing file " + info.Name())
-			return err
-		}
-		wg.Done()
-		return nil
-	}
-
 	walkHelper := func(path string, info os.FileInfo, err error) error {
-		wg.Add(1)
-		go walkHelperHelper(path, info, &wg)
+		if regex.MatchString(info.Name()) {
+			go func(path string) {
+				channel <- imgToText(path)
+			}(path)
+
+			amount++
+		}
 		return nil
 	}
 
@@ -140,7 +105,11 @@ func imagesToTextAsync(image string, dir string, format string) []string {
 			fmt.Println("something went wrong with filepath walk")
 		}
 	}
-	wg.Wait()
+
+	for range amount {
+		result := <-channel
+		txt = append(txt, result)
+	}
 
 	return txt
 }
@@ -154,7 +123,7 @@ func Run() {
 	defer sw.Stop()
 	// test := imgToText("covpdf/page-1.png")
 	// imagesToText("", prefix+"covpdf/")
-	imagesToTextAsync("", prefix+"covpdf/", ".png")
+	imagesToTextAsync("", prefix+"covpdf/")
 	// fmt.Println(test)
 	// clearOutputDir(prefix + "/covpdf/")
 }
