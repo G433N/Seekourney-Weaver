@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/savioxavier/termlink"
 	"log"
 	"os"
 	"seekourney/client"
@@ -13,6 +12,8 @@ import (
 	"seekourney/timing"
 	"seekourney/utils"
 	"strconv"
+
+	"github.com/savioxavier/termlink"
 )
 
 // TODO: All this should be moved to client side
