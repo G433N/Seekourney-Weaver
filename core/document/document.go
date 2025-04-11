@@ -2,10 +2,10 @@ package document
 
 import (
 	"log"
-	"seekourney/indexing"
-	"seekourney/normalize"
-	"seekourney/timing"
-	"seekourney/utils"
+	"seekourney/core/indexing"
+	"seekourney/core/normalize"
+	"seekourney/core/timing"
+	"seekourney/core/utils"
 	"sort"
 )
 

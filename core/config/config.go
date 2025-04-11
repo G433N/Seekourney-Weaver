@@ -1,8 +1,8 @@
 package config
 
 import (
-	"seekourney/normalize"
-	"seekourney/utils"
+	"seekourney/core/normalize"
+	"seekourney/core/utils"
 )
 
 // TODO: Ensure that the config file is valid, currently this is a silent error

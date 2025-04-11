@@ -4,10 +4,10 @@ import (
 	"iter"
 	"log"
 	"os"
-	"seekourney/config"
-	"seekourney/document"
-	"seekourney/timing"
-	"seekourney/utils"
+	"seekourney/core/config"
+	"seekourney/core/document"
+	"seekourney/core/timing"
+	"seekourney/core/utils"
 )
 
 type Config struct {

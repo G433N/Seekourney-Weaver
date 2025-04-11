@@ -2,7 +2,7 @@ package words
 
 import (
 	"iter"
-	"seekourney/utils"
+	"seekourney/core/utils"
 )
 
 const UTF8Prefix = 0b10000000

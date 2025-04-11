@@ -1,9 +1,9 @@
 package indexing
 
 import (
-	"seekourney/timing"
-	"seekourney/utils"
-	"seekourney/words"
+	"seekourney/core/timing"
+	"seekourney/core/utils"
+	"seekourney/core/words"
 )
 
 // Indexer is a function that takes a string and returns a map of words to their

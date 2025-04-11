@@ -3,10 +3,10 @@ package folder
 import (
 	"iter"
 	"log"
-	"seekourney/document"
-	"seekourney/normalize"
-	"seekourney/timing"
-	"seekourney/utils"
+	"seekourney/core/document"
+	"seekourney/core/normalize"
+	"seekourney/core/timing"
+	"seekourney/core/utils"
 )
 
 // Type alias
