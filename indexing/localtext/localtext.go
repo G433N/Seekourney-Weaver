@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"seekourney/core/config"
-	"seekourney/core/document"
+	"seekourney/indexing/document"
 	"seekourney/utils"
 	"seekourney/utils/timing"
 )

@@ -5,6 +5,7 @@ import (
 	"log"
 	"seekourney/core/document"
 	"seekourney/core/normalize"
+	external "seekourney/indexing"
 	"seekourney/utils"
 	"seekourney/utils/timing"
 )
@@ -33,7 +34,7 @@ func EmptyFolder() Folder {
 
 func FromIter(
 	normalize normalize.Normalizer,
-	docs iter.Seq2[utils.Path, document.UnnormalizedDocument],
+	docs iter.Seq2[utils.Path, external.UnnormalizedDocument],
 ) Folder {
 	folder := EmptyFolder()
 
