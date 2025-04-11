@@ -1,8 +1,7 @@
-package document
+package indexing
 
 import (
 	"log"
-	"seekourney/indexing"
 	"seekourney/utils"
 )
 
@@ -25,10 +24,10 @@ type UnnormalizedDocument struct {
 	Words utils.FrequencyMap
 }
 
-// New creates a new document
+// DocNew creates a new document
 // It takes a path, a source,
 // It returns a Document
-func New(path utils.Path, source Source) UnnormalizedDocument {
+func DocNew(path utils.Path, source Source) UnnormalizedDocument {
 	return UnnormalizedDocument{
 		Path:   path,
 		Source: source,
@@ -36,21 +35,21 @@ func New(path utils.Path, source Source) UnnormalizedDocument {
 	}
 }
 
-// FromText creates a new document from a string
+// DocFromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func FromText(path utils.Path, source Source, text string) UnnormalizedDocument {
-	doc := New(path, source)
-	doc.Words = indexing.IndexString(text)
+func DocFromText(path utils.Path, source Source, text string) UnnormalizedDocument {
+	doc := DocNew(path, source)
+	doc.Words = IndexString(text)
 	return doc
 }
 
-// FromBytes creates a new document from a byte slice
+// DocFromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func FromBytes(path utils.Path, source Source, bytes []byte) UnnormalizedDocument {
-	doc := New(path, source)
-	doc.Words = indexing.IndexBytes(bytes)
+func DocFromBytes(path utils.Path, source Source, bytes []byte) UnnormalizedDocument {
+	doc := DocNew(path, source)
+	doc.Words = IndexBytes(bytes)
 	return doc
 }
 

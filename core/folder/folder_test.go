@@ -4,16 +4,16 @@ import (
 	"reflect" // map equality
 	"seekourney/core/document"
 	"seekourney/core/normalize"
-	doc "seekourney/indexing/document"
+	"seekourney/indexing"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var ( // Can't use const here
-	testDocAlpha = document.Normalize(doc.New("these are", 42), normalize.ToLower)
-	testDocBeta  = document.Normalize(doc.New("some bogus", 43), normalize.ToLower)
-	testDocGamma = document.Normalize(doc.New("file path", 44), normalize.ToLower)
+	testDocAlpha = document.Normalize(indexing.DocNew("these are", 42), normalize.ToLower)
+	testDocBeta  = document.Normalize(indexing.DocNew("some bogus", 43), normalize.ToLower)
+	testDocGamma = document.Normalize(indexing.DocNew("file path", 44), normalize.ToLower)
 	// testDocDelta   document.Document = document.New("not important", 45)
 	// testDocEpsilon document.Document = document.New("for testing", 46)
 )

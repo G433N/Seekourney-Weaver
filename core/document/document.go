@@ -3,15 +3,15 @@ package document
 import (
 	"log"
 	"seekourney/core/normalize"
-	"seekourney/indexing/document"
+	"seekourney/indexing"
 	"seekourney/utils"
 	"seekourney/utils/timing"
 	"sort"
 )
 
-type Document document.UnnormalizedDocument
+type Document indexing.UnnormalizedDocument
 
-func Normalize(doc document.UnnormalizedDocument, normalizer normalize.Normalizer) Document {
+func Normalize(doc indexing.UnnormalizedDocument, normalizer normalize.Normalizer) Document {
 
 	freqMap := make(utils.FrequencyMap)
 
