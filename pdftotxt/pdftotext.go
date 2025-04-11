@@ -1,18 +1,22 @@
 package pdftotext
 
-import "os/exec"
-import "os"
-import "fmt"
-import "github.com/tiagomelo/go-ocr/ocr"
-import "path/filepath"
-import "regexp"
-import "sync"
-import "strconv"
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"seekourney/timing"
+	"strconv"
+	"sync"
+
+	"github.com/tiagomelo/go-ocr/ocr"
+)
 
 var currentPage = 1
 var cond = sync.NewCond(&sync.Mutex{})
 
-//converts one pdf to images, replace exec.command later
+// converts one pdf to images, replace exec.command later
 func pdftoimg(pdf string, outputDir string, imgFormat string) {
 	_, err := exec.Command("pdftoppm", imgFormat, pdf, outputDir+"page").CombinedOutput()
 	if err != nil {
@@ -24,12 +28,23 @@ func clearOutputDir(outputDir string) {
 	exec.Command("rm", "-rf", outputDir+"*page-*")
 }
 
-func imgToText(image string) string {
+func ocrInit() ocr.Ocr {
 	ocr, err := ocr.New()
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
-	extractedText, err := ocr.TextFromImageFile(image)
+
+	return ocr
+
+}
+
+var ocrEngine ocr.Ocr = ocrInit()
+
+func imgToText(image string) string {
+	sw := timing.Measure(timing.OCRRun, image)
+	defer sw.Stop()
+	extractedText, err := ocrEngine.TextFromImageFile(image)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -46,6 +61,8 @@ func imagesToText(image string, dir string) []string {
 	}
 
 	walkHelper := func(path string, info os.FileInfo, err error) error {
+		sw := timing.Measure(timing.PdfWalkHelper)
+		defer sw.Stop()
 		if regex.MatchString(info.Name()) {
 			txt = append(txt, imgToText(path))
 		}
@@ -81,6 +98,9 @@ func imagesToTextAsync(image string, dir string, format string) []string {
 	}
 
 	var wg sync.WaitGroup
+
+	channel := make(chan string, 100)
+	amount := 0
 
 	walkHelperHelper := func(path string, info os.FileInfo, wg *sync.WaitGroup) error {
 		if regex.MatchString(info.Name()) {
@@ -127,10 +147,14 @@ func imagesToTextAsync(image string, dir string, format string) []string {
 
 func Run() {
 	prefix := "pdftotxt/"
+	sw := timing.Measure(timing.PfdToImage)
 	pdftoimg(prefix+"pdf/EXAMPLE.pdf", prefix+"covpdf/", "-png") //kör pdftoimg först på din pdf, lägg pdf i pdf folder och byt ut "EXAMPLE" med dess namn
+	sw.Stop()
+	sw = timing.Measure(timing.ImageToText)
+	defer sw.Stop()
 	// test := imgToText("covpdf/page-1.png")
-	test := imagesToText("", prefix+"covpdf/")
-	// test := imagesToTextAsync("", prefix+"covpdf/", ".png")
-	fmt.Println(test)
-	clearOutputDir(prefix + "/covpdf/")
+	// imagesToText("", prefix+"covpdf/")
+	imagesToTextAsync("", prefix+"covpdf/", ".png")
+	// fmt.Println(test)
+	// clearOutputDir(prefix + "/covpdf/")
 }

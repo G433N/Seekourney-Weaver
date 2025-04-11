@@ -14,6 +14,11 @@ const (
 	DocFromFile
 	ReverseMapLocal
 	FolderFromIter
+	PfdToImage
+	ImageToText
+	PdfWalkHelper
+	OCRNew
+	OCRRun
 )
 
 // Default creates the default config for the stopwatches.
@@ -46,6 +51,26 @@ func Default() WatchesConfig {
 		FolderFromIter: StopwatchInfo{
 			print: true,
 			name:  "Folder From Dir",
+		},
+		PfdToImage: StopwatchInfo{
+			print: true,
+			name:  "PDF to Image",
+		},
+		ImageToText: StopwatchInfo{
+			print: true,
+			name:  "Image to Text",
+		},
+		PdfWalkHelper: StopwatchInfo{
+			print: true,
+			name:  "PDF Walk Helper",
+		},
+		OCRNew: StopwatchInfo{
+			print: true,
+			name:  "OCR New",
+		},
+		OCRRun: StopwatchInfo{
+			print: true,
+			name:  "OCR Run",
 		},
 	}
 }
