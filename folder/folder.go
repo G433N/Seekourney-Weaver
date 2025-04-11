@@ -7,6 +7,7 @@ import (
 	"seekourney/normalize"
 	"seekourney/timing"
 	"seekourney/utils"
+	"time"
 )
 
 // Type alias
@@ -15,19 +16,26 @@ type DocMap map[utils.Path]document.Document
 // Abstract collection of documents
 // The folder struct will start as a singleton, but later expanded such that we can multiple folders to sort documents into groups
 type Folder struct {
-	docs DocMap
+	docs                DocMap
+	folderPath          utils.Path
+	usedIndexing        utils.TypeOfIndexing
+	lastIndexedUnixTime time.Time
 }
 
 // New creates a new folder
-func New(docs DocMap) Folder {
+// Assumes document indexing happened just before call
+func New(docs DocMap, folderPath utils.Path, usedIndexing utils.TypeOfIndexing) Folder {
 	return Folder{
-		docs: docs,
+		docs:                docs,
+		folderPath:          folderPath,
+		usedIndexing:        usedIndexing,
+		lastIndexedUnixTime: time.Now(),
 	}
 }
 
 // Creates an empty folder
 func EmptyFolder() Folder {
-	return New(make(DocMap))
+	return Folder{docs: make(DocMap), folderPath: "", usedIndexing: 0}
 }
 
 func FromIter(normalize normalize.Normalizer, docs iter.Seq2[utils.Path, document.UnnormalizedDocument]) Folder {
@@ -89,4 +97,10 @@ func (folder *Folder) GetDoc(path utils.Path) (document.Document, bool) {
 
 func (folder *Folder) GetDocAmount() int {
 	return len(folder.docs)
+}
+
+func (folder *Folder) ReIndexDocs() {
+	// TODO call indexing function based on folder.usedIndexing	value
+
+	folder.lastIndexedUnixTime = time.Now()
 }

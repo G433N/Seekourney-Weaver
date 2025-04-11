@@ -22,19 +22,19 @@ func TestAddRemoveDoc(t *testing.T) {
 	docMap[testDocAlpha.Path] = testDocAlpha
 	docMap[testDocBeta.Path] = testDocBeta
 	docMap[testDocGamma.Path] = testDocGamma
-	expected := New(docMap)
+	expected := New(docMap, "", 0)
 
 	result := EmptyFolder()
 	result.AddDoc(testDocBeta.Path, testDocBeta)
 	result.AddDoc(testDocGamma.Path, testDocGamma)
 	result.AddDoc(testDocAlpha.Path, testDocAlpha)
 
-	assert.True(t, reflect.DeepEqual(result, expected))
+	assert.True(t, reflect.DeepEqual(result.docs, expected.docs))
 
 	delete(expected.docs, testDocBeta.Path)
 	removedDoc, firstOK := result.RemoveDoc(testDocBeta.Path)
 
-	assert.True(t, reflect.DeepEqual(result, expected))
+	assert.True(t, reflect.DeepEqual(result.docs, expected.docs))
 	assert.True(t, firstOK)
 	assert.Equal(t, removedDoc, testDocBeta)
 
@@ -43,4 +43,19 @@ func TestAddRemoveDoc(t *testing.T) {
 
 	_, thirdOK := result.RemoveDoc(testDocBeta.Path)
 	assert.False(t, thirdOK)
+}
+
+func TestReIndexDocs(t *testing.T) {
+	docMap := make(DocMap)
+	docMap[testDocAlpha.Path] = testDocAlpha
+	docMap[testDocBeta.Path] = testDocBeta
+	docMap[testDocGamma.Path] = testDocGamma
+	folder := New(docMap, "", 0)
+
+	oldTime := folder.lastIndexedUnixTime
+	folder.ReIndexDocs()
+	newTime := folder.lastIndexedUnixTime
+	assert.True(t, oldTime.Before(newTime))
+
+	// TODO check indexing actually happened
 }
