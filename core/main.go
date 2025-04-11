@@ -9,8 +9,8 @@ import (
 	"seekourney/core/indexing/localtext"
 	"seekourney/core/search"
 	"seekourney/core/server"
-	"seekourney/core/timing"
-	"seekourney/core/utils"
+	"seekourney/utils"
+	"seekourney/utils/timing"
 	"strconv"
 
 	"github.com/savioxavier/termlink"

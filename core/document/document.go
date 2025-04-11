@@ -4,8 +4,8 @@ import (
 	"log"
 	"seekourney/core/indexing"
 	"seekourney/core/normalize"
-	"seekourney/core/timing"
-	"seekourney/core/utils"
+	"seekourney/utils"
+	"seekourney/utils/timing"
 	"sort"
 )
 

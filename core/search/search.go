@@ -5,9 +5,9 @@ import (
 	"seekourney/core/config"
 	"seekourney/core/folder"
 	"seekourney/core/normalize"
-	"seekourney/core/timing"
-	"seekourney/core/utils"
-	"seekourney/core/words"
+	"seekourney/utils"
+	"seekourney/utils/timing"
+	"seekourney/utils/words"
 	"sort"
 )
 

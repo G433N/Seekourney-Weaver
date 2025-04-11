@@ -2,7 +2,7 @@ package config
 
 import (
 	"seekourney/core/normalize"
-	"seekourney/core/utils"
+	"seekourney/utils"
 )
 
 // TODO: Ensure that the config file is valid, currently this is a silent error

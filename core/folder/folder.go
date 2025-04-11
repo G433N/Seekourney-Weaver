@@ -5,8 +5,8 @@ import (
 	"log"
 	"seekourney/core/document"
 	"seekourney/core/normalize"
-	"seekourney/core/timing"
-	"seekourney/core/utils"
+	"seekourney/utils"
+	"seekourney/utils/timing"
 )
 
 // Type alias

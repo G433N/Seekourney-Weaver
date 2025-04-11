@@ -6,8 +6,8 @@ import (
 	"os"
 	"seekourney/core/config"
 	"seekourney/core/document"
-	"seekourney/core/timing"
-	"seekourney/core/utils"
+	"seekourney/utils"
+	"seekourney/utils/timing"
 )
 
 type Config struct {

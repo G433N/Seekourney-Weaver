@@ -1,7 +1,7 @@
 package normalize
 
 import (
-	"seekourney/core/utils"
+	"seekourney/utils"
 	"strings"
 )
 
