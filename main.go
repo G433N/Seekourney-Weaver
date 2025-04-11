@@ -1,15 +1,55 @@
 package main
 
 import (
-	"fmt"
+	"github.com/savioxavier/termlink"
 	"log"
 	"os"
 	"seekourney/client"
+	"seekourney/config"
+	"seekourney/folder"
+	"seekourney/indexing/localtext"
+	"seekourney/search"
 	"seekourney/server"
-	"seekourney/words"
-	"sort"
-	"strings"
+	"seekourney/timing"
+	"seekourney/utils"
+	"strconv"
 )
+
+// TODO: All this should be moved to client side
+func bold(text string) string {
+	return "\033[1m" + text + "\033[0m"
+}
+
+func italic(text string) string {
+	return "\033[3m" + text + "\033[0m"
+}
+
+func lightBlue(text string) string {
+	return "\033[94m" + text + "\033[0m"
+}
+
+func green(text string) string {
+	return "\033[92m" + text + "\033[0m"
+}
+
+func testSearch(c *config.Config, folder *folder.Folder, rm utils.ReverseMap, query string) {
+
+	// Perform search using the folder and reverse mapping
+	pairs := search.Search(c, folder, rm, query)
+
+	log.Printf("--- Search results for query '%s' ---\n", bold(italic(query)))
+	for n, result := range pairs {
+		path := string(result.Path)
+		score := int(result.Value)
+		link := termlink.Link(path, path)
+		log.Printf("%d. Path: %s Score: %s\n", n, lightBlue(bold(link)), green(strconv.Itoa(score)))
+	}
+}
+
+func init() {
+	// Initialize the timing package
+	timing.Init(timing.Default())
+}
 
 // Usage for running server or client: `go run . <server | client>`
 func main() {
@@ -26,36 +66,44 @@ func main() {
 		}
 	}
 
-	content, err := os.ReadFile("text.txt")
-	if err != nil {
-		log.Fatal(err)
+	t := timing.Measure(timing.Main)
+	defer t.Stop()
+
+	// Load config
+	config := config.Load()
+
+	// Load local file config
+	localConfig := localtext.Load(config)
+
+	// TODO: Later when documents comes over the network, we can still use the same code. since it is an iterator
+	folder := folder.FromIter(config.Normalizer, localConfig.IndexDir("test_data"))
+
+	rm := folder.ReverseMappingLocal()
+
+	queries := []string{
+		"Linear Interpolation",
+		"Linearly Interpolate",
+		"Color",
+		"Color Interpolation",
+		"Color Interpolation in 3D",
+		"macro",
+		"neovim",
+		"mozilla",
+		"curl",
+		"math",
 	}
 
-	s := string(content)
-
-	wordList := make(map[string]int)
-
-	for w := range words.WordsIter(s) {
-
-		l := strings.ToLower(w)
-
-		wordList[l]++
+	// TODO: Automated testing
+	for _, query := range queries {
+		testSearch(config, &folder, rm, query)
 	}
 
-	type Pair struct {
-		Key   string
-		Value int
-	}
+	files := folder.GetDocAmount()
+	words := len(rm)
 
-	pairs := make([]Pair, 0)
+	log.Printf("Files: %d, Words: %d\n", files, words)
 
-	for k, v := range wordList {
-		pairs = append(pairs, Pair{k, v})
-	}
-
-	sort.Slice(pairs, func(i, j int) bool { return pairs[i].Value > pairs[j].Value })
-
-	for _, p := range pairs {
-		fmt.Printf("%s: %d\n", p.Key, p.Value)
+	if files == 0 {
+		log.Println("No files found, run make downloadTestFiles to download test files")
 	}
 }

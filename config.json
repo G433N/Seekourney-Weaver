@@ -1,0 +1,5 @@
+{
+  "ParrallelIndexing": true,
+  "ParrallelSearching": true,
+  "NormalizeWordFunc": 0
+}
