@@ -23,6 +23,9 @@ var page2 = Page{
 	dict:     `{"key2": 4, "key3": 6}`,
 }
 
+// Adds a deferred func before running the test function to ensure that the
+// database container is stopped if the test panics. Also resets the database
+// to if the tests executed without panicking
 func safelyTest(testFunc func(test *testing.T)) func(*testing.T) {
 	return func(test *testing.T) {
 		// Stop container if test panicked, otherwise reset database
@@ -51,8 +54,7 @@ func TestDB(test *testing.T) {
 	test.Run("TestInsertRow", safelyTest(testInsertRow))
 }
 
-// Resets the state of the database by dropping the table and running initdb
-// again. Should be run after any tests that write to the table
+// Resets the state of the database by dropping the table and rerunning initdb
 func resetSQL(db *sql.DB) {
 	if db == nil {
 		return
