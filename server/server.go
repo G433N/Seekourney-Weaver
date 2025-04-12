@@ -21,7 +21,7 @@ const (
 	containerName       = "go-postgres"
 	user                = "go-postgres"
 	password            = "go-postgres"
-	dbname              = "go-postgres"
+	dbname              = user
 	emptyJSON           = "{}"
 )
 

@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"os"
+	"os/exec"
 	"testing"
 )
 
@@ -22,6 +23,52 @@ var page2 = Page{
 	dict:     `{"key2": 4, "key3": 6}`,
 }
 
+func safelyTest(testFunc func(test *testing.T)) func(*testing.T) {
+	return func(test *testing.T) {
+		// Stop container if test panicked, otherwise reset database
+		defer func() {
+			if err := recover(); err != nil {
+				stopContainer()
+				panic(err)
+			} else {
+				resetSQL(testDB)
+			}
+		}()
+		testFunc(test)
+	}
+}
+
+func TestDB(test *testing.T) {
+	os.Chdir("..")
+
+	go startContainer()
+	defer stopContainer()
+
+	testDB = connectToDB()
+
+	test.Run("TestQueryAll", safelyTest(testQueryAll))
+	test.Run("TestQueryJSONKeysAll", safelyTest(testQueryJSONKeysAll))
+	test.Run("TestInsertRow", safelyTest(testInsertRow))
+}
+
+// Resets the state of the database by dropping the table and running initdb
+// again. Should be run after any tests that write to the table
+func resetSQL(db *sql.DB) {
+	if db == nil {
+		return
+	}
+	_, err := db.Exec(`DROP TABLE page`)
+	checkSQLError(err)
+
+	const initDB = "/docker-entrypoint-initdb.d/initdb.sql"
+
+	err = exec.Command(
+		"docker", "exec", containerName, "psql", "-U", dbname, "-f", initDB).Run()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func pageEquals(a Page, b Page) bool {
 	return a.id == b.id &&
 		a.path == b.path &&
@@ -36,7 +83,7 @@ func pageEqualsIgnoreId(a Page, b Page) bool {
 }
 
 // Reads the next row in rows and checks if it matches expected
-func testRow(test *testing.T, rows *sql.Rows, expected Page) {
+func checkRow(test *testing.T, rows *sql.Rows, expected Page) {
 	var page Page
 	if !rows.Next() {
 		test.Error("Expected a row")
@@ -50,29 +97,29 @@ func testRow(test *testing.T, rows *sql.Rows, expected Page) {
 	}
 }
 
-func TestQueryAll(test *testing.T) {
+func testQueryAll(test *testing.T) {
 	rows := queryAll(testDB)
-	testRow(test, rows, page1)
-	testRow(test, rows, page2)
+	checkRow(test, rows, page1)
+	checkRow(test, rows, page2)
 	rows.Close()
 }
 
-func TestQueryJSONKeysAll(test *testing.T) {
+func testQueryJSONKeysAll(test *testing.T) {
 	rows := queryJSONKeysAll(testDB, []string{"key1"})
-	testRow(test, rows, page1)
+	checkRow(test, rows, page1)
 	rows.Close()
 
 	rows = queryJSONKeysAll(testDB, []string{"key3"})
-	testRow(test, rows, page2)
+	checkRow(test, rows, page2)
 	rows.Close()
 
 	rows = queryJSONKeysAll(testDB, []string{"key2"})
-	testRow(test, rows, page1)
-	testRow(test, rows, page2)
+	checkRow(test, rows, page1)
+	checkRow(test, rows, page2)
 	rows.Close()
 
 	rows = queryJSONKeysAll(testDB, []string{"key1", "key2"})
-	testRow(test, rows, page1)
+	checkRow(test, rows, page1)
 	rows.Close()
 
 	rows = queryJSONKeysAll(testDB, []string{"key1", "key2", "key3"})
@@ -81,7 +128,7 @@ func TestQueryJSONKeysAll(test *testing.T) {
 	}
 }
 
-func TestInsertRows(test *testing.T) {
+func testInsertRow(test *testing.T) {
 	// Test normal
 	newPage := Page{
 		path:     "/path1",
@@ -137,17 +184,4 @@ func TestInsertRows(test *testing.T) {
 	if !ok || !pageEqualsIgnoreId(inserted, missingDictWithJSON) {
 		test.Error("Insertion error")
 	}
-}
-
-func TestMain(m *testing.M) {
-	os.Chdir("..")
-
-	go startContainer()
-
-	// TODO, this doesn't seem to stop the container if one of the tests panic
-	defer stopContainer()
-
-	testDB = connectToDB()
-
-	m.Run()
 }
