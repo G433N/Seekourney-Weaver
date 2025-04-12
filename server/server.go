@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 )
 
 const (
@@ -30,6 +31,7 @@ type serverFuncParams struct {
 	server *http.Server
 	writer io.Writer
 	db     *sql.DB
+	stop   context.CancelFunc
 }
 
 // Starts the database container using the command defined in containerStart.
@@ -80,12 +82,20 @@ func Run(args []string) {
 
 	db := connectToDB()
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+
 	server := &http.Server{
-		Addr: serverAddress,
+		Addr:        serverAddress,
+		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 
-	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
-		serverParams := serverFuncParams{server: server, writer: writer, db: db}
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		serverParams := serverFuncParams{
+			server: server,
+			writer: writer,
+			db:     db,
+			stop:   stop,
+		}
 
 		switch html.EscapeString(request.URL.Path) {
 		case "/all":
@@ -97,10 +107,21 @@ func Run(args []string) {
 		case "/quit":
 			handleQuit(serverParams)
 		}
-	}
-	http.HandleFunc("/", queryHandler)
+	})
 
-	log.Fatal(server.ListenAndServe())
+	go server.ListenAndServe()
+	fmt.Println("Server online")
+
+	// Wait until server is finished
+	<-ctx.Done()
+
+	fmt.Println("Shutting down")
+	err := server.Shutdown(context.Background())
+	if err != nil {
+		fmt.Println("Error while shutting down server: ", err)
+	}
+	db.Close()
+	stopContainer()
 }
 
 func checkIOError(err error) {
@@ -133,21 +154,20 @@ func handleSearch(serverParams serverFuncParams, keys []string) {
 // Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
 	for _, path := range paths {
-		_, err := insertRow(serverParams.db, Page{path: path, pathType: pathTypeFile})
+		_, err := insertRow(
+			serverParams.db,
+			Page{path: path, pathType: pathTypeFile},
+		)
 		if err != nil {
 			fmt.Fprintf(serverParams.writer, "SQL failed: %s\n", err)
 		}
 	}
 }
 
-// Handles a /quit request, cleanly shutsdown the database container and server
+// Handles a /quit request initiates the shutdown process by cancelling the
+// server context
 func handleQuit(serverParams serverFuncParams) {
 	fmt.Fprintf(serverParams.writer, "Shutting down\n")
 
-	serverParams.db.Close()
-	stopContainer()
-
-	// This needs to be called as a goroutine because the handler needs to return
-	// before the server can shutdown
-	go serverParams.server.Shutdown(context.Background())
+	serverParams.stop()
 }
