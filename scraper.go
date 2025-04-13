@@ -73,7 +73,7 @@ func debugPrint(a ...any) {
 }
 
 func main() {
-	collector := CollectorSetup()
+	collector := CollectorSetup(true)
 
 	RequestVisitToSite(collector, "https://en.wikipedia.org/wiki/Cucumber")
 	go CollectorRepopulate(collector)
@@ -101,6 +101,7 @@ The function to run while owning the mutex
 */
 func counterSync(collector *CollectorStruct, f func(counter *counter)) {
 	counter := &collector.counter
+
 	counter.counterLock.Lock()
 	f(counter)
 	counter.counterLock.Unlock()
@@ -279,14 +280,16 @@ CollectorSetup
 sets up a new collector.
 
 # Parameters:
+  - async bool
 
+boolean for turning on and of asyncronous work
 
 # Returns:
   - *CollectorStruct
 
 A new collector ready to be used.
 */
-func CollectorSetup() *CollectorStruct {
+func CollectorSetup(async bool) *CollectorStruct {
 	collector := &CollectorStruct{}
 	collector.context = context{}
 	context := &collector.context
@@ -304,7 +307,7 @@ func CollectorSetup() *CollectorStruct {
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
 	collector.collectorColly = c
 
-	c.Async = true
+	c.Async = async
 
 	// called before an HTTP request is triggered
 	c.OnRequest(func(r *colly.Request) {
@@ -352,10 +355,18 @@ func CollectorSetup() *CollectorStruct {
 			log.Fatal("couldn't find ID")
 		}
 		fmt.Println("Scraped: ", r.Request.URL)
-		counterSync(collector, func(counter *counter) {
+
+		f := func(counter *counter) {
 			counter.workingCounter--
 			counter.finishedCounter++
-		})
+		}
+
+		// needed bypass for synced scraping to work
+		if async {
+			counterSync(collector, f)
+		} else {
+			f(&collector.counter)
+		}
 		context.finishedIndexes <- ID
 
 	})
