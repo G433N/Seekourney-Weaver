@@ -1,0 +1,17 @@
+body {
+	background-color: rgb(255, 255, 255);
+}
+
+header {
+	margin: none;
+	background-color: #6085a0;
+	text-align: center;
+	font-family: Verdana, Geneva, Tahoma, sans-serif;
+	padding: 0.5rem;
+}
+
+button {
+	background-color: #aec6df;
+	border-color: #aec6df;
+}
+
