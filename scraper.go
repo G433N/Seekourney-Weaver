@@ -15,16 +15,16 @@ const (
 	// Total amount of worspaces in the collector
 	_QUEUEMAXLEN_ = 5
 	// Buffer size of the link and priority link channels
-	_LINKQUEUELEN_ = 200
+	_LINKQUEUELEN_ = 20
 	// Key used to access workspace ID in a map
 	_IDKEY_ = `WorkspaceID`
 )
 
 var (
 	//Matches when the new link is in the same main domain as the current webbsite
-	shortendLinkRegex = regexp.MustCompile(`^/wiki/`)
+	shortendLinkRegex = regexp.MustCompile(`^/[a-zA-Z]`)
 	//Parts of wikipedia not worth indexing
-	nonAllowedRegex = regexp.MustCompile(`/wiki/(File|Wikipedia|Special|User):`)
+	WikipediaBadRegex = regexp.MustCompile(`/wiki/(File|Wikipedia|Special|User)|/static/|/w/`)
 )
 
 type (
@@ -75,14 +75,12 @@ func debugPrint(a ...any) {
 func main() {
 	collector := CollectorSetup(true)
 
-	RequestVisitToSite(collector, "https://en.wikipedia.org/wiki/Cucumber")
-	go CollectorRepopulate(collector)
+	collector.RequestVisitToSite("https://en.wikipedia.org/wiki/Cucumber")
+	collector.CollectorRepopulate()
 
-	ReadAndPrint(collector)
-
-	ReadAndPrint(collector)
-
-	ReadAndPrint(collector)
+	collector.ReadAndPrint()
+	collector.ReadAndPrint()
+	collector.ReadAndPrint()
 
 }
 
@@ -114,13 +112,8 @@ requests the scraper to scrape enough websites to fill the buffer.
 
 It will block until it has enough links in the queue for all its requests.
 Is safe to run in a seperate go rutine.
-
-# Parameters:
-  - collector *CollectorStruct
-
-The struct containin the scraper and all used context.
 */
-func CollectorRepopulate(collector *CollectorStruct) {
+func (collector *CollectorStruct) CollectorRepopulate() {
 	counterSync(collector, func(counter *counter) {
 
 		amountFilled := counter.finishedCounter + counter.workingCounter
@@ -143,9 +136,6 @@ It will block until it has enough links in the queue for all its requests.
 Is safe to run in a seperate go rutine.
 
 # Parameters:
-  - collector *CollectorStruct
-
-The struct containing the scraper and all used context.
 
   - n int
 
@@ -156,7 +146,7 @@ The amount of sites to scrape.
 
 The amount of requests that couldn't be fullfilled.
 */
-func CollectorRepopulateFixedNumber(collector *CollectorStruct, n int) int {
+func (collector *CollectorStruct) CollectorRepopulateFixedNumber(n int) int {
 	amountDidntFit := 0
 	counterSync(collector, func(counter *counter) {
 
@@ -177,14 +167,10 @@ func CollectorRepopulateFixedNumber(collector *CollectorStruct, n int) int {
 /*
 ReadAndPrint
 reads the first avaliable fully scraped site and prints the content.
-
-# Parameters:
-  - collector *CollectorStruct
-
-The struct containing the scraper and all used context.
 */
-func ReadAndPrint(collector *CollectorStruct) {
-	stringSlice := ReadFinished(collector)
+func (collector *CollectorStruct) ReadAndPrint() {
+	stringSlice := collector.ReadFinished()
+	fmt.Print("\n\n\n")
 	for _, text := range stringSlice {
 		fmt.Println(text)
 	}
@@ -220,16 +206,13 @@ retrieves a fully scraped page and returns it.
 If there is no page to retrieve it will block until one gets avaliable.
 
 # Parameters:
-  - collector *CollectorStruct
-
-The struct containing the scraper and all used context.
 
 # Returns:
   - []string
 
 The slice containing the text from the scraped page.
 */
-func ReadFinished(collector *CollectorStruct) []string {
+func (collector *CollectorStruct) ReadFinished() []string {
 	context := &collector.context
 	// removes 1 from finished
 	counterSync(collector, func(counter *counter) {
@@ -304,7 +287,7 @@ func CollectorSetup(async bool) *CollectorStruct {
 	context.priorityLinkQueue = make(chan URLString, _LINKQUEUELEN_)
 	context.workspaceBuffer = [_QUEUEMAXLEN_][]string{}
 
-	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
+	c := colly.NewCollector()
 	collector.collectorColly = c
 
 	c.Async = async
@@ -343,8 +326,16 @@ func CollectorSetup(async bool) *CollectorStruct {
 	})
 
 	// Find and visit all links
-	c.OnHTML(`a[href*="/wiki/"]`, func(e *colly.HTMLElement) {
-		addScrapedLinkToQueue(e, context)
+	c.OnHTML(`[href]`, func(e *colly.HTMLElement) {
+		link, valid := linkHandler(e)
+		if !valid {
+			return
+		}
+		select {
+		case context.linkQueue <- URLString(link):
+		default:
+			debugPrint("linkQueue full skipped link: ", link)
+		}
 	})
 
 	// triggered once scraping is done
@@ -374,34 +365,38 @@ func CollectorSetup(async bool) *CollectorStruct {
 }
 
 /*
-addScrapedLinkToQueue
+linkHandler
 is a helperfunction used for adding a scraped link to the queue.
 
 # Parameters:
-  - e *colly.HTMLElement
+- e *colly.HTMLElement
 
 the matched HTMLElemnt.
 
-  - context *context
+- context *context
 
 Struct containing the context used by the collector.
 */
-func addScrapedLinkToQueue(e *colly.HTMLElement, context *context) {
+func linkHandler(e *colly.HTMLElement) (string, bool) {
 
-	// TODO: filter away already visited before adding to the queue
+	// TODO: filter away already visited
 
 	link := e.Attr("href")
-	if !shortendLinkRegex.MatchString(link) || nonAllowedRegex.MatchString(link) {
-		debugPrint("non allowed link: ", link)
-		return
-	}
-	link = "https://en.wikipedia.org" + link
-	select {
-	case context.linkQueue <- URLString(link):
-	default:
-		debugPrint("linkQueue full skipped link: ", link)
-	}
+	host := e.Request.URL.Host
 
+	switch host {
+	case `en.wikipedia.org`:
+		if WikipediaBadRegex.MatchString(link) {
+			debugPrint("Not worth indexing: ", link)
+			return "", false
+		}
+	default:
+	}
+	if !shortendLinkRegex.MatchString(link) {
+		debugPrint("Not allowed for crawler to leave host\nhost:", host, "\nlink:", link)
+		return "", false
+	}
+	return "https://" + host + link, true
 }
 
 /*
@@ -409,15 +404,12 @@ RequestVisitToSite
 adds the requested site to the queue of links to visit.
 
 # Parameters:
-  - collector *CollectorStruct
-
-The struct containing the scraper and all used context.
 
   - link string
 
 The link to the requested site
 */
-func RequestVisitToSite(collector *CollectorStruct, link string) {
+func (collector *CollectorStruct) RequestVisitToSite(link string) {
 	if len(collector.context.linkQueue) == 0 {
 		collector.context.linkQueue <- URLString(link)
 		return
