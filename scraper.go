@@ -57,7 +57,7 @@ type (
 	}
 
 	CollectorStruct struct {
-		// struct holding all cotext to make the inteface with the collector as simple as possible
+		// struct holding all context to make the inteface with the collector as simple as possible
 		context context
 		// used to keep track of number of workspaces in use
 		counter counter
@@ -354,7 +354,7 @@ func CollectorSetup(async bool) *CollectorStruct {
 		if !ok {
 			log.Fatal("couldn't find ID")
 		}
-		fmt.Println("Scraped: ", r.Request.URL)
+		debugPrint("Scraped: ", r.Request.URL)
 
 		f := func(counter *counter) {
 			counter.workingCounter--
@@ -374,24 +374,17 @@ func CollectorSetup(async bool) *CollectorStruct {
 }
 
 /*
-Function name
-desc.
-
-newline continued desc.
+addScrapedLinkToQueue
+is a helperfunction used for adding a scraped link to the queue.
 
 # Parameters:
-  - param1 type
+  - e *colly.HTMLElement
 
-desc.
+the matched HTMLElemnt.
 
-  - param2 type
+  - context *context
 
-...
-
-# Returns:
-  - type
-
-desc.
+Struct containing the context used by the collector.
 */
 func addScrapedLinkToQueue(e *colly.HTMLElement, context *context) {
 
@@ -412,24 +405,17 @@ func addScrapedLinkToQueue(e *colly.HTMLElement, context *context) {
 }
 
 /*
-Function name
-desc.
-
-newline continued desc.
+RequestVisitToSite
+adds the requested site to the queue of links to visit.
 
 # Parameters:
-  - param1 type
+  - collector *CollectorStruct
 
-desc.
+The struct containing the scraper and all used context.
 
-  - param2 type
+  - link string
 
-...
-
-# Returns:
-  - type
-
-desc.
+The link to the requested site
 */
 func RequestVisitToSite(collector *CollectorStruct, link string) {
 	if len(collector.context.linkQueue) == 0 {
@@ -441,24 +427,19 @@ func RequestVisitToSite(collector *CollectorStruct, link string) {
 }
 
 /*
-Function name
-desc.
+visitNextLink
+dispatches a new worker to scrape the next link in the queue.
 
-should only be called while having the counter lock
+Should only be called in the scope of [counterSync].
 
 # Parameters:
-  - param1 type
+  - collector *CollectorStruct
 
-desc.
+The struct containing the scraper and all used context.
 
-  - param2 type
+  - counter *counter
 
-...
-
-# Returns:
-  - type
-
-desc.
+Struct used to keep track of number of workspaces in use
 */
 func visitNextLink(collector *CollectorStruct, counter *counter) {
 	for {
