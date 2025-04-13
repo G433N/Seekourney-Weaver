@@ -1,26 +1,5 @@
 package main
 
-/*
-Function name
-desc.
-
-newline continued desc.
-
-# Parameters:
-  - param1 type
-
-desc.
-
-  - param2 type
-
-...
-
-# Returns:
-  - type
-
-desc.
-*/
-
 import (
 	"fmt"
 	"log"
@@ -30,53 +9,62 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-const _DEBUG_ = false
+const (
+	// Used for enabling debug prints
+	_DEBUG_ = false
+	// Total amount of worspaces in the collector
+	_QUEUEMAXLEN_ = 5
+	// Buffer size of the link and priority link channels
+	_LINKQUEUELEN_ = 200
+	// Key used to access workspace ID in a map
+	_IDKEY_ = `WorkspaceID`
+)
 
-const _QUEUEMAXLEN_ = 5
-const _LINKQUEUELEN_ = 200
-const _IDKEY_ = `QueueIndex`
+var (
+	//Matches when the new link is in the same main domain as the current webbsite
+	shortendLinkRegex = regexp.MustCompile(`^/wiki/`)
+	//Parts of wikipedia not worth indexing
+	nonAllowedRegex = regexp.MustCompile(`/wiki/(File|Wikipedia|Special|User):`)
+)
 
-var shortendLinkRegex *regexp.Regexp
-var nonAllowedRegex *regexp.Regexp
+type (
+	WorkspaceID int
+	URLString   string
 
-type WorkspaceID int
-type URLString string
+	context struct {
+		// buffered queue channel of links scraped from previously visited sites
+		linkQueue chan URLString
+		// buffered queue channel of links inputed to the scraper
+		priorityLinkQueue chan URLString
+		// worspace for the collectors async requests
+		// each request gets their own index and append the text they recieve to the slice
+		workspaceBuffer [_QUEUEMAXLEN_][]string
+		// channel of indexes in the 'workspace' array ready to be assigned to a request
+		// (buffer of size 'QUEUEMAXLEN')
+		emptyIndexes chan WorkspaceID
+		//  channel of indexes in the 'workspace' array ready to be read
+		// (buffer of size 'QUEUEMAXLEN')
+		finishedIndexes chan WorkspaceID
+	}
 
-type context struct {
+	counter struct {
+		// mutex used to sync changes to the two counters in context
+		counterLock sync.Mutex
+		// currently working on amount
+		workingCounter int
+		// currently finished amount should be in sync with len(finishedIndexes)
+		finishedCounter int
+	}
 
-	// buffered queue channel of links scraped from previously visited sites
-	linkQueue chan URLString
-	// buffered queue channel of links inputed to the scraper
-	priorityLinkQueue chan URLString
-	// worspace for the collectors async requests
-	// each request gets their own index and append the text they recieve to the slice
-	workspaceBuffer [_QUEUEMAXLEN_][]string
-	// channel of indexes in the 'workspace' array ready to be assigned to a request
-	// (buffer of size 'QUEUEMAXLEN')
-	emptyIndexes chan WorkspaceID
-	//  channel of indexes in the 'workspace' array ready to be read
-	// (buffer of size 'QUEUEMAXLEN')
-	finishedIndexes chan WorkspaceID
-}
-
-type counter struct {
-	// mutex used to sync changes to the two counters in context
-	counterLock sync.Mutex
-	// currently working on amount
-	workingCounter int
-	// currently finished amount should be in sync with len(finishedIndexes)
-	finishedCounter int
-}
-
-type CollectorStruct struct {
-	// struct holding all cotext to make the inteface with the collector as simple as possible
-	context context
-	//
-	counter counter
-
-	// the colly collector used for webb scraping and formatting
-	collectorColly *colly.Collector
-}
+	CollectorStruct struct {
+		// struct holding all cotext to make the inteface with the collector as simple as possible
+		context context
+		// used to keep track of number of workspaces in use
+		counter counter
+		// the colly collector used for webb scraping and formatting
+		collectorColly *colly.Collector
+	}
+)
 
 func debugPrint(a ...any) {
 	if _DEBUG_ {
@@ -98,6 +86,19 @@ func main() {
 
 }
 
+/*
+counterSync
+syncs changes to the counter using a mutex.
+
+# Parameters:
+  - collector *CollectorStruct
+
+The struct containing the scraper and all used context this includes the counter.
+
+  - f func(counter *counter)
+
+The function to run while owning the mutex
+*/
 func counterSync(collector *CollectorStruct, f func(counter *counter)) {
 	counter := &collector.counter
 	counter.counterLock.Lock()
@@ -108,7 +109,7 @@ func counterSync(collector *CollectorStruct, f func(counter *counter)) {
 
 /*
 CollectorRepopulate
-is used to request the scraper to scrape enough websites to fill the buffer.
+requests the scraper to scrape enough websites to fill the buffer.
 
 It will block until it has enough links in the queue for all its requests.
 Is safe to run in a seperate go rutine.
@@ -131,7 +132,7 @@ func CollectorRepopulate(collector *CollectorStruct) {
 
 /*
 CollectorRepopulateFixedNumber
-is used to request the scraper to scrape a specified amount of websites.
+requests the scraper to scrape a specified amount of websites.
 
 The scraper is using a fixed sized buffer
 which means that it isnt always possible to fit the amount of requests made.
@@ -193,22 +194,22 @@ claimNewIndex
 claims and initialises a space in the worspace buffer.
 
 # Parameters:
-  - collector *CollectorStruct
+  - context *context
 
-The struct containing the scraper and all used context.
+Struct containing the context used by the collector.
 
-  - url string
+  - url URLString
 
 The url that the worker is speaking with and is used to initialise the slice.
 
 # Returns:
-  - int
+  - WorkspaceID
 
-The index of the claimed space in the buffer
+The ID of the claimed workspace.
 */
-func claimNewIndex(context *context, url string) WorkspaceID {
+func claimNewIndex(context *context, url URLString) WorkspaceID {
 	ID := <-context.emptyIndexes
-	context.workspaceBuffer[ID] = []string{url}
+	context.workspaceBuffer[ID] = []string{string(url)}
 	return ID
 }
 
@@ -256,13 +257,13 @@ writeToWorkspace
 appends text to the specified workspace.
 
 # Parameters:
-  - collector *CollectorStruct
+  - context *context
 
-The struct containing the scraper and all used context.
+Struct containing the context used by the collector.
 
-  - index int
+  - ID WorkspaceID
 
-The index or ID of the workspace to use.
+ID of the workspace to write to.
 
   - text string
 
@@ -274,24 +275,16 @@ func writeToWorkspace(context *context, ID WorkspaceID, text string) {
 }
 
 /*
-Function name
-desc.
-
-newline continued desc.
+CollectorSetup
+sets up a new collector.
 
 # Parameters:
-  - param1 type
 
-desc.
-
-  - param2 type
-
-...
 
 # Returns:
-  - type
+  - *CollectorStruct
 
-desc.
+A new collector ready to be used.
 */
 func CollectorSetup() *CollectorStruct {
 	collector := &CollectorStruct{}
@@ -307,9 +300,6 @@ func CollectorSetup() *CollectorStruct {
 	context.linkQueue = make(chan URLString, _LINKQUEUELEN_)
 	context.priorityLinkQueue = make(chan URLString, _LINKQUEUELEN_)
 	context.workspaceBuffer = [_QUEUEMAXLEN_][]string{}
-
-	shortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
-	nonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
 
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
 	collector.collectorColly = c
@@ -333,7 +323,7 @@ func CollectorSetup() *CollectorStruct {
 		if shortendLinkRegex.MatchString(url) {
 			url = "https://en.wikipedia.org" + url
 		}
-		ID := claimNewIndex(context, url)
+		ID := claimNewIndex(context, URLString(url))
 		r.Ctx.Put(_IDKEY_, ID)
 	})
 
@@ -361,6 +351,7 @@ func CollectorSetup() *CollectorStruct {
 		if !ok {
 			log.Fatal("couldn't find ID")
 		}
+		fmt.Println("Scraped: ", r.Request.URL)
 		counterSync(collector, func(counter *counter) {
 			counter.workingCounter--
 			counter.finishedCounter++
@@ -467,6 +458,7 @@ func visitNextLink(collector *CollectorStruct, counter *counter) {
 			link = <-collector.context.linkQueue
 		}
 		err := collector.collectorColly.Visit(string(link))
+
 		if err == nil {
 			counter.workingCounter++
 			break
