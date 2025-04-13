@@ -79,8 +79,9 @@ func writeRows(writer io.Writer, rows *sql.Rows) {
 		err := rows.Scan(&id, &path, &pathType, &dict)
 		checkSQLError(err)
 
-		fmt.Fprintf(writer, "id: %d\npath: %s\npathType: %s\ndict: %s\n\n",
+		_, err = fmt.Fprintf(writer, "id: %d\npath: %s\npathType: %s\ndict: %s\n\n",
 			id, path, pathType, dict)
+		checkIOError(err)
 	}
 }
 
@@ -97,7 +98,10 @@ func queryJSONKeysAll(db *sql.DB, writer io.Writer, keys []string) {
 
 	rows, err := db.Query(query, pq.StringArray(keys))
 	checkSQLError(err)
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+		checkIOError(err)
+	}()
 
 	writeRows(writer, rows)
 }
@@ -111,7 +115,10 @@ func queryAll(db *sql.DB, writer io.Writer) {
 
 	rows, err := db.Query(query)
 	checkSQLError(err)
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+		checkIOError(err)
+	}()
 
 	writeRows(writer, rows)
 }
