@@ -30,69 +30,84 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-const DEBUG = false
+const _DEBUG_ = false
 
-const QUEUEMAXLEN = 5
-const LINKQUEUELEN = 200
-const INDEXKEY = `QueueIndex`
+const _QUEUEMAXLEN_ = 5
+const _LINKQUEUELEN_ = 200
+const _IDKEY_ = `QueueIndex`
 
-var ShortendLinkRegex *regexp.Regexp
-var NonAllowedRegex *regexp.Regexp
+var shortendLinkRegex *regexp.Regexp
+var nonAllowedRegex *regexp.Regexp
 
-// initialize a data structure to keep the scraped data
-type Context struct {
-	// currently working on amount
-	WorkingCounter int
-	// currently finished amount should be in sync with len(finishedIndexes)
-	FinishedCounter int
+type WorkspaceID int
+type URLString string
+
+type context struct {
+
 	// buffered queue channel of links scraped from previously visited sites
-	LinkQueue chan string
+	linkQueue chan URLString
 	// buffered queue channel of links inputed to the scraper
-	PriorityLinkQueue chan string
+	priorityLinkQueue chan URLString
 	// worspace for the collectors async requests
 	// each request gets their own index and append the text they recieve to the slice
-	WorkspaceBuffer [QUEUEMAXLEN][]string
+	workspaceBuffer [_QUEUEMAXLEN_][]string
 	// channel of indexes in the 'workspace' array ready to be assigned to a request
 	// (buffer of size 'QUEUEMAXLEN')
-	EmptyIndexes chan int
+	emptyIndexes chan WorkspaceID
 	//  channel of indexes in the 'workspace' array ready to be read
 	// (buffer of size 'QUEUEMAXLEN')
-	FinishedIndexes chan int
+	finishedIndexes chan WorkspaceID
+}
+
+type counter struct {
+	// mutex used to sync changes to the two counters in context
+	counterLock sync.Mutex
+	// currently working on amount
+	workingCounter int
+	// currently finished amount should be in sync with len(finishedIndexes)
+	finishedCounter int
 }
 
 type CollectorStruct struct {
-	// mutex used to sync changes to the two counters in context
-	CounterLock sync.Mutex
-
 	// struct holding all cotext to make the inteface with the collector as simple as possible
-	Context Context
+	context context
+	//
+	counter counter
 
 	// the colly collector used for webb scraping and formatting
-	CollectorColly *colly.Collector
+	collectorColly *colly.Collector
 }
 
 func debugPrint(a ...any) {
-	if DEBUG {
+	if _DEBUG_ {
 		fmt.Println(a...)
 	}
 }
 
 func main() {
-	collector := collectorSetup()
+	collector := CollectorSetup()
 
 	RequestVisitToSite(collector, "https://en.wikipedia.org/wiki/Cucumber")
-	go collectorRepopulate(collector)
+	go CollectorRepopulate(collector)
 
-	readAndPrint(collector)
+	ReadAndPrint(collector)
 
-	readAndPrint(collector)
+	ReadAndPrint(collector)
 
-	readAndPrint(collector)
+	ReadAndPrint(collector)
+
+}
+
+func counterSync(collector *CollectorStruct, f func(counter *counter)) {
+	counter := &collector.counter
+	counter.counterLock.Lock()
+	f(counter)
+	counter.counterLock.Unlock()
 
 }
 
 /*
-collectorRepopulate
+CollectorRepopulate
 is used to request the scraper to scrape enough websites to fill the buffer.
 
 It will block until it has enough links in the queue for all its requests.
@@ -103,21 +118,19 @@ Is safe to run in a seperate go rutine.
 
 The struct containin the scraper and all used context.
 */
-func collectorRepopulate(collector *CollectorStruct) {
-	context := &collector.Context
-	countLock := &collector.CounterLock
-	countLock.Lock()
-	amountFilled := context.FinishedCounter + context.WorkingCounter
-	amountEmpty := QUEUEMAXLEN - amountFilled
-	for range amountEmpty {
-		VisitNextLink(collector)
-	}
-	countLock.Unlock()
+func CollectorRepopulate(collector *CollectorStruct) {
+	counterSync(collector, func(counter *counter) {
 
+		amountFilled := counter.finishedCounter + counter.workingCounter
+		amountEmpty := _QUEUEMAXLEN_ - amountFilled
+		for range amountEmpty {
+			visitNextLink(collector, counter)
+		}
+	})
 }
 
 /*
-collectorRepopulateFixedNumber
+CollectorRepopulateFixedNumber
 is used to request the scraper to scrape a specified amount of websites.
 
 The scraper is using a fixed sized buffer
@@ -141,26 +154,26 @@ The amount of sites to scrape.
 
 The amount of requests that couldn't be fullfilled.
 */
-func collectorRepopulateFixedNumber(collector *CollectorStruct, n int) int {
+func CollectorRepopulateFixedNumber(collector *CollectorStruct, n int) int {
 	amountDidntFit := 0
-	context := &collector.Context
-	countLock := &collector.CounterLock
-	countLock.Lock()
-	amountFilled := context.FinishedCounter + context.WorkingCounter
-	amountEmpty := QUEUEMAXLEN - amountFilled
-	if amountEmpty < n {
-		amountDidntFit = n - amountEmpty
-		n = amountEmpty
-	}
-	for range n {
-		VisitNextLink(collector)
-	}
-	countLock.Unlock()
+	counterSync(collector, func(counter *counter) {
+
+		amountFilled := counter.finishedCounter + counter.workingCounter
+		amountEmpty := _QUEUEMAXLEN_ - amountFilled
+		if amountEmpty < n {
+			amountDidntFit = n - amountEmpty
+			n = amountEmpty
+		}
+		for range n {
+			visitNextLink(collector, counter)
+		}
+	})
+
 	return amountDidntFit
 }
 
 /*
-readAndPrint
+ReadAndPrint
 reads the first avaliable fully scraped site and prints the content.
 
 # Parameters:
@@ -168,8 +181,8 @@ reads the first avaliable fully scraped site and prints the content.
 
 The struct containing the scraper and all used context.
 */
-func readAndPrint(collector *CollectorStruct) {
-	stringSlice := readFinished(collector)
+func ReadAndPrint(collector *CollectorStruct) {
+	stringSlice := ReadFinished(collector)
 	for _, text := range stringSlice {
 		fmt.Println(text)
 	}
@@ -193,15 +206,16 @@ The url that the worker is speaking with and is used to initialise the slice.
 
 The index of the claimed space in the buffer
 */
-func claimNewIndex(collector *CollectorStruct, url string) int {
-	index := <-collector.Context.EmptyIndexes
-	collector.Context.WorkspaceBuffer[index] = []string{url}
-	return index
+func claimNewIndex(context *context, url string) WorkspaceID {
+	ID := <-context.emptyIndexes
+	context.workspaceBuffer[ID] = []string{url}
+	return ID
 }
 
 /*
-readFinished
+ReadFinished
 retrieves a fully scraped page and returns it.
+If there is no page to retrieve it will block until one gets avaliable.
 
 # Parameters:
   - collector *CollectorStruct
@@ -213,28 +227,28 @@ The struct containing the scraper and all used context.
 
 The slice containing the text from the scraped page.
 */
-func readFinished(collector *CollectorStruct) []string {
+func ReadFinished(collector *CollectorStruct) []string {
+	context := &collector.context
 	// removes 1 from finished
-	countLock := &collector.CounterLock
-	countLock.Lock()
-	// can currently become negative by this which
-	// isn't a case deeply explored but should work fine
-	// TODO: test for cases where FinishedCounter becomes negative
-	collector.Context.FinishedCounter--
-	countLock.Unlock()
+	counterSync(collector, func(counter *counter) {
+		// can currently become negative by this which
+		// isn't a case deeply explored but should work fine
+		// TODO: test for cases where FinishedCounter becomes negative
+		counter.finishedCounter--
+	})
 
 	// waits for a Workspace to finish
-	index := <-collector.Context.FinishedIndexes
+	ID := <-context.finishedIndexes
 
 	// retrieves the content and empties out the workspace
-	pos := &collector.Context.WorkspaceBuffer[index]
-	PageText := *pos
+	pos := &context.workspaceBuffer[ID]
+	pageText := *pos
 	*pos = nil
 
 	// adds the index to the list of unused/empty workspaces
-	collector.Context.EmptyIndexes <- index
+	context.emptyIndexes <- ID
 
-	return PageText
+	return pageText
 }
 
 /*
@@ -254,8 +268,8 @@ The index or ID of the workspace to use.
 
 The text to appended.
 */
-func writeToWorkspace(collector *CollectorStruct, index int, text string) {
-	path := &collector.Context.WorkspaceBuffer[index]
+func writeToWorkspace(context *context, ID WorkspaceID, text string) {
+	path := &context.workspaceBuffer[ID]
 	*path = append(*path, text)
 }
 
@@ -279,26 +293,26 @@ desc.
 
 desc.
 */
-func collectorSetup() *CollectorStruct {
+func CollectorSetup() *CollectorStruct {
 	collector := &CollectorStruct{}
-	collector.Context = Context{}
-	context := &collector.Context
-	context.FinishedCounter = 0
-	context.WorkingCounter = 0
-	context.EmptyIndexes = make(chan int, QUEUEMAXLEN)
-	for x := range QUEUEMAXLEN {
-		context.EmptyIndexes <- x
+	collector.context = context{}
+	context := &collector.context
+	collector.counter.finishedCounter = 0
+	collector.counter.workingCounter = 0
+	context.emptyIndexes = make(chan WorkspaceID, _QUEUEMAXLEN_)
+	for x := range _QUEUEMAXLEN_ {
+		context.emptyIndexes <- WorkspaceID(x)
 	}
-	context.FinishedIndexes = make(chan int, QUEUEMAXLEN)
-	context.LinkQueue = make(chan string, LINKQUEUELEN)
-	context.PriorityLinkQueue = make(chan string, LINKQUEUELEN)
-	context.WorkspaceBuffer = [QUEUEMAXLEN][]string{}
+	context.finishedIndexes = make(chan WorkspaceID, _QUEUEMAXLEN_)
+	context.linkQueue = make(chan URLString, _LINKQUEUELEN_)
+	context.priorityLinkQueue = make(chan URLString, _LINKQUEUELEN_)
+	context.workspaceBuffer = [_QUEUEMAXLEN_][]string{}
 
-	ShortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
-	NonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
+	shortendLinkRegex, _ = regexp.Compile(`^/wiki/`)
+	nonAllowedRegex, _ = regexp.Compile(`/wiki/(File|Wikipedia|Special|User):`)
 
 	c := colly.NewCollector(colly.AllowedDomains("en.wikipedia.org"))
-	collector.CollectorColly = c
+	collector.collectorColly = c
 
 	c.Async = true
 
@@ -316,43 +330,42 @@ func collectorSetup() *CollectorStruct {
 	c.OnResponse(func(r *colly.Response) {
 		url := r.Request.URL.EscapedPath()
 		debugPrint("Page visited: ", r.Request.URL)
-		if ShortendLinkRegex.MatchString(url) {
+		if shortendLinkRegex.MatchString(url) {
 			url = "https://en.wikipedia.org" + url
 		}
-		index := claimNewIndex(collector, url)
-		r.Ctx.Put(INDEXKEY, index)
+		ID := claimNewIndex(context, url)
+		r.Ctx.Put(_IDKEY_, ID)
 	})
 
 	// triggered when a CSS selector matches an element
 	c.OnHTML("p, div.mw-heading", func(e *colly.HTMLElement) {
 		// printing all URLs associated with the <p> tag on the page
-		mapValue := e.Response.Ctx.GetAny(INDEXKEY)
-		index, ok := mapValue.(int)
+		mapValue := e.Response.Ctx.GetAny(_IDKEY_)
+		ID, ok := mapValue.(WorkspaceID)
 		if !ok {
-			log.Fatal("couldn't find index")
+			log.Fatal("couldn't find ID")
 		}
-		writeToWorkspace(collector, index, e.Text)
+		writeToWorkspace(context, ID, e.Text)
 
 	})
 
 	// Find and visit all links
 	c.OnHTML(`a[href*="/wiki/"]`, func(e *colly.HTMLElement) {
-		AddScrapedLinkToQueue(e, collector)
+		addScrapedLinkToQueue(e, context)
 	})
 
 	// triggered once scraping is done
 	c.OnScraped(func(r *colly.Response) {
-		mapValue := r.Ctx.GetAny(INDEXKEY)
-		index, ok := mapValue.(int)
+		mapValue := r.Ctx.GetAny(_IDKEY_)
+		ID, ok := mapValue.(WorkspaceID)
 		if !ok {
-			log.Fatal("couldn't find index")
+			log.Fatal("couldn't find ID")
 		}
-		lock := &collector.CounterLock
-		lock.Lock()
-		context.WorkingCounter--
-		context.FinishedCounter++
-		lock.Unlock()
-		context.FinishedIndexes <- index
+		counterSync(collector, func(counter *counter) {
+			counter.workingCounter--
+			counter.finishedCounter++
+		})
+		context.finishedIndexes <- ID
 
 	})
 	return collector
@@ -378,19 +391,18 @@ desc.
 
 desc.
 */
-func AddScrapedLinkToQueue(e *colly.HTMLElement, collector *CollectorStruct) {
+func addScrapedLinkToQueue(e *colly.HTMLElement, context *context) {
 
 	// TODO: filter away already visited before adding to the queue
 
-	context := collector.Context
 	link := e.Attr("href")
-	if !ShortendLinkRegex.MatchString(link) || NonAllowedRegex.MatchString(link) {
+	if !shortendLinkRegex.MatchString(link) || nonAllowedRegex.MatchString(link) {
 		debugPrint("non allowed link: ", link)
 		return
 	}
 	link = "https://en.wikipedia.org" + link
 	select {
-	case context.LinkQueue <- link:
+	case context.linkQueue <- URLString(link):
 	default:
 		debugPrint("linkQueue full skipped link: ", link)
 	}
@@ -418,11 +430,12 @@ desc.
 desc.
 */
 func RequestVisitToSite(collector *CollectorStruct, link string) {
-	if len(collector.Context.LinkQueue) == 0 {
-		collector.Context.LinkQueue <- link
+	if len(collector.context.linkQueue) == 0 {
+		collector.context.linkQueue <- URLString(link)
 		return
 	}
-	collector.Context.PriorityLinkQueue <- link
+
+	collector.context.priorityLinkQueue <- URLString(link)
 }
 
 /*
@@ -445,18 +458,17 @@ desc.
 
 desc.
 */
-func VisitNextLink(collector *CollectorStruct) {
+func visitNextLink(collector *CollectorStruct, counter *counter) {
 	for {
-		var link string
+		var link URLString
 		select {
-		case link = <-collector.Context.PriorityLinkQueue:
+		case link = <-collector.context.priorityLinkQueue:
 		default:
-			link = <-collector.Context.LinkQueue
+			link = <-collector.context.linkQueue
 		}
-		err := collector.CollectorColly.Visit(link)
+		err := collector.collectorColly.Visit(string(link))
 		if err == nil {
-
-			collector.Context.WorkingCounter++
+			counter.workingCounter++
 			break
 		}
 		switch err.Error() {
