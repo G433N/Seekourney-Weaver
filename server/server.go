@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -111,9 +112,10 @@ func Run(args []string) {
 
 	go func() {
 		err := server.ListenAndServe()
-		if err != nil {
-			panic(err)
+		if !errors.Is(err, http.ErrServerClosed) {
+			fmt.Println("Server encountered an error:", err)
 		}
+		stop()
 	}()
 	fmt.Println("Server online")
 
