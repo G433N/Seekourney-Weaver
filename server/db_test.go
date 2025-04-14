@@ -2,7 +2,6 @@ package server
 
 import (
 	"database/sql"
-	"os"
 	"os/exec"
 	"testing"
 )
@@ -42,7 +41,7 @@ func safelyTest(testFunc func(test *testing.T)) func(*testing.T) {
 }
 
 func TestDB(test *testing.T) {
-	os.Chdir("..")
+	test.Chdir("..")
 
 	go startContainer()
 	defer stopContainer()
