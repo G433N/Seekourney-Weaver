@@ -54,7 +54,8 @@ func IndexIter(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 	}
 }
 
-// IndexIterParallel iterates over a sequence of paths and indexes them in parallel
+// IndexIterParallel iterates over a sequence of paths and indexes them in
+// parallel
 func IndexIterParallel(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 
 	type result struct {
@@ -108,7 +109,8 @@ func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 
 func Default(config *config.Config) *Config {
 
-	w := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
+	w := utils.NewWalkDirConfig().
+		SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
 	return &Config{
 		WalkDirConfig:     w,
 		ParrallelIndexing: config.ParrallelIndexing,

@@ -33,7 +33,12 @@ func green(text string) string {
 	return "\033[92m" + text + "\033[0m"
 }
 
-func testSearch(c *config.Config, folder *folder.Folder, rm utils.ReverseMap, query string) {
+func testSearch(
+	c *config.Config,
+	folder *folder.Folder,
+	rm utils.ReverseMap,
+	query string,
+) {
 
 	// Perform search using the folder and reverse mapping
 	pairs := search.Search(c, folder, rm, query)
@@ -43,7 +48,12 @@ func testSearch(c *config.Config, folder *folder.Folder, rm utils.ReverseMap, qu
 		path := string(result.Path)
 		score := int(result.Value)
 		link := termlink.Link(path, path)
-		log.Printf("%d. Path: %s Score: %s\n", n, lightBlue(bold(link)), green(strconv.Itoa(score)))
+		log.Printf(
+			"%d. Path: %s Score: %s\n",
+			n,
+			lightBlue(bold(link)),
+			green(strconv.Itoa(score)),
+		)
 	}
 }
 
@@ -76,8 +86,12 @@ func main() {
 	// Load local file config
 	localConfig := localtext.Load(config)
 
-	// TODO: Later when documents comes over the network, we can still use the same code. since it is an iterator
-	folder := folder.FromIter(config.Normalizer, localConfig.IndexDir("test_data"))
+	// TODO: Later when documents comes over the network, we can still use the
+	// same code. since it is an iterator
+	folder := folder.FromIter(
+		config.Normalizer,
+		localConfig.IndexDir("test_data"),
+	)
 
 	rm := folder.ReverseMappingLocal()
 
@@ -105,6 +119,8 @@ func main() {
 	log.Printf("Files: %d, Words: %d\n", files, words)
 
 	if files == 0 {
-		log.Println("No files found, run make downloadTestFiles to download test files")
+		log.Println(
+			"No files found, run make downloadTestFiles to download test files",
+		)
 	}
 }

@@ -64,7 +64,8 @@ func insertRow(db *sql.DB, page Page) (sql.Result, error) {
 }
 
 // func insertRowWithJSON(db *sql.DB, page Page) (sql.Result, error) {
-// 	insertStmt := `INSERT INTO "page"("path", "type", "dict") values($1, $2, $3)`
+// 	insertStmt := `INSERT INTO "page"("path", "type", "dict") values($1, $2,
+// $3)`
 // 	return db.Exec(insertStmt, page.path, page.pathType, page.dict)
 // }
 
@@ -79,8 +80,14 @@ func writeRows(writer io.Writer, rows *sql.Rows) {
 		err := rows.Scan(&id, &path, &pathType, &dict)
 		checkSQLError(err)
 
-		_, err = fmt.Fprintf(writer, "id: %d\npath: %s\npathType: %s\ndict: %s\n\n",
-			id, path, pathType, dict)
+		_, err = fmt.Fprintf(
+			writer,
+			"id: %d\npath: %s\npathType: %s\ndict: %s\n\n",
+			id,
+			path,
+			pathType,
+			dict,
+		)
 		checkIOError(err)
 	}
 }
