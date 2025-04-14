@@ -15,7 +15,7 @@ type ConfigData interface {
 // It takes a path to the file and a function that returns an empty config
 func Load[C any](path string, empty func() *C) (*C, error) {
 
-	var config *C = empty()
+	var config = empty()
 
 	content, err := os.ReadFile(path)
 	if err != nil {

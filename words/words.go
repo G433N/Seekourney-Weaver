@@ -93,7 +93,6 @@ func WordsIterBytes(bytes []byte) iter.Seq[utils.Word] {
 				}
 
 				start = i + 1
-				end = i + 1
 			}
 			// Ship UTF-8 continuation bytes
 			len := charLen(c)
