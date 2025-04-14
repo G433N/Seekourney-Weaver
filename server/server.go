@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	serverAddress       = ":8080"
-	containerStart      = "./docker-start"
-	containerOutputFile = "./docker.log"
-	host                = "localhost"
-	port                = 5433
-	containerName       = "go-postgres"
-	user                = "go-postgres"
-	password            = "go-postgres"
-	dbname              = "go-postgres"
-	emptyJSON           = "{}"
+	serverAddress       string = ":8080"
+	containerStart      string = "./docker-start"
+	containerOutputFile string = "./docker.log"
+	host                string = "localhost"
+	port                int    = 5433
+	containerName       string = "go-postgres"
+	user                string = "go-postgres"
+	password            string = "go-postgres"
+	dbname              string = "go-postgres"
+	emptyJSON           string = "{}"
 )
 
 // Used to params used by server query handler functions
@@ -42,8 +42,10 @@ func startContainer() {
 	container.Stdout = outfile
 	container.Stderr = outfile
 
-	container.Run()
-	outfile.Close()
+	err = container.Run()
+	checkIOError(err)
+	err = outfile.Close()
+	checkIOError(err)
 }
 
 // Stops the database container, will finish the command started by
@@ -112,7 +114,8 @@ func checkIOError(err error) {
 // Calls recover and writes a message to writer if an SQL function panic'd.
 func recoverSQLError(writer io.Writer) {
 	if err := recover(); err != nil {
-		fmt.Fprintf(writer, "SQL failed: %s\n", err)
+		_, ioErr := fmt.Fprintf(writer, "SQL failed: %s\n", err)
+		checkIOError(ioErr)
 	}
 }
 
@@ -135,19 +138,25 @@ func handleAdd(serverParams serverFuncParams, paths []string) {
 	for _, path := range paths {
 		_, err := insertRow(serverParams.db, Page{path: path, pathType: pathTypeFile})
 		if err != nil {
-			fmt.Fprintf(serverParams.writer, "SQL failed: %s\n", err)
+			_, ioErr := fmt.Fprintf(serverParams.writer, "SQL failed: %s\n", err)
+			checkIOError(ioErr)
 		}
 	}
 }
 
 // Handles a /quit request, cleanly shutsdown the database container and server
 func handleQuit(serverParams serverFuncParams) {
-	fmt.Fprintf(serverParams.writer, "Shutting down\n")
+	_, err := fmt.Fprintf(serverParams.writer, "Shutting down\n")
+	checkIOError(err)
 
-	serverParams.db.Close()
+	err = serverParams.db.Close()
+	checkIOError(err)
 	stopContainer()
 
 	// This needs to be called as a goroutine because the handler needs to return
 	// before the server can shutdown
-	go serverParams.server.Shutdown(context.Background())
+	go func() {
+		err := serverParams.server.Shutdown(context.Background())
+		checkIOError(err)
+	}()
 }

@@ -1,0 +1,46 @@
+name: Default CI
+
+on:
+  pull_request:
+    types: [labeled]
+  pull_request_review:
+    types: [submitted]
+
+# All in one job to reduce GitHub-actions minutes used.
+# Only run if "ready for review" label exists on PR.
+jobs:
+  default-ci:
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review')
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.2'
+    
+    - name: Install Go dependencies
+      run: go get .
+
+    - name: Build Backend
+      run: go build -v ./...
+
+    - name: Run Backend Unit Tests
+      run: timeout 10 go test -v ./...
+
+    - name: Backend Linting
+      uses: golangci/golangci-lint-action@v7
+      with:
+        version: 'v2.0'
