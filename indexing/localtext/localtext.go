@@ -110,7 +110,16 @@ func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 func Default(config *config.Config) *Config {
 
 	w := utils.NewWalkDirConfig().
-		SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
+		SetAllowedExts([]string{
+			".txt",
+			".md",
+			".json",
+			".xml",
+			".html",
+			"htm",
+			".xhtml",
+			".csv",
+		})
 	return &Config{
 		WalkDirConfig:     w,
 		ParrallelIndexing: config.ParrallelIndexing,
