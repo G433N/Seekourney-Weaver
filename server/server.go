@@ -28,7 +28,6 @@ const (
 
 // Used to params used by server query handler functions
 type serverFuncParams struct {
-	server *http.Server
 	writer io.Writer
 	db     *sql.DB
 	stop   context.CancelFunc
@@ -93,7 +92,6 @@ func Run(args []string) {
 
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		serverParams := serverFuncParams{
-			server: server,
 			writer: writer,
 			db:     db,
 			stop:   stop,
