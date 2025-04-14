@@ -1,0 +1,13 @@
+version: '2'
+linters:
+  default: standard
+  enable:
+    - lll
+  settings:
+    lll:
+      line-length: 80
+      tab-width: 4
+formatters:
+  olines:
+  max-len: 80
+  tab-len: 4
