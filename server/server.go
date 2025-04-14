@@ -109,7 +109,12 @@ func Run(args []string) {
 		}
 	})
 
-	go server.ListenAndServe()
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(err)
+		}
+	}()
 	fmt.Println("Server online")
 
 	// Wait until server is finished
