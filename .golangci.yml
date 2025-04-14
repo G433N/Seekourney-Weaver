@@ -8,6 +8,10 @@ linters:
       line-length: 80
       tab-width: 4
 formatters:
-  olines:
-  max-len: 80
-  tab-len: 4
+  enable:
+    - gofmt
+    - golines
+  settings:
+    golines:
+      max-len: 80
+      tab-len: 4
