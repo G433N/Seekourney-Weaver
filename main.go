@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	webb "indexer/scraper"
 	"indexer/words"
 	"log"
 	"os"
@@ -9,7 +10,18 @@ import (
 	"strings"
 )
 
-func main2() {
+func main() {
+	collector := webb.NewCollector(true)
+
+	collector.RequestVisitToSite("https://en.wikipedia.org/wiki/Cucumber")
+	collector.CollectorRepopulate()
+
+	collector.ReadAndPrint()
+	collector.ReadAndPrint()
+	collector.ReadAndPrint()
+}
+
+func Main2() {
 
 	content, err := os.ReadFile("text.txt")
 	if err != nil {
