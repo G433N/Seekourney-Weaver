@@ -5,19 +5,26 @@ import (
 )
 
 type Semaphore struct {
-	signals   int
-	syncLock  sync.Mutex
+	signals  int
+	syncLock sync.Mutex
+	waitLock sync.Mutex
+
 	waitGroup sync.WaitGroup
 }
 
 func (semaphore *Semaphore) Wait() {
+	semaphore.waitLock.Lock()
+	defer semaphore.waitLock.Unlock()
+
 	semaphore.waitGroup.Wait()
+
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
 
 	if semaphore.signals == 1 {
 		semaphore.waitGroup.Add(1)
 	}
+
 	semaphore.signals--
 
 }
