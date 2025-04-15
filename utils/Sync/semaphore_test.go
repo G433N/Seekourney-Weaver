@@ -121,3 +121,35 @@ func TestWaitBlock(test *testing.T) {
 	}
 
 }
+
+func TestLargeNumberGoroutine(test *testing.T) {
+	sem1 := Sync.NewSemaphore(1)
+	sem2 := Sync.NewSemaphore(0)
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(200)
+	for range 100 {
+		go func(w *sync.WaitGroup) {
+			sem1.Wait()
+			sem2.Signal()
+			w.Done()
+		}(&waitGroup)
+	}
+	for range 100 {
+		go func(w *sync.WaitGroup) {
+			sem2.Wait()
+			sem1.Signal()
+			w.Done()
+		}(&waitGroup)
+	}
+	waitGroup.Wait()
+
+	if !sem1.TryWait() {
+		test.Error("sem1 should have a signal")
+	}
+	if sem1.TryWait() {
+		test.Error("sem1 should be empty")
+	}
+	if sem2.TryWait() {
+		test.Error("sem2 should be empty")
+	}
+}
