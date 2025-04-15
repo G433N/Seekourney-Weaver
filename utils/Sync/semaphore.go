@@ -22,6 +22,19 @@ func (semaphore *Semaphore) Wait() {
 
 }
 
+func (semaphore *Semaphore) TryWait() bool {
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+	if semaphore.signals == 0 {
+		return false
+	}
+	if semaphore.signals == 1 {
+		semaphore.waitGroup.Add(1)
+	}
+	semaphore.signals--
+	return true
+}
+
 func (semaphore *Semaphore) Signal() {
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
