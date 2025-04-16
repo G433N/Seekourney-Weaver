@@ -87,6 +87,13 @@ func Normalize(
 	}
 }
 
+// Normalize normalizes the document
+func (doc UnnormalizedDocument) Normalize(
+	normalizer normalize.Normalizer,
+) Document {
+	return Normalize(doc, normalizer)
+}
+
 // Misc
 
 // DebugPrint prints information about the document
