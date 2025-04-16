@@ -1,9 +1,11 @@
 <script lang="ts">
 	let { children } = $props();
+	import { page } from '$app/stores';
+	import { derived } from 'svelte/store';
 </script>
 
 <header>
-	<h1 style="font-size: 2.5rem; font-weight: bold; line-height: 1.2;">Seekourny <br/>Weaver</h1>
+	<h1>Seekourny <br/>Weaver</h1>
 </header>
 
 <!--
@@ -18,10 +20,10 @@
 	</ul>
 </nav>
 -->
-<nav style="background-color: #AEC6DF; display: flex; justify-content: center; gap: 6rem; padding: 1rem;">
-	<a href="/" class="active">Home</a>
-	<a href="/settings">Settings</a>
-	<a href="/about">About</a>
+<nav>
+	<a href="/" class:active={$page.url.pathname === '/'}>Home</a>
+	<a href="/settings" class:active={$page.url.pathname === '/settings'}>Settings</a>
+	<a href="/about" class:active={$page.url.pathname === '/about'}>About</a>
 </nav>
 
 {@render children()}
