@@ -136,9 +136,16 @@ func handleSearch(serverParams serverFuncParams, keys []string) {
 // Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
 	for _, path := range paths {
-		_, err := insertRow(serverParams.db, Page{path: path, pathType: pathTypeFile})
+		_, err := insertRow(
+			serverParams.db,
+			Page{path: path, pathType: pathTypeFile},
+		)
 		if err != nil {
-			_, ioErr := fmt.Fprintf(serverParams.writer, "SQL failed: %s\n", err)
+			_, ioErr := fmt.Fprintf(
+				serverParams.writer,
+				"SQL failed: %s\n",
+				err,
+			)
 			checkIOError(ioErr)
 		}
 	}
@@ -153,7 +160,8 @@ func handleQuit(serverParams serverFuncParams) {
 	checkIOError(err)
 	stopContainer()
 
-	// This needs to be called as a goroutine because the handler needs to return
+	// This needs to be called as a goroutine because the handler needs to
+	// return
 	// before the server can shutdown
 	go func() {
 		err := serverParams.server.Shutdown(context.Background())

@@ -45,7 +45,11 @@ func New(path utils.Path, source Source) UnnormalizedDocument {
 // FromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func FromText(path utils.Path, source Source, text string) UnnormalizedDocument {
+func FromText(
+	path utils.Path,
+	source Source,
+	text string,
+) UnnormalizedDocument {
 	doc := New(path, source)
 	doc.Words = indexing.IndexString(text)
 	return doc
@@ -54,13 +58,20 @@ func FromText(path utils.Path, source Source, text string) UnnormalizedDocument 
 // FromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func FromBytes(path utils.Path, source Source, bytes []byte) UnnormalizedDocument {
+func FromBytes(
+	path utils.Path,
+	source Source,
+	bytes []byte,
+) UnnormalizedDocument {
 	doc := New(path, source)
 	doc.Words = indexing.IndexBytes(bytes)
 	return doc
 }
 
-func Normalize(doc UnnormalizedDocument, normalizer normalize.Normalizer) Document {
+func Normalize(
+	doc UnnormalizedDocument,
+	normalizer normalize.Normalizer,
+) Document {
 
 	freqMap := make(utils.FrequencyMap)
 
@@ -77,7 +88,9 @@ func Normalize(doc UnnormalizedDocument, normalizer normalize.Normalizer) Docume
 }
 
 // Normalize normalizes the document
-func (doc UnnormalizedDocument) Normalize(normalizer normalize.Normalizer) Document {
+func (doc UnnormalizedDocument) Normalize(
+	normalizer normalize.Normalizer,
+) Document {
 	return Normalize(doc, normalizer)
 }
 
@@ -85,7 +98,12 @@ func (doc UnnormalizedDocument) Normalize(normalizer normalize.Normalizer) Docum
 
 // DebugPrint prints information about the document
 func (doc *Document) DebugPrint() {
-	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", doc.Path, doc.Source, len(doc.Words))
+	log.Printf(
+		"Document = {Path: %s, Type: %d, Length: %d}",
+		doc.Path,
+		doc.Source,
+		len(doc.Words),
+	)
 }
 
 // Pair
@@ -113,6 +131,9 @@ func (doc *Document) GetWordsSorted() []Pair {
 	t := timing.Measure(timing.SortWords)
 	defer t.Stop()
 
-	sort.Slice(pairs, func(i, j int) bool { return pairs[i].Freq > pairs[j].Freq })
+	sort.Slice(
+		pairs,
+		func(i, j int) bool { return pairs[i].Freq > pairs[j].Freq },
+	)
 	return pairs
 }
