@@ -48,7 +48,12 @@ func TestDB(test *testing.T) {
 
 	go startContainer()
 	testDB = connectToDB()
-	defer testDB.Close()
+	defer func() {
+		err := testDB.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
 	defer stopContainer()
 
 	test.Run("TestQueryAll", safelyTest(testQueryAll))
@@ -67,7 +72,15 @@ func resetSQL(db *sql.DB) {
 	const initDB = "/docker-entrypoint-initdb.d/initdb.sql"
 
 	err = exec.Command(
-		"docker", "exec", containerName, "psql", "-U", dbname, "-f", initDB).Run()
+		"docker",
+		"exec",
+		containerName,
+		"psql",
+		"-U",
+		dbname,
+		"-f",
+		initDB,
+	).Run()
 	if err != nil {
 		panic(err)
 	}
