@@ -9,7 +9,8 @@ import (
 
 // TODO: WalkDir is not tested with symbolic/hard links.
 
-// NOTE: WalkDir is also a STDLib function in Go, but this is a custom iterator implementation.
+// NOTE: WalkDir is also a STDLib function in Go, but this is a custom iterator
+// implementation.
 
 // Constants for the always forbidden directories
 func alwaysForbiddenDirs() []string {
@@ -22,7 +23,8 @@ func defaultForbiddenDirs() []string {
 }
 
 // WalkDirConfig is a configuration struct for the WalkDir function.
-// It allows setting options for verbosity, returning directories, and filtering by forbidden directories and allowed file extensions.
+// It allows setting options for verbosity, returning directories, and filtering
+// by forbidden directories and allowed file extensions.
 // If there is no allowed file extension, all files are returned.
 type WalkDirConfig struct {
 	Verbose       bool
@@ -58,7 +60,8 @@ func (config *WalkDirConfig) SetAllowedExts(exts []string) *WalkDirConfig {
 	return config
 }
 
-// WalkDir returns a sequence of file paths in the given directory and its subdirectories.
+// WalkDir returns a sequence of file paths in the given directory and its
+// subdirectories.
 func (config *WalkDirConfig) WalkDir(path Path) iter.Seq[Path] {
 
 	return func(yield func(Path) bool) {
@@ -66,7 +69,8 @@ func (config *WalkDirConfig) WalkDir(path Path) iter.Seq[Path] {
 	}
 }
 
-// walkDirIter is a helper function that recursively walks the directory and yields file paths.
+// walkDirIter is a helper function that recursively walks the directory and
+// yields file paths.
 func (config *WalkDirConfig) walkDirIter(yield func(Path) bool, path Path) {
 	entries, err := os.ReadDir(string(path))
 
@@ -95,7 +99,10 @@ func (config *WalkDirConfig) walkDirIter(yield func(Path) bool, path Path) {
 }
 
 // forEachDir yields each file in the directory and its subdirectories.
-func (config *WalkDirConfig) forEachDir(yield func(Path) bool, dirPath Path) bool {
+func (config *WalkDirConfig) forEachDir(
+	yield func(Path) bool,
+	dirPath Path,
+) bool {
 
 	if config.Verbose {
 		log.Printf("Found directory: %s\n", dirPath)
@@ -117,8 +124,12 @@ func (config *WalkDirConfig) forEachDir(yield func(Path) bool, dirPath Path) boo
 	return true
 }
 
-// forEachFile yields a file if it is valid based on the allowed file extensions.
-func (config *WalkDirConfig) forEachFile(yield func(Path) bool, filePath Path) bool {
+// forEachFile yields a file if it is valid based on the allowed file
+// extensions.
+func (config *WalkDirConfig) forEachFile(
+	yield func(Path) bool,
+	filePath Path,
+) bool {
 
 	if config.Verbose {
 		log.Printf("Found file: %s\n", filePath)
@@ -134,7 +145,8 @@ func (config *WalkDirConfig) forEachFile(yield func(Path) bool, filePath Path) b
 	return yield(filePath)
 }
 
-// isValidDir checks if the directory is valid based on the forbidden directories.
+// isValidDir checks if the directory is valid based on the forbidden
+// directories.
 func (config *WalkDirConfig) isValidDir(path Path) bool {
 
 	name := filepath.Base(string(path))

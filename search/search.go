@@ -19,7 +19,11 @@ type SearchResult struct {
 // / scoreWord takes a folder, a reverse mapping and a word
 // It returns a map of document paths and their corresponding score of the word
 // Higher score means more relevant document
-func scoreWord(folder *folder.Folder, rm utils.ReverseMap, word utils.Word) utils.ScoreMap {
+func scoreWord(
+	folder *folder.Folder,
+	rm utils.ReverseMap,
+	word utils.Word,
+) utils.ScoreMap {
 
 	paths, ok := rm[word]
 	if !ok {
@@ -52,7 +56,12 @@ func scoreWord(folder *folder.Folder, rm utils.ReverseMap, word utils.Word) util
 // search takes a folder, a reverse mapping and a query
 // It returns a map of document paths and their corresponding score of the query
 // Higher score means more relevant document
-func search(normalize normalize.Normalizer, folder *folder.Folder, rm utils.ReverseMap, query string) utils.ScoreMap {
+func search(
+	normalize normalize.Normalizer,
+	folder *folder.Folder,
+	rm utils.ReverseMap,
+	query string,
+) utils.ScoreMap {
 	result := make(utils.ScoreMap)
 
 	for word := range words.WordsIter(query) {
@@ -68,10 +77,17 @@ func search(normalize normalize.Normalizer, folder *folder.Folder, rm utils.Reve
 	return result
 }
 
-// searchParrallel is a parallel version of the search function, currently slower
-func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm utils.ReverseMap, query string) utils.ScoreMap {
+// searchParrallel is a parallel version of the search function, currently
+// slower
+func searchParrallel(
+	normalize normalize.Normalizer,
+	folder *folder.Folder,
+	rm utils.ReverseMap,
+	query string,
+) utils.ScoreMap {
 
-	// TODO: This is currently slower than the normal search function, I think caching is faster / Marcus
+	// TODO: This is currently slower than the normal search function, I think
+	// caching is faster / Marcus
 	result := make(utils.ScoreMap)
 
 	channel := make(chan utils.ScoreMap)
@@ -96,8 +112,14 @@ func searchParrallel(normalize normalize.Normalizer, folder *folder.Folder, rm u
 }
 
 // Search performs a search on the folder using the reverse mapping
-// It returns a slice of SearchResult sorted by value in descending order, max 10 results
-func Search(config *config.Config, f *folder.Folder, rm utils.ReverseMap, query string) []SearchResult {
+// It returns a slice of SearchResult sorted by value in descending order, max
+// 10 results
+func Search(
+	config *config.Config,
+	f *folder.Folder,
+	rm utils.ReverseMap,
+	query string,
+) []SearchResult {
 
 	// TODO: Support more than 10 results
 

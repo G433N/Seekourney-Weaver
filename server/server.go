@@ -167,7 +167,11 @@ func handleAdd(serverParams serverFuncParams, paths []string) {
 			Page{path: path, pathType: pathTypeFile},
 		)
 		if err != nil {
-			_, ioErr := fmt.Fprintf(serverParams.writer, "SQL failed: %s\n", err)
+			_, ioErr := fmt.Fprintf(
+				serverParams.writer,
+				"SQL failed: %s\n",
+				err,
+			)
 			checkIOError(ioErr)
 		}
 	}
