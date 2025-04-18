@@ -15,7 +15,7 @@ type ConfigData interface {
 // It takes a path to the file and a function that returns an empty config
 func Load[C any](path string, empty func() *C) (*C, error) {
 
-	var config *C = empty()
+	var config = empty()
 
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -32,14 +32,19 @@ func Load[C any](path string, empty func() *C) (*C, error) {
 
 }
 
-// LoadOrElse loads a config from a file or creates a new one if it doesn't exist
-// It takes a path to the file, a function that returns an empty config, and a function that creates a new config
+// LoadOrElse loads a config from a file or creates a new one if it doesn't
+// exist It takes a path to the file, a function that returns an empty config,
+// and a function that creates a new config
 func LoadOrElse[C ConfigData](path string, new func() *C, empty func() *C) *C {
 
 	config, err := Load(path, empty)
 	if err != nil {
 		config = new()
-		log.Printf("\"%s\" config not found, creating new one at %s", (*config).ConfigName(), path)
+		log.Printf(
+			"\"%s\" config not found, creating new one at %s",
+			(*config).ConfigName(),
+			path,
+		)
 		err = Save(config, path)
 		if err != nil {
 			log.Fatalf("Error saving config: %s", err)

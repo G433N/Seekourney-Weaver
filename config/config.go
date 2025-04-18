@@ -11,14 +11,17 @@ const path = "config.json"
 
 // Config is a struct that containf the configuration for the server
 type Config struct {
-	// ParrallelIndexing is a flag that indicates whether to use parallel indexing
+	// ParrallelIndexing is a flag that indicates whether to use parallel
+	// indexing
 	// This is the default setting
 	ParrallelIndexing bool
 
-	// ParrallelSearching is a flag that indicates whether to use parallel searching
+	// ParrallelSearching is a flag that indicates whether to use parallel
+	// searching
 	ParrallelSearching bool
 
-	// Folder/Indexer specific settings, should be extracted to a separate struct
+	// Folder/Indexer specific settings, should be extracted to a separate
+	// struct
 
 	// Normalizer is a function that normalizes words
 	Normalizer normalize.Normalizer

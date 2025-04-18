@@ -80,7 +80,8 @@ func insertRow(db *sql.DB, page Page) (sql.Result, error) {
 }
 
 // func insertRowWithJSON(db *sql.DB, page Page) (sql.Result, error) {
-// 	insertStmt := `INSERT INTO "page"("path", "type", "dict") values($1, $2, $3)`
+// 	insertStmt := `INSERT INTO "page"("path", "type", "dict") values($1, $2,
+// $3)`
 // 	return db.Exec(insertStmt, page.path, page.pathType, page.dict)
 // }
 
@@ -109,6 +110,7 @@ func queryJSONKeysAll(db *sql.DB, keys []string) *sql.Rows {
 
 	rows, err := db.Query(query, pq.StringArray(keys))
 	checkSQLError(err)
+
 	return rows
 }
 
@@ -121,6 +123,7 @@ func queryAll(db *sql.DB) *sql.Rows {
 
 	rows, err := db.Query(query)
 	checkSQLError(err)
+
 	return rows
 }
 

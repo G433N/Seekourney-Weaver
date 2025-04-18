@@ -6,7 +6,6 @@ import (
 	"os"
 	"seekourney/config"
 	"seekourney/document"
-	"seekourney/folder"
 	"seekourney/timing"
 	"seekourney/utils"
 )
@@ -18,7 +17,7 @@ type Config struct {
 }
 
 // Can't name this folder since it conflicts with the folder package
-type fold = folder.Folder
+// type fold = folder.Folder
 type doc = document.UnnormalizedDocument
 
 // IndexFile creates a new document from a file
@@ -55,7 +54,8 @@ func IndexIter(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 	}
 }
 
-// IndexIterParallel iterates over a sequence of paths and indexes them in parallel
+// IndexIterParallel iterates over a sequence of paths and indexes them in
+// parallel
 func IndexIterParallel(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 
 	type result struct {
@@ -109,7 +109,17 @@ func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 
 func Default(config *config.Config) *Config {
 
-	w := utils.NewWalkDirConfig().SetAllowedExts([]string{".txt", ".md", ".json", ".xml", ".html", "htm", ".xhtml", ".csv"})
+	w := utils.NewWalkDirConfig().
+		SetAllowedExts([]string{
+			".txt",
+			".md",
+			".json",
+			".xml",
+			".html",
+			"htm",
+			".xhtml",
+			".csv",
+		})
 	return &Config{
 		WalkDirConfig:     w,
 		ParrallelIndexing: config.ParrallelIndexing,

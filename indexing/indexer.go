@@ -6,7 +6,8 @@ import (
 	"seekourney/words"
 )
 
-// Indexer is a function that takes a string and returns a map of words to their frequency.
+// Indexer is a function that takes a string and returns a map of words to their
+// frequency.
 func IndexBytes(chars []byte) utils.FrequencyMap {
 	sw := timing.Measure(timing.IndexBytes)
 	defer sw.Stop()
