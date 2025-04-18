@@ -41,6 +41,9 @@ func safelyTest(testFunc func(test *testing.T)) func(*testing.T) {
 }
 
 func TestDB(test *testing.T) {
+	if testing.Short() {
+		test.SkipNow()
+	}
 	test.Chdir("..")
 
 	go startContainer()
