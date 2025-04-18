@@ -20,10 +20,16 @@ const (
 type JSONString string
 
 type Page struct {
-	// id       int64
+	id       int64
 	path     string
 	pathType PathType
-	// dict     JSONString
+	dict     JSONString
+}
+
+// Prints the values of a page to a string
+func pageString(page Page) string {
+	return fmt.Sprintf("id: %d, \npath: %s, \npathType: %s, \ndict: %s\n",
+		page.id, page.path, page.pathType, page.dict)
 }
 
 // Attempts to connect to the database, will retry every half second for
@@ -72,23 +78,12 @@ func insertRow(db *sql.DB, page Page) (sql.Result, error) {
 // Writes the contents of database rows to the given writer
 func writeRows(writer io.Writer, rows *sql.Rows) {
 	for rows.Next() {
-		var id int64
-		var path string
-		var pathType string
-		var dict string
+		var page Page
 
-		err := rows.Scan(&id, &path, &pathType, &dict)
+		err := rows.Scan(&page.id, &page.path, &page.pathType, &page.dict)
 		checkSQLError(err)
 
-		_, err = fmt.Fprintf(
-			writer,
-			"id: %d\npath: %s\npathType: %s\ndict: %s\n\n",
-			id,
-			path,
-			pathType,
-			dict,
-		)
-		checkIOError(err)
+		fmt.Fprint(writer, pageString(page), "\n")
 	}
 }
 

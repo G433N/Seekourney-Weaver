@@ -8,6 +8,20 @@ import (
 
 var testDB *sql.DB
 
+var page1 = Page{
+	id:       1,
+	path:     "/some/path",
+	pathType: "file",
+	dict:     `{"key1": 1, "key2": 2}`,
+}
+
+var page2 = Page{
+	id:       2,
+	path:     "/some/other/path",
+	pathType: "file",
+	dict:     `{"key2": 4, "key3": 6}`,
+}
+
 // Adds a deferred func before running the test function to ensure that the
 // database container is stopped if the test panics. Also resets the database
 // to if the tests executed without panicking

@@ -11,8 +11,13 @@ import (
 // each test
 var serverParams serverFuncParams
 var ctx context.Context
+var buffer bytes.Buffer
 
 func TestServer(test *testing.T) {
+	if testing.Short() {
+		test.SkipNow()
+	}
+
 	os.Chdir("..")
 
 	go startContainer()
@@ -25,10 +30,8 @@ func TestServer(test *testing.T) {
 	ctx, stop = context.WithCancel(context.Background())
 	defer stop()
 
-	var buffer *bytes.Buffer
-
 	serverParams = serverFuncParams{
-		writer: buffer,
+		writer: &buffer,
 		stop:   stop,
 		db:     testDB,
 	}
@@ -39,8 +42,24 @@ func TestServer(test *testing.T) {
 	test.Run("TestHandleQuit", safelyTest(testHandleQuit))
 }
 
+func assertBufferEquals(test *testing.T, expected bytes.Buffer, actual bytes.Buffer) {
+	if !bytes.Equal(expected.Bytes(), actual.Bytes()) {
+		test.Log("Incorrect output written by server function, expected:")
+		test.Log(expected.String())
+		test.Log("\n\nGot: ")
+		test.Log(actual.String())
+		test.Fail()
+	}
+}
+
 func testHandleAll(test *testing.T) {
-	// TODO
+	handleAll(serverParams)
+
+	var expected bytes.Buffer
+	expected.WriteString(pageString(page1) + "\n")
+	expected.WriteString(pageString(page2) + "\n")
+
+	assertBufferEquals(test, expected, buffer)
 }
 
 func testHandleSearch(test *testing.T) {
