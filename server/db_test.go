@@ -44,9 +44,9 @@ func TestDB(test *testing.T) {
 	test.Chdir("..")
 
 	go startContainer()
-	defer stopContainer()
-
 	testDB = connectToDB()
+	defer testDB.Close()
+	defer stopContainer()
 
 	test.Run("TestQueryAll", safelyTest(testQueryAll))
 	test.Run("TestQueryJSONKeysAll", safelyTest(testQueryJSONKeysAll))
@@ -102,26 +102,26 @@ func testQueryAll(test *testing.T) {
 	rows := queryAll(testDB)
 	checkRow(test, rows, page1)
 	checkRow(test, rows, page2)
-	rows.Close()
+	unsafelyClose(rows)
 }
 
 func testQueryJSONKeysAll(test *testing.T) {
 	rows := queryJSONKeysAll(testDB, []string{"key1"})
 	checkRow(test, rows, page1)
-	rows.Close()
+	unsafelyClose(rows)
 
 	rows = queryJSONKeysAll(testDB, []string{"key3"})
 	checkRow(test, rows, page2)
-	rows.Close()
+	unsafelyClose(rows)
 
 	rows = queryJSONKeysAll(testDB, []string{"key2"})
 	checkRow(test, rows, page1)
 	checkRow(test, rows, page2)
-	rows.Close()
+	unsafelyClose(rows)
 
 	rows = queryJSONKeysAll(testDB, []string{"key1", "key2"})
 	checkRow(test, rows, page1)
-	rows.Close()
+	unsafelyClose(rows)
 
 	rows = queryJSONKeysAll(testDB, []string{"key1", "key2", "key3"})
 	if rows.Next() {

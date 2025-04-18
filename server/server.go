@@ -125,7 +125,7 @@ func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
 	rows := queryAll(serverParams.db)
 	writeRows(serverParams.writer, rows)
-	rows.Close()
+	unsafelyClose(rows)
 }
 
 // Handles a /search request, queries database for rows containing ALL keys and
@@ -134,7 +134,7 @@ func handleSearch(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
 	rows := queryJSONKeysAll(serverParams.db, keys)
 	writeRows(serverParams.writer, rows)
-	rows.Close()
+	unsafelyClose(rows)
 }
 
 // Handles an /add request, inserts a row to the database for each path given
