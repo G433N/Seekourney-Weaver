@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -42,33 +43,79 @@ func TestServer(test *testing.T) {
 	test.Run("TestHandleQuit", safelyTest(testHandleQuit))
 }
 
-func assertBufferEquals(test *testing.T, expected bytes.Buffer, actual bytes.Buffer) {
+func assertBufferEquals(test *testing.T, label string, expected bytes.Buffer, actual bytes.Buffer) {
 	if !bytes.Equal(expected.Bytes(), actual.Bytes()) {
-		test.Log("Incorrect output written by server function, expected:")
-		test.Log(expected.String())
-		test.Log("\n\nGot: ")
-		test.Log(actual.String())
-		test.Fail()
+		fmt.Println("Incorrect output written by server function, expected:")
+		fmt.Println(expected.String())
+		fmt.Println("\n\nGot: ")
+		fmt.Println(actual.String())
+		test.Error(label)
 	}
 }
 
 func testHandleAll(test *testing.T) {
-	handleAll(serverParams)
-
 	var expected bytes.Buffer
 	expected.WriteString(pageString(page1) + "\n")
 	expected.WriteString(pageString(page2) + "\n")
 
-	assertBufferEquals(test, expected, buffer)
+	buffer.Reset()
+	handleAll(serverParams)
+	assertBufferEquals(test, "HandleAll", expected, buffer)
 }
 
 func testHandleSearch(test *testing.T) {
-	// TODO
+	var expected bytes.Buffer
 
+	buffer.Reset()
+	expected.WriteString(pageString(page1) + "\n")
+	handleSearch(serverParams, []string{"key1"})
+	assertBufferEquals(test, "Search key1", expected, buffer)
+
+	expected.Reset()
+	buffer.Reset()
+	expected.WriteString(pageString(page2) + "\n")
+	handleSearch(serverParams, []string{"key3"})
+	assertBufferEquals(test, "Search key3", expected, buffer)
+
+	expected.Reset()
+	buffer.Reset()
+	expected.WriteString(pageString(page1) + "\n")
+	expected.WriteString(pageString(page2) + "\n")
+	handleSearch(serverParams, []string{"key2"})
+	assertBufferEquals(test, "Search key2", expected, buffer)
 }
 
 func testHandleAdd(test *testing.T) {
-	// TODO
+	// Add one
+	path1 := "/a/path"
+	handleAdd(serverParams, []string{path1})
+
+	page, ok := getRowByPath(testDB, path1)
+	if !ok ||
+		page.path != path1 ||
+		page.pathType != pathTypeFile ||
+		page.dict != emptyJSON {
+		test.Error("handleAdd one, did not add correct page")
+	}
+
+	// Add many
+	path2 := "/another/path"
+	path3 := "/one/more/path"
+	handleAdd(serverParams, []string{path2, path3})
+	page, ok = getRowByPath(testDB, path2)
+	if !ok ||
+		page.path != path2 ||
+		page.pathType != pathTypeFile ||
+		page.dict != emptyJSON {
+		test.Error("handleAdd multiple, did not add correct page (2)")
+	}
+	page, ok = getRowByPath(testDB, path3)
+	if !ok ||
+		page.path != path3 ||
+		page.pathType != pathTypeFile ||
+		page.dict != emptyJSON {
+		test.Error("handleAdd multiple, did not add correct page (3)")
+	}
 
 }
 

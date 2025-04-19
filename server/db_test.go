@@ -51,7 +51,15 @@ func resetSQL(db *sql.DB) {
 	const initDB = "/docker-entrypoint-initdb.d/initdb.sql"
 
 	err = exec.Command(
-		"docker", "exec", containerName, "psql", "-U", dbname, "-f", initDB).Run()
+		"docker",
+		"exec",
+		containerName,
+		"psql",
+		"-U",
+		dbname,
+		"-f",
+		initDB,
+	).Run()
 	if err != nil {
 		panic(err)
 	}

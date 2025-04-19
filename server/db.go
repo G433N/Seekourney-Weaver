@@ -63,9 +63,16 @@ func checkSQLError(err error) {
 	}
 }
 
+func unsafelyClose(rows *sql.Rows) {
+	err := rows.Close()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func insertRow(db *sql.DB, page Page) (sql.Result, error) {
 	insert := `INSERT INTO "page"("path", "type") values($1, $2)`
-	fmt.Printf("%s (%s)\n", insert, page.path)
+	fmt.Printf("%s (%s, %s)\n", insert, page.path, page.pathType)
 	return db.Exec(insert, page.path, page.pathType)
 }
 
@@ -123,4 +130,23 @@ func queryAll(db *sql.DB, writer io.Writer) {
 	}()
 
 	writeRows(writer, rows)
+}
+
+func getRowByPath(db *sql.DB, path string) (Page, bool) {
+	var page Page
+	const query = `SELECT * FROM page WHERE path = $1`
+
+	fmt.Printf("%s (%s)\n", query, path)
+
+	rows, err := db.Query(query, path)
+	checkSQLError(err)
+	defer unsafelyClose(rows)
+
+	if rows.Next() {
+		err = rows.Scan(&page.id, &page.path, &page.pathType, &page.dict)
+		checkSQLError(err)
+		return page, true
+	} else {
+		return page, false
+	}
 }

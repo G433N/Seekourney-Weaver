@@ -15,16 +15,16 @@ import (
 )
 
 const (
-	serverAddress       string = ":8080"
-	containerStart      string = "./docker-start"
-	containerOutputFile string = "./docker.log"
-	host                string = "localhost"
-	port                int    = 5433
-	containerName       string = "go-postgres"
-	user                string = "go-postgres"
-	password            string = "go-postgres"
-	dbname              string = "go-postgres"
-	emptyJSON           string = "{}"
+	serverAddress       string     = ":8080"
+	containerStart      string     = "./docker-start"
+	containerOutputFile string     = "./docker.log"
+	host                string     = "localhost"
+	port                int        = 5433
+	containerName       string     = "go-postgres"
+	user                string     = "go-postgres"
+	password            string     = "go-postgres"
+	dbname              string     = "go-postgres"
+	emptyJSON           JSONString = "{}"
 )
 
 // Used to params used by server query handler functions
