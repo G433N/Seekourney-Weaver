@@ -24,9 +24,6 @@ func TestServer(test *testing.T) {
 	go startContainer()
 	testDB = connectToDB()
 
-	defer testDB.Close()
-	defer stopContainer()
-
 	var stop context.CancelFunc
 	ctx, stop = context.WithCancel(context.Background())
 	defer stop()
@@ -41,6 +38,12 @@ func TestServer(test *testing.T) {
 	test.Run("TestHandleSearch", safelyTest(testHandleSearch))
 	test.Run("TestHandleAdd", safelyTest(testHandleAdd))
 	test.Run("TestHandleQuit", safelyTest(testHandleQuit))
+
+	err := testDB.Close()
+	if err != nil {
+		panic(err)
+	}
+	stopContainer()
 }
 
 func assertBufferEquals(test *testing.T, label string, expected bytes.Buffer, actual bytes.Buffer) {
@@ -93,7 +96,7 @@ func testHandleAdd(test *testing.T) {
 	page, ok := getRowByPath(testDB, path1)
 	if !ok ||
 		page.path != path1 ||
-		page.pathType != pathTypeFile ||
+		page.pathType != PathTypeFile ||
 		page.dict != emptyJSON {
 		test.Error("handleAdd one, did not add correct page")
 	}
@@ -105,14 +108,14 @@ func testHandleAdd(test *testing.T) {
 	page, ok = getRowByPath(testDB, path2)
 	if !ok ||
 		page.path != path2 ||
-		page.pathType != pathTypeFile ||
+		page.pathType != PathTypeFile ||
 		page.dict != emptyJSON {
 		test.Error("handleAdd multiple, did not add correct page (2)")
 	}
 	page, ok = getRowByPath(testDB, path3)
 	if !ok ||
 		page.path != path3 ||
-		page.pathType != pathTypeFile ||
+		page.pathType != PathTypeFile ||
 		page.dict != emptyJSON {
 		test.Error("handleAdd multiple, did not add correct page (3)")
 	}
