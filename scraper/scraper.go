@@ -3,6 +3,7 @@ package scraper
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"regexp"
 	"sync"
 
@@ -240,7 +241,7 @@ boolean for turning on and off asyncronous work
 
 A new collector ready to be used.
 */
-func NewCollector(async bool) *CollectorStruct {
+func NewCollector(async bool, localFiles bool) *CollectorStruct {
 	collector := &CollectorStruct{}
 	collector.context = context{}
 	context := &collector.context
@@ -259,6 +260,12 @@ func NewCollector(async bool) *CollectorStruct {
 	collector.collectorColly = c
 
 	c.Async = async
+	if localFiles {
+		t := &http.Transport{}
+		t.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
+
+		c.WithTransport(t)
+	}
 
 	// called before an HTTP request is triggered
 	c.OnRequest(func(r *colly.Request) {
@@ -266,8 +273,11 @@ func NewCollector(async bool) *CollectorStruct {
 	})
 
 	// triggered when the scraper encounters an error
-	c.OnError(func(_ *colly.Response, err error) {
-		debugPrint("Something went wrong: ", err)
+	c.OnError(func(r *colly.Response, err error) {
+		debugPrint(
+			"Something went wrong: ", err,
+			"\nWhen trying to scrape:", r.Request.URL,
+		)
 	})
 
 	// fired when the server responds
@@ -295,7 +305,7 @@ func NewCollector(async bool) *CollectorStruct {
 
 	// Find and visit all links
 	c.OnHTML(`[href]`, func(e *colly.HTMLElement) {
-		link, valid := linkHandler(e)
+		link, valid := linkFilter(e)
 		if !valid {
 			return
 		}
@@ -344,7 +354,7 @@ the matched HTMLElemnt.
 
 bool whether the the link is valid
 */
-func linkHandler(e *colly.HTMLElement) (string, bool) {
+func linkFilter(e *colly.HTMLElement) (string, bool) {
 
 	// TODO: filter away already visited
 
