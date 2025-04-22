@@ -11,8 +11,8 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'ready for review')
     runs-on: ubuntu-latest
     defaults:
-          run:
-            working-directory: ./backend
+      run:
+        working-directory: ./backend
 
     steps:
       - uses: actions/checkout@v4
