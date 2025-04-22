@@ -38,7 +38,11 @@ func DocNew(path utils.Path, source Source) UnnormalizedDocument {
 // DocFromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func DocFromText(path utils.Path, source Source, text string) UnnormalizedDocument {
+func DocFromText(
+	path utils.Path,
+	source Source,
+	text string,
+) UnnormalizedDocument {
 	doc := DocNew(path, source)
 	doc.Words = IndexString(text)
 	return doc
@@ -47,7 +51,11 @@ func DocFromText(path utils.Path, source Source, text string) UnnormalizedDocume
 // DocFromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func DocFromBytes(path utils.Path, source Source, bytes []byte) UnnormalizedDocument {
+func DocFromBytes(
+	path utils.Path,
+	source Source,
+	bytes []byte,
+) UnnormalizedDocument {
 	doc := DocNew(path, source)
 	doc.Words = IndexBytes(bytes)
 	return doc
@@ -57,5 +65,10 @@ func DocFromBytes(path utils.Path, source Source, bytes []byte) UnnormalizedDocu
 
 // DebugPrint prints information about the document
 func (doc *UnnormalizedDocument) DebugPrint() {
-	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", doc.Path, doc.Source, len(doc.Words))
+	log.Printf(
+		"Document = {Path: %s, Type: %d, Length: %d}",
+		doc.Path,
+		doc.Source,
+		len(doc.Words),
+	)
 }

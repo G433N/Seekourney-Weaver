@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"seekourney/core/config"
-	"seekourney/core/folder"
 	"seekourney/indexing"
 	"seekourney/utils"
 	"seekourney/utils/timing"
@@ -18,7 +17,7 @@ type Config struct {
 }
 
 // Can't name this folder since it conflicts with the folder package
-type fold = folder.Folder
+// type fold = folder.Folder
 type doc = indexing.UnnormalizedDocument
 
 // IndexFile creates a new document from a file
