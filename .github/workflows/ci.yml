@@ -10,6 +10,9 @@ jobs:
   default-ci:
     if: contains(github.event.pull_request.labels.*.name, 'ready for review')
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +33,7 @@ jobs:
           go-version: '1.24.2'
 
       - name: Install Go dependencies
-        run: cd backend && go get ./...
+        run: go get ./...
 
       - name: Build Backend
         run: go build -v ./...
