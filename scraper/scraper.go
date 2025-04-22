@@ -31,8 +31,9 @@ var (
 )
 
 type (
-	WorkspaceID int
-	URLString   string
+	WorkspaceID  int
+	URLString    string
+	HtmlFileType string
 
 	context struct {
 
@@ -80,6 +81,14 @@ type (
 
 		// the colly collector used for webb scraping and formatting
 		collectorColly *colly.Collector
+
+		settings settings
+	}
+
+	settings struct {
+		HtmlFileType HtmlFileType
+
+		async bool
 	}
 )
 
@@ -244,6 +253,14 @@ A new collector ready to be used.
 func NewCollector(async bool, localFiles bool) *CollectorStruct {
 	collector := &CollectorStruct{}
 	collector.context = context{}
+	settings := settings{}
+	collector.settings = settings
+	settings.async = async
+	if localFiles {
+		settings.HtmlFileType = HtmlFileType("file://")
+	} else {
+		settings.HtmlFileType = HtmlFileType("https://")
+	}
 	context := &collector.context
 	collector.counter.finishedCounter = 0
 	collector.counter.workingCounter = 0
@@ -286,7 +303,7 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 		debugPrint("Page visited: ", r.Request.URL)
 		host := r.Request.URL.Host
 		if shortendLinkRegex.MatchString(url) {
-			url = "https://" + host + url
+			url = string(settings.HtmlFileType) + host + url
 		}
 		ID := context.claimNewIndex(URLString(url))
 		r.Ctx.Put(_IDKEY_, ID)
@@ -310,6 +327,7 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 		if !valid {
 			return
 		}
+		link = string(settings.HtmlFileType) + link
 		select {
 		case context.linkQueue <- URLString(link):
 		default:
@@ -375,7 +393,7 @@ func linkFilter(e *colly.HTMLElement) (string, bool) {
 			host, "\nlink:", link)
 		return "", false
 	}
-	return "https://" + host + link, true
+	return host + link, true
 }
 
 /*
