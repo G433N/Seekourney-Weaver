@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	serverAddress       string = ":8080"
-	containerStart      string = "./docker-start"
-	containerOutputFile string = "./docker.log"
-	host                string = "localhost"
-	port                int    = 5433
-	containerName       string = "go-postgres"
-	user                string = "go-postgres"
-	password            string = "go-postgres"
-	dbname              string = "go-postgres"
-	emptyJSON           string = "{}"
+	serverAddress       string     = ":8080"
+	containerStart      string     = "./docker-start"
+	containerOutputFile string     = "./docker.log"
+	host                string     = "localhost"
+	port                int        = 5433
+	containerName       string     = "go-postgres"
+	user                string     = "go-postgres"
+	password            string     = "go-postgres"
+	dbname              string     = "go-postgres"
+	emptyJSON           JSONString = "{}"
 )
 
 // Used to params used by server query handler functions
@@ -123,23 +123,28 @@ func recoverSQLError(writer io.Writer) {
 // response writer
 func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
-	queryAll(serverParams.db, serverParams.writer)
+	rows := queryAll(serverParams.db)
+	writeRows(serverParams.writer, rows)
+	unsafelyClose(rows)
 }
 
 // Handles a /search request, queries database for rows containing ALL keys and
 // wrties output to response writer
 func handleSearch(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
-	queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
+	rows := queryJSONKeysAll(serverParams.db, keys)
+	writeRows(serverParams.writer, rows)
+	unsafelyClose(rows)
 }
 
 // Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
 	for _, path := range paths {
-		_, err := insertRow(
-			serverParams.db,
-			Page{path: path, pathType: pathTypeFile},
-		)
+		_, err := insertRow(serverParams.db, Page{
+			path:     path,
+			pathType: PathTypeFile,
+			dict:     emptyJSON,
+		})
 		if err != nil {
 			_, ioErr := fmt.Fprintf(
 				serverParams.writer,
