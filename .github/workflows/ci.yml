@@ -43,3 +43,5 @@ jobs:
 
       - name: Backend Linting
         uses: golangci/golangci-lint-action@v7
+        with:
+          working-directory: backend
