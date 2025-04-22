@@ -10,6 +10,9 @@ jobs:
   default-ci:
     if: contains(github.event.pull_request.labels.*.name, 'ready for review')
     runs-on: ubuntu-latest
+    defaults:
+          run:
+            working-directory: ./backend
 
     steps:
       - uses: actions/checkout@v4
@@ -30,13 +33,13 @@ jobs:
           go-version: '1.24.2'
 
       - name: Install Go dependencies
-        run: go get ./backend
+        run: go get .
 
       - name: Build Backend
-        run: go build -v backend/...
+        run: go build -v ./...
 
       - name: Run Backend Unit Tests
-        run: timeout 10 go test -v -short backend/...
+        run: timeout 10 go test -v -short ./...
 
       - name: Backend Linting
         uses: golangci/golangci-lint-action@v7
