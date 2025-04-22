@@ -284,8 +284,9 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 	c.OnResponse(func(r *colly.Response) {
 		url := r.Request.URL.EscapedPath()
 		debugPrint("Page visited: ", r.Request.URL)
+		host := r.Request.URL.Host
 		if shortendLinkRegex.MatchString(url) {
-			url = "https://en.wikipedia.org" + url
+			url = "https://" + host + url
 		}
 		ID := context.claimNewIndex(URLString(url))
 		r.Ctx.Put(_IDKEY_, ID)
