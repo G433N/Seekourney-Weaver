@@ -2,7 +2,7 @@ name: Default CI
 
 on:
   pull_request:
-    types: [push]
+    types: [opened, synchronize, reopened]
 
 # All in one job to reduce GitHub-actions minutes used.
 # Only run if "ready for review" label exists on PR.
