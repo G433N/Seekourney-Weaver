@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"testing"
 )
 
@@ -19,7 +18,7 @@ func TestServer(test *testing.T) {
 		test.SkipNow()
 	}
 
-	os.Chdir("..")
+	test.Chdir("..")
 
 	go startContainer()
 	testDB = connectToDB()
@@ -46,7 +45,12 @@ func TestServer(test *testing.T) {
 	stopContainer()
 }
 
-func assertBufferEquals(test *testing.T, label string, expected bytes.Buffer, actual bytes.Buffer) {
+func assertBufferEquals(
+	test *testing.T,
+	label string,
+	expected bytes.Buffer,
+	actual bytes.Buffer,
+) {
 	if !bytes.Equal(expected.Bytes(), actual.Bytes()) {
 		fmt.Println("Incorrect output written by server function, expected:")
 		fmt.Println(expected.String())
