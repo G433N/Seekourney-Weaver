@@ -91,24 +91,25 @@ func Run(args []string) {
 		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		serverParams := serverFuncParams{
-			writer: writer,
-			db:     db,
-			stop:   stop,
-		}
+	http.HandleFunc("/",
+		func(writer http.ResponseWriter, request *http.Request) {
+			serverParams := serverFuncParams{
+				writer: writer,
+				db:     db,
+				stop:   stop,
+			}
 
-		switch html.EscapeString(request.URL.Path) {
-		case "/all":
-			handleAll(serverParams)
-		case "/search":
-			handleSearch(serverParams, request.URL.Query()["q"])
-		case "/add":
-			handleAdd(serverParams, request.URL.Query()["p"])
-		case "/quit":
-			handleQuit(serverParams)
-		}
-	})
+			switch html.EscapeString(request.URL.Path) {
+			case "/all":
+				handleAll(serverParams)
+			case "/search":
+				handleSearch(serverParams, request.URL.Query()["q"])
+			case "/add":
+				handleAdd(serverParams, request.URL.Query()["p"])
+			case "/quit":
+				handleQuit(serverParams)
+			}
+		})
 
 	go func() {
 		err := server.ListenAndServe()
@@ -127,7 +128,11 @@ func Run(args []string) {
 	if err != nil {
 		fmt.Println("Error while shutting down server: ", err)
 	}
-	db.Close()
+	err = db.Close()
+	if err != nil {
+		fmt.Println("Error while closing database: ", err)
+	}
+
 	stopContainer()
 }
 
