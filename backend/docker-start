@@ -4,7 +4,5 @@ docker run --rm \
     -e POSTGRES_USER=go-postgres \
     -e POSTGRES_PASSWORD=go-postgres \
     -p 5433:5432 \
+    -v "$PWD/data":/var/lib/postgresql/data \
     postgres 
-
-# For persistent data
-# -v "$PWD/data":/var/lib/postgresql/data \

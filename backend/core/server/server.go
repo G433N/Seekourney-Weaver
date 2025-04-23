@@ -93,6 +93,18 @@ func index() folder.Folder {
 	return folder
 }
 
+func insertFolder(db *sql.DB, folder *folder.Folder) {
+
+	for _, doc := range folder.GetDocs() {
+
+		_, err := InsertInto(db, doc)
+
+		if err != nil {
+			log.Printf("Error inserting row: %s\n", err)
+		}
+	}
+}
+
 /*
 Runs a http server with a postgres instance within docker container,
 can be accessed for example by `curl 'http://localhost:8080/search?q=key1'`
@@ -115,13 +127,32 @@ func Run(args []string) {
 
 	go startContainer()
 
-	Folder = index()
-
 	db := connectToDB()
+
+	loadFromDisc := true
+
+	if len(args) > 1 {
+		log.Fatal("Too many arguments")
+	} else if len(args) == 1 {
+		switch args[0] {
+		case "load":
+			loadFromDisc = true
+		}
+	}
+
+	if !loadFromDisc {
+		log.Println("Indexing files")
+		Folder = index()
+		insertFolder(db, &Folder)
+	} else {
+		log.Println("Loading from disk")
+	}
 
 	server := &http.Server{
 		Addr: serverAddress,
 	}
+
+	log.Println("Server started at", serverAddress)
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
 		serverParams := serverFuncParams{server: server, writer: writer, db: db}

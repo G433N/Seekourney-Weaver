@@ -1,6 +1,7 @@
 package document
 
 import (
+	"encoding/json"
 	"log"
 	"seekourney/core/normalize"
 	"seekourney/indexing"
@@ -69,4 +70,26 @@ func (doc *Document) GetWordsSorted() []Pair {
 		func(i, j int) bool { return pairs[i].Freq > pairs[j].Freq },
 	)
 	return pairs
+}
+
+// SQL
+
+func (doc Document) SQLGetName() string {
+	return "document"
+}
+
+func (doc Document) SQLGetFields() []string {
+	return []string{"path", "type", "words"}
+}
+
+func (doc Document) SQLGetValues() []any {
+
+	bytes, err := json.Marshal(doc.Words)
+
+	if err != nil {
+		log.Printf("Error marshalling dict: %s", err)
+		return []any{doc.Path, "file", nil}
+	}
+
+	return []any{doc.Path, "file", bytes}
 }

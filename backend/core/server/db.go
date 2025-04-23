@@ -116,7 +116,7 @@ func queryJSONKeysAll(db *sql.DB, writer io.Writer, keys []string) {
 // Querys the database for all rows.
 // Writes output to writer
 func queryAll(db *sql.DB, writer io.Writer) {
-	query := `SELECT * FROM page`
+	query := `SELECT * FROM document`
 
 	fmt.Printf("%s\n", query)
 

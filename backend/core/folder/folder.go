@@ -94,6 +94,12 @@ func (folder *Folder) GetDoc(path utils.Path) (document.Document, bool) {
 	return doc, ok
 }
 
+// GetDocs returns the documents in the folder
+func (folder *Folder) GetDocs() DocMap {
+	return folder.docs
+}
+
+// GetDocAmount returns the number of documents in the folder
 func (folder *Folder) GetDocAmount() int {
 	return len(folder.docs)
 }
