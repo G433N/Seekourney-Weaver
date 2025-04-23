@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"seekourney/document"
+	"seekourney/indexing"
 	"seekourney/utils"
 	"time"
 )
@@ -155,8 +155,8 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 func indexPath(
 	info IndexerInfo,
 	path utils.Path,
-) ([]document.UnnormalizedDocument, error) {
-	var docs []document.UnnormalizedDocument
+) ([]indexing.UnnormalizedDocument, error) {
+	var docs []indexing.UnnormalizedDocument
 
 	client := http.Client{
 		Timeout: _LONGTIMEOUT_,
@@ -176,7 +176,10 @@ func indexPath(
 	parsedDocs := parsedData.Documents
 	for _, parsedDoc := range parsedDocs {
 		// TODO temp source
-		docs = append(docs, document.New(parsedDoc.Path, document.SourceLocal))
+		docs = append(
+			docs,
+			indexing.DocNew(parsedDoc.Path, indexing.SourceLocal),
+		)
 	}
 
 	// TODO check document.go, see if can use Pair type
