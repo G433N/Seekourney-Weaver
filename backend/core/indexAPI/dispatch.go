@@ -23,6 +23,7 @@ const (
 	_STATUSSUCCESSFUL_ string        = "success"
 	_STATUSFAILURE_    string        = "fail"
 	_PONG_             string        = "pong"
+	_EXITING_          string        = "exiting"
 )
 
 // See indexing_API.md for corresponding JSON formatting.
@@ -43,7 +44,7 @@ type indexerDocsCollection struct {
 
 // Generic response from indexer.
 type indexerResponse struct {
-	Status string `json:"success"`
+	Status string `json:"status"`
 	Data   any    `json:"data"`
 }
 
@@ -102,8 +103,8 @@ func startupIndexer(info IndexerInfo) error {
 	if parsedResp.Status == _STATUSSUCCESSFUL_ && parsedResp.Data == _PONG_ {
 		return nil
 	} else {
-		return errors.New("Indexer" + info.name +
-			"ping response did not match expected data")
+		return errors.New("Ping response from indexer " + info.name +
+			" did not match expected data")
 	}
 }
 
@@ -138,11 +139,13 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 	defer closeResponse(resp)
 
 	parsedResp, err := responseToStruct(resp)
-	if err != nil ||
-		parsedResp.Status != _STATUSSUCCESSFUL_ ||
-		parsedResp.Data != _SHUTDOWN_ {
-		defer carelessShutdown(info)
+	if err != nil {
 		return err
+	}
+	if parsedResp.Status != _STATUSSUCCESSFUL_ || parsedResp.Data != _EXITING_ {
+		defer carelessShutdown(info)
+		return errors.New("JSON response to indexer shutdown request failed" +
+			" to match expected format")
 	}
 
 	info.cmd.WaitDelay = _MEDIUMTIMEOUT_

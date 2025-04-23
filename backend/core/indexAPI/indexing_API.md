@@ -120,7 +120,7 @@ Indexer must respond with:
 ```json
 {
     "status" : "success",
-    "data" : "shutdown",
+    "data" : "exiting",
 }
 ```
 And immediately exit all it's associated processes.
