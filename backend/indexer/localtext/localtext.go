@@ -4,10 +4,10 @@ import (
 	"iter"
 	"log"
 	"os"
-	"seekourney/config"
-	"seekourney/document"
-	"seekourney/timing"
+	"seekourney/core/config"
+	"seekourney/indexing"
 	"seekourney/utils"
+	"seekourney/utils/timing"
 )
 
 type Config struct {
@@ -18,7 +18,7 @@ type Config struct {
 
 // Can't name this folder since it conflicts with the folder package
 // type fold = folder.Folder
-type doc = document.UnnormalizedDocument
+type doc = indexing.UnnormalizedDocument
 
 // IndexFile creates a new document from a file
 // It takes a path to the file
@@ -32,7 +32,7 @@ func IndexFile(path utils.Path) (doc, error) {
 		return doc{}, err
 	}
 
-	return document.FromBytes(path, document.SourceLocal, content), nil
+	return indexing.DocFromBytes(path, indexing.SourceLocal, content), nil
 }
 
 // IndexIter iterates over a sequence of paths and indexes them
@@ -60,7 +60,7 @@ func IndexIterParallel(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 
 	type result struct {
 		path utils.Path
-		doc  document.UnnormalizedDocument
+		doc  indexing.UnnormalizedDocument
 		err  error
 	}
 

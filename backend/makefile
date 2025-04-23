@@ -11,6 +11,12 @@ endif
 # End From
 
 
+server:
+> go run core/main.go server
+
+test:
+> go test -v ./...
+
 
 downloadTestFiles: removeTestFiles
 > mkdir -p test_data
