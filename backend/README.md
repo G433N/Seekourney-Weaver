@@ -1,13 +1,16 @@
-# Run application
+# Start server
 
 ```bash
-$ go run main.go
+$ make server
 ```
+
+
+The server can now be accessed at http://localhost:8080 or using the client demo. The server's database can be inspected using `$ docker exec -it go-postgres psql -U go-postgres`
 
 # Run tests
 
 ```bash
-$ go test ./...
+$ make test
 ```
 
 # Run application or tests on save
@@ -17,19 +20,10 @@ $ go test ./...
 Install `watchexec` using your package manager.
 
 ```bash
-$ watchexec -e go -r go run main.go
-$ watchexec -e go -r go test ./...
+$ watchexec -e go -r make server
+$ watchexec -e go -r make test
 ```
 
-# Run server demo
-
-Ensure that docker engine daemon is running in background
-
-```bash
-$ go run main.go server
-```
-
-The server can now be accessed at http://localhost:8080 or using the client demo. The server's database can be inspected using `$ docker exec -it go-postgres psql -U go-postgres`
 
 ## Server api
 
@@ -49,7 +43,17 @@ query under the key 'p'
 Ensure that the server application is running
 
 ```bash
-$ go run main.go client <command> [<args>]
+$ go run tui/main.go <command> [<args>]
 ```
 
 See server api for more information about possible commands
+
+# Package structure
+
+```
+core - Server and search code, nothing should depend on this package
+indexing - Indexers depend on this package
+indexer - Indexers for different file types
+tui - Tui client for the server
+utils - Utilities, should only depend on external packages
+```

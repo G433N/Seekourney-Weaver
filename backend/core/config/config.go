@@ -1,7 +1,7 @@
 package config
 
 import (
-	"seekourney/normalize"
+	"seekourney/core/normalize"
 	"seekourney/utils"
 )
 

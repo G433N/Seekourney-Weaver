@@ -3,14 +3,13 @@ package main
 import (
 	"log"
 	"os"
-	"seekourney/client"
-	"seekourney/config"
-	"seekourney/folder"
-	"seekourney/indexing/localtext"
-	"seekourney/search"
-	"seekourney/server"
-	"seekourney/timing"
+	"seekourney/core/config"
+	"seekourney/core/folder"
+	"seekourney/core/search"
+	"seekourney/core/server"
+	"seekourney/indexer/localtext"
 	"seekourney/utils"
+	"seekourney/utils/timing"
 	"strconv"
 
 	"github.com/savioxavier/termlink"
@@ -67,9 +66,6 @@ func main() {
 	// check commandline args to run server or client
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
-		case "client":
-			client.Run(os.Args[1:])
-			return
 		case "server":
 			// right now server does not take any commandline arguments
 			server.Run(os.Args[1:])

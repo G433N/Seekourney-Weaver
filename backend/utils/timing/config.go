@@ -2,6 +2,8 @@ package timing
 
 type WatchID = int
 
+// TODO: Make this a config file instead
+
 // All the different stopwatches
 const (
 	Search WatchID = iota

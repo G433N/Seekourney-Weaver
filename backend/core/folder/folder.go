@@ -3,10 +3,11 @@ package folder
 import (
 	"iter"
 	"log"
-	"seekourney/document"
-	"seekourney/normalize"
-	"seekourney/timing"
+	"seekourney/core/document"
+	"seekourney/core/normalize"
+	external "seekourney/indexing"
 	"seekourney/utils"
+	"seekourney/utils/timing"
 )
 
 // Type alias
@@ -33,7 +34,7 @@ func EmptyFolder() Folder {
 
 func FromIter(
 	normalize normalize.Normalizer,
-	docs iter.Seq2[utils.Path, document.UnnormalizedDocument],
+	docs iter.Seq2[utils.Path, external.UnnormalizedDocument],
 ) Folder {
 	folder := EmptyFolder()
 

@@ -2,7 +2,7 @@ name: Default CI
 
 on:
   pull_request:
-    types: [labeled, review_requested]
+    types: [opened, synchronize, reopened]
 
 # All in one job to reduce GitHub-actions minutes used.
 # Only run if "ready for review" label exists on PR.
@@ -10,6 +10,9 @@ jobs:
   default-ci:
     if: contains(github.event.pull_request.labels.*.name, 'ready for review')
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +33,7 @@ jobs:
           go-version: '1.24.2'
 
       - name: Install Go dependencies
-        run: go get .
+        run: go get ./...
 
       - name: Build Backend
         run: go build -v ./...
@@ -40,3 +43,5 @@ jobs:
 
       - name: Backend Linting
         uses: golangci/golangci-lint-action@v7
+        with:
+          working-directory: backend

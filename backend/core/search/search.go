@@ -2,12 +2,12 @@ package search
 
 import (
 	"log"
-	"seekourney/config"
-	"seekourney/folder"
-	"seekourney/normalize"
-	"seekourney/timing"
+	"seekourney/core/config"
+	"seekourney/core/folder"
+	"seekourney/core/normalize"
 	"seekourney/utils"
-	"seekourney/words"
+	"seekourney/utils/timing"
+	"seekourney/utils/words"
 	"sort"
 )
 
