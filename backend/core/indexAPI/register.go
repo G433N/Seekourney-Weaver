@@ -19,6 +19,8 @@ type RegisterID uint
 // E.g. "http://localhost:39010"
 type restEndpoint string
 
+// IndexerInfo contains information about a registered indexer
+// which is needed to startup, shutdown and make requests to the indexer.
 type IndexerInfo struct {
 	name             string
 	cmd              *exec.Cmd
@@ -115,7 +117,6 @@ func RegisterIndexer(
 }
 
 // UnregisterIndexer removes an existing indexer from the system.
-// Returns nil on successful removal.
 func UnregisterIndexer(id RegisterID) error {
 	if info, ok := registeredIndexers[id]; ok {
 		delete(registeredIndexers, id)
