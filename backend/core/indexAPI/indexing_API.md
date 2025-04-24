@@ -3,6 +3,8 @@
 The general standard for the API's requests and responses follow the
 [jsend](https://github.com/omniti-labs/jsend) specifications which are very minimal.
 
+HTTP response codes will be ignored, only JSON data will be checked.
+
 `.json` ending in request path as stated by `jsend` will be omitted,
 as responses will always be in json-format.
 
@@ -48,7 +50,9 @@ Indexer must respond with:
 ```json
 {
     "status" : "success",
-    "data" : "pong",
+    "data": {
+        "message": "pong",
+    }
 }
 ```
 
@@ -59,19 +63,25 @@ GET /indexfull/FILE_OR_FOLDERPATH`
 Indexer must respond with:
 ```json
 {
-    "status" : "success",
-    "data" : {
+    "status": "success",
+    "data": {
         "documents": [
-          {"path": "FILEPATH",
-           "words": [
-              {"word": "WORD", "frequency": 42},
-              {"word": "ANOTHER-WORD", "frequency": 5}
-          ]},
-          {"path": "OTHERFILEPATH",
-           "words": [
-              ...
-          ]},
-          ...
+            {
+                "path": "FILEPATH",
+                "source": 0,
+                "words": {
+                    "SOMEWORD": 42,
+                    "ANOTHER-WORD": 5,
+                }
+            },
+            {
+                "path": "PATHFORSOMEWEB",
+                "source": 1,
+                "words": {
+                    ...
+                }
+            },
+            ...
         ],
     }
 }
@@ -79,10 +89,15 @@ Indexer must respond with:
 Alternatively, if indexing failed:
 ```json
 {
-    "status" : "fail",
-    "data" : "HUMAN-READABLE ERROR MESSAGE",
+    "status": "fail",
+    "data": {
+        "message": "HUMAN-READABLE ERROR MESSAGE",
+    }
 }
 ```
+
+**`"source"` value in response must be `0` for a local file,
+or `1` for web file (e.g. HTML).**
 
 **Example:**
 Main server requests indexing of a single text file with an active text indexer.
@@ -92,16 +107,19 @@ GET /indexfull/home/george/my_cool_text_files/mount_vesuvius.txt
 The text indexer may respond with:
 ```json
 {
-    "status" : "success",
-    "data" : {
-        "documents": [
-          {"path": "home/george/my_cool_text_files/mount_vesuvius.txt",
-           "words": [
-              {"word": "volcano", "frequency": 3},
-              {"word": "italy", "frequency": 1},
-              {"word": "the", "frequency": 65},
-              {"word": "erupt", "frequency": 12}
-          ]},
+    "status": "success",
+    "data": {
+        "documents":[
+            {
+                "path": "home/george/my_cool_text_files/mount_vesuvius.txt",
+                "source": 0,
+                "words": {
+                    "volcano": 3,
+                    "italy": 1,
+                    "the": 65,
+                    "erupt": 12,
+                } 
+            },
         ],
     }
 }
@@ -119,8 +137,10 @@ GET /shutdown
 Indexer must respond with:
 ```json
 {
-    "status" : "success",
-    "data" : "exiting",
+    "status": "success",
+    "data": {
+        "message": "exiting",
+    }
 }
 ```
 And immediately exit all it's associated processes.
