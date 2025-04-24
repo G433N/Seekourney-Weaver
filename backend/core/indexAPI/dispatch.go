@@ -27,25 +27,23 @@ const (
 )
 
 // See indexing_API.md for corresponding JSON formatting.
-type indexerWordTuple struct {
-	Word      utils.Word      `json:"word"`
-	Frequency utils.Frequency `json:"frequency"`
-}
 
-type indexerDocument struct {
-	Path  utils.Path         `json:"path"`
-	Words []indexerWordTuple `json:"words"`
+type responseDoc struct {
+	Path   utils.Path         `json:"path"`
+	Source indexing.Source    `json:"source"`
+	Words  utils.FrequencyMap `json:"words"`
 }
 
 // Normally corresponds to "data" value in indexerResponse.
-type indexerDocsCollection struct {
-	Documents []indexerDocument `json:"documents"`
+type responseData struct {
+	Message   string        `json:"message"`
+	Documents []responseDoc `json:"documents"`
 }
 
 // Generic response from indexer.
 type indexerResponse struct {
-	Status string `json:"status"`
-	Data   any    `json:"data"`
+	Status string       `json:"status"`
+	Data   responseData `json:"data"`
 }
 
 // responseToStruct converts an HTTP response to an indexerResponse struct.
@@ -100,7 +98,8 @@ func startupIndexer(info IndexerInfo) error {
 	if err != nil {
 		return err
 	}
-	if parsedResp.Status == _STATUSSUCCESSFUL_ && parsedResp.Data == _PONG_ {
+	if parsedResp.Status == _STATUSSUCCESSFUL_ &&
+		parsedResp.Data.Message == _PONG_ {
 		return nil
 	} else {
 		return errors.New("Ping response from indexer " + info.name +
@@ -142,7 +141,8 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 	if err != nil {
 		return err
 	}
-	if parsedResp.Status != _STATUSSUCCESSFUL_ || parsedResp.Data != _EXITING_ {
+	if parsedResp.Status != _STATUSSUCCESSFUL_ ||
+		parsedResp.Data.Message != _EXITING_ {
 		defer carelessShutdown(info)
 		return errors.New("JSON response to indexer shutdown request failed" +
 			" to match expected format")
@@ -153,9 +153,9 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 	return info.cmd.Wait()
 }
 
-// indexPath requests indexer to index and return
+// requestIndexing requests indexer to index and return
 // an array of indexed documents, through the indexing API.
-func indexPath(
+func requestIndexing(
 	info IndexerInfo,
 	path utils.Path,
 ) ([]indexing.UnnormalizedDocument, error) {
@@ -164,28 +164,27 @@ func indexPath(
 	client := http.Client{
 		Timeout: _LONGTIMEOUT_,
 	}
-	resp, err := client.Get(string(info.endpoint) + _INDEXFULL_ + string(path))
+	resp, err := client.Get(string(info.endpoint) + _INDEXFULL_ + "/" +
+		string(path))
 	if err != nil {
 		return docs, err
 	}
 	defer closeResponse(resp)
 
 	parsedResp, err := responseToStruct(resp)
-	if err != nil || parsedResp.Status != _STATUSSUCCESSFUL_ {
+	if err != nil {
 		return docs, err
 	}
-
-	parsedData := parsedResp.Data.(indexerDocsCollection)
-	parsedDocs := parsedData.Documents
-	for _, parsedDoc := range parsedDocs {
-		// TODO temp source
-		docs = append(
-			docs,
-			indexing.DocNew(parsedDoc.Path, indexing.SourceLocal),
+	if parsedResp.Status != _STATUSSUCCESSFUL_ {
+		return docs, errors.New(
+			"indexer " + info.name + " failed indexing request with message: " +
+				parsedResp.Data.Message,
 		)
 	}
 
-	// TODO check document.go, see if can use Pair type
-
+	parsedDocs := parsedResp.Data.Documents
+	for _, parsedDoc := range parsedDocs {
+		docs = append(docs, indexing.UnnormalizedDocument(parsedDoc))
+	}
 	return docs, nil
 }
