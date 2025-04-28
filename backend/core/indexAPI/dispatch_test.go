@@ -288,3 +288,191 @@ func TestRequestIndexingInvalidJSON(t *testing.T) {
 	assert.Error(t, err)
 	assert.True(t, gock.IsDone())
 }
+
+func TestNewIndexErrorsLow(t *testing.T) {
+	errs := newIndexErrors(1)
+	assert.NoError(t, errs.Startup)
+	assert.NoError(t, errs.Shutdown)
+	assert.Equal(t, len(errs.Indexing), 1)
+	assert.NoError(t, errs.Indexing[0])
+}
+
+func TestNewIndexErrorsHigh(t *testing.T) {
+	errs := newIndexErrors(42)
+	assert.NoError(t, errs.Startup)
+	assert.NoError(t, errs.Shutdown)
+	assert.Equal(t, len(errs.Indexing), 42)
+	for i := range errs.Indexing {
+		assert.NoError(t, errs.Indexing[i])
+	}
+}
+
+func TestIndexOneSuccess(t *testing.T) {
+	defer gock.Off()
+	gock.New(string(_TESTURI_)).
+		Get(_PING_).
+		Reply(200).
+		JSON(testResponsePong)
+	gock.New(string(_TESTURI_)).
+		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
+		Reply(200).
+		JSON(testIndexingResponse1)
+	gock.New(string(_TESTURI_)).
+		Get(_SHUTDOWN_).
+		Reply(200).
+		JSON(testResponseExiting)
+	info := IndexerInfo{
+		name:             "TestIndexerName",
+		cmd:              exec.Command("ls"),
+		fileTypesHandled: []utils.FileType{"txt"},
+		id:               42,
+		endpoint:         _TESTURI_,
+	}
+
+	docs, errStruct := IndexOne(info, testIndexFilePath1)
+	assert.True(t, gock.IsDone())
+
+	assert.Equal(t, len(docs), 1) // Path yields 1 Document
+	assert.Equal(t, len(errStruct.Indexing), 1)
+	assert.NoError(t, errStruct.Startup)
+	assert.NoError(t, errStruct.Shutdown)
+	assert.NoError(t, errStruct.Indexing[0])
+}
+
+func TestIndexOneStartupFail(t *testing.T) {
+	defer gock.Off()
+	gock.New(string(_TESTURI_)).
+		Get(_PING_).
+		Reply(200).
+		JSON(testResponseFail)
+	info := IndexerInfo{
+		name:             "TestIndexerName",
+		cmd:              exec.Command("ls"),
+		fileTypesHandled: []utils.FileType{"txt"},
+		id:               42,
+		endpoint:         _TESTURI_,
+	}
+
+	_, errStruct := IndexOne(info, testIndexFilePath1)
+	assert.True(t, gock.IsDone())
+
+	assert.Equal(t, len(errStruct.Indexing), 1)
+	assert.Error(t, errStruct.Startup)
+	assert.Error(t, errStruct.Shutdown)
+	assert.Error(t, errStruct.Indexing[0])
+}
+
+func TestIndexOneIndexFail(t *testing.T) {
+	defer gock.Off()
+	gock.New(string(_TESTURI_)).
+		Get(_PING_).
+		Reply(200).
+		JSON(testResponsePong)
+	gock.New(string(_TESTURI_)).
+		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
+		Reply(200).
+		JSON(testResponseFail)
+	gock.New(string(_TESTURI_)).
+		Get(_SHUTDOWN_).
+		Reply(200).
+		JSON(testResponseExiting)
+	info := IndexerInfo{
+		name:             "TestIndexerName",
+		cmd:              exec.Command("ls"),
+		fileTypesHandled: []utils.FileType{"txt"},
+		id:               42,
+		endpoint:         _TESTURI_,
+	}
+
+	_, errStruct := IndexOne(info, testIndexFilePath1)
+	assert.True(t, gock.IsDone())
+
+	assert.NoError(t, errStruct.Startup)
+	assert.NoError(t, errStruct.Shutdown)
+	assert.Error(t, errStruct.Indexing[0])
+}
+
+func TestIndexOneShutdownFail(t *testing.T) {
+	defer gock.Off()
+	gock.New(string(_TESTURI_)).
+		Get(_PING_).
+		Reply(200).
+		JSON(testResponsePong)
+	gock.New(string(_TESTURI_)).
+		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
+		Reply(200).
+		JSON(testIndexingResponse1)
+	gock.New(string(_TESTURI_)).
+		Get(_SHUTDOWN_).
+		Reply(200).
+		JSON(testResponseFail)
+	info := IndexerInfo{
+		name:             "TestIndexerName",
+		cmd:              exec.Command("ls"),
+		fileTypesHandled: []utils.FileType{"txt"},
+		id:               42,
+		endpoint:         _TESTURI_,
+	}
+
+	docs, errStruct := IndexOne(info, testIndexFilePath1)
+	assert.True(t, gock.IsDone())
+
+	assert.Equal(t, len(docs), 1) // Path yields 1 Document
+	assert.Equal(t, len(errStruct.Indexing), 1)
+	assert.NoError(t, errStruct.Startup)
+	assert.Error(t, errStruct.Shutdown)
+	assert.NoError(t, errStruct.Indexing[0])
+}
+
+func TestIndexManyPartialSuccess(t *testing.T) {
+	defer gock.Off()
+	gock.New(string(_TESTURI_)).
+		Get(_PING_).
+		Reply(200).
+		JSON(testResponsePong)
+	gock.New(string(_TESTURI_)).
+		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
+		Reply(200).
+		JSON(testResponseFail)
+	gock.New(string(_TESTURI_)).
+		Get(_INDEXFULL_ + "/" + string(testIndexFilePath2)).
+		Reply(200).
+		JSON(testResponseFail)
+	gock.New(string(_TESTURI_)).
+		Get(_INDEXFULL_ + "/" + string(testIndexFolderPath1)).
+		Reply(200).
+		JSON(testIndexingResponse2)
+	gock.New(string(_TESTURI_)).
+		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
+		Reply(200).
+		JSON(testResponseFail)
+	gock.New(string(_TESTURI_)).
+		Get(_SHUTDOWN_).
+		Reply(200).
+		JSON(testResponseExiting)
+	info := IndexerInfo{
+		name:             "TestIndexerName",
+		cmd:              exec.Command("ls"),
+		fileTypesHandled: []utils.FileType{"txt"},
+		id:               42,
+		endpoint:         _TESTURI_,
+	}
+
+	paths := []utils.Path{testIndexFilePath1, testIndexFilePath2, testIndexFolderPath1, testIndexFilePath1}
+	// First fails, second fails, third succeeds, fourth fails.
+	manyDocs, errStruct := IndexMany(info, paths)
+	assert.True(t, gock.IsDone())
+
+	assert.Equal(t, len(manyDocs), 4)
+	assert.Equal(t, len(manyDocs), len(errStruct.Indexing))
+	assert.NoError(t, errStruct.Startup)
+	assert.NoError(t, errStruct.Shutdown)
+
+	assert.Error(t, errStruct.Indexing[0])
+	assert.Error(t, errStruct.Indexing[1])
+	assert.NoError(t, errStruct.Indexing[2])
+	assert.Error(t, errStruct.Indexing[3])
+
+	// The successful indexing attempt should produce 2 documents.
+	assert.Equal(t, len(manyDocs[2]), 2)
+}
