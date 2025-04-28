@@ -12,14 +12,12 @@ import (
 	"os"
 	"os/exec"
 	"seekourney/core/config"
+	"seekourney/core/database"
 	"seekourney/core/folder"
 	"seekourney/core/search"
 	"seekourney/indexer/localtext"
 	"seekourney/utils"
-	"seekourney/utils/words"
 	"strings"
-
-	"github.com/lib/pq"
 )
 
 const (
@@ -106,7 +104,7 @@ func insertFolder(db *sql.DB, folder *folder.Folder) {
 
 	for _, doc := range folder.GetDocs() {
 
-		_, err := InsertInto(db, doc)
+		_, err := database.InsertInto(db, doc)
 
 		if err != nil {
 			log.Printf("Error inserting row: %s\n", err)
@@ -171,7 +169,6 @@ func Run(args []string) {
 		case "/all":
 			handleAll(serverParams)
 		case "/search":
-			handleSearch(serverParams, request.URL.Query()["q"])
 			handleSearchSql(serverParams, request.URL.Query()["q"])
 		case "/add":
 			handleAdd(serverParams, request.URL.Query()["p"])
@@ -205,85 +202,32 @@ func handleAll(serverParams serverFuncParams) {
 	queryAll(serverParams.db, serverParams.writer)
 }
 
-type sqlResult struct {
-	path  utils.Path
-	score utils.Frequency
-}
-
-func (sqlPath sqlResult) SQLScan(rows *sql.Rows) (sqlResult, error) {
-	var path utils.Path
-	var score utils.Frequency
-	err := rows.Scan(&path, &score)
-	if err != nil {
-		return sqlResult{}, err
-	}
-	return sqlResult{
-		path:  path,
-		score: score,
-	}, nil
-}
-
-func (sqlPath sqlResult) IntoKey() string {
-	return string(sqlPath.path)
-}
-
-func (sqlPath sqlResult) IntoValue() utils.Frequency {
-	return sqlPath.score
-}
-
-func freqMap(db *sql.DB, word utils.Word) (utils.WordFrequencyMap, error) {
-
-	wordStr := string(word)
-
-	json := JsonValue("words", wordStr, "score")
-	q := Select().Queries("path", json).From("document").Where("words ?& $1")
-
-	w := []string{wordStr}
-	rows, err := db.Query(string(q), pq.StringArray(w))
-
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = rows.Close()
-		checkIOError(err)
-	}()
-
-	rMap, err := ScanRowsIntoMapRaw[sqlResult](rows, func(k string) utils.Path {
-		return utils.Path(k)
-	}, func(v utils.Frequency) utils.Frequency {
-		return v
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return rMap, nil
-}
-
 func handleSearchSql(serverParams serverFuncParams, keys []string) {
 
 	defer recoverSQLError(serverParams.writer)
-	// queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
 
-	for _, key := range keys {
-		for word := range words.WordsIter(key) {
-
-			log.Printf("Word: %s\n", word)
-
-			rMap, err := freqMap(serverParams.db, word)
-
-			if err != nil {
-				log.Printf("Error: %s\n", err)
-				continue
-			}
-
-			for path, score := range rMap {
-				log.Printf("Path: %s, Score: %d\n", path, score)
-			}
-		}
+	if len(keys) == 0 {
+		fmt.Fprintf(serverParams.writer, emptyJSON)
+		return
 	}
+
+	query := utils.Query(strings.Join(keys, " "))
+
+	results := search.SqlSearch(Config, serverParams.db, query)
+
+	response := utils.SearchResponse{
+		Query:   string(query), // TODO: Swap type
+		Results: results,
+	}
+
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		fmt.Fprintf(serverParams.writer, "JSON failed: %s\n", err)
+		return
+	}
+
+	fmt.Fprintf(serverParams.writer, "%s\n", jsonResponse)
+
 }
 
 // Handles a /search request, queries database for rows containing ALL keys and
