@@ -15,8 +15,7 @@ func TestLongLocalWikipediaHtml(t *testing.T) {
 		panic(err)
 	}
 
-	wa := regexp.MustCompile(`.*/Seekourney-Weaver/`)
-
+	wa := regexp.MustCompile(`.*/`)
 	path := "file://" + wa.FindString(dir) + "testingFiles/"
 	newScraper := NewCollector(true, true)
 	newScraper.RequestVisitToSite(
@@ -81,7 +80,7 @@ func TestLocalLinkHopping(t *testing.T) {
 		panic(err)
 	}
 
-	wa := regexp.MustCompile(`.*/Seekourney-Weaver/`)
+	wa := regexp.MustCompile(`.*/`)
 
 	path := "file://" + wa.FindString(dir) + "testingFiles/"
 	newScraper := NewCollector(true, true)
