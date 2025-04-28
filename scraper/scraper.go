@@ -4,92 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
-	"sync"
 
 	"github.com/gocolly/colly/v2"
-)
-
-const (
-
-	// Used for enabling debug prints
-	_DEBUG_ = false
-	// Total amount of worspaces in the collector
-	_QUEUEMAXLEN_ = 5
-	// Buffer size of the link and priority link channels
-	_LINKQUEUELEN_ = 20
-	// Key used to access workspace ID in a map
-	_IDKEY_ = `WorkspaceID`
-)
-
-var (
-	//Matches when the link is in the same main domain as the current webbsite
-	shortendLinkRegex = regexp.MustCompile(`^/[a-zA-Z]`)
-	//Parts of wikipedia not worth indexing
-	WikipediaBadRegex = regexp.MustCompile(
-		`/wiki/(File|Wikipedia|Special|User)|/static/|/w/`)
-)
-
-type (
-	WorkspaceID  int
-	URLString    string
-	HtmlFileType string
-
-	context struct {
-
-		// buffered queue channel of links scraped from previously visited sites
-		linkQueue chan URLString
-
-		// buffered queue channel of links inputed to the scraper
-		priorityLinkQueue chan URLString
-
-		// worspace for the collectors async requests
-		// each request gets their own index
-		// and then appends the text they recieve to the slice
-		workspaceBuffer [_QUEUEMAXLEN_][]string
-
-		// channel of indexes in the `workspace` array
-		// ready to be assigned to a request
-		// (buffer of size 'QUEUEMAXLEN')
-		emptyIndexes chan WorkspaceID
-
-		//  channel of indexes in the `workspace` array ready to be read
-		// (buffer of size 'QUEUEMAXLEN')
-		finishedIndexes chan WorkspaceID
-	}
-
-	counter struct {
-
-		// mutex used to sync changes to the two counters in context
-		counterLock sync.Mutex
-
-		// currently working on amount
-		workingCounter int
-
-		// currently finished amount should be in sync with len(finishedIndexes)
-		finishedCounter int
-	}
-
-	CollectorStruct struct {
-
-		// struct holding all context
-		// to make the inteface with the collector as simple as possible
-		context context
-
-		// used to keep track of number of workspaces in use
-		counter counter
-
-		// the colly collector used for webb scraping and formatting
-		collectorColly *colly.Collector
-
-		settings settings
-	}
-
-	settings struct {
-		HtmlFileType HtmlFileType
-
-		async bool
-	}
 )
 
 func debugPrint(a ...any) {
@@ -128,7 +44,7 @@ func (collector *CollectorStruct) CollectorRepopulate() {
 	collector.counterSync(func(counter *counter) {
 
 		amountFilled := counter.finishedCounter + counter.workingCounter
-		amountEmpty := _QUEUEMAXLEN_ - amountFilled
+		amountEmpty := _WORKSPACES_ - amountFilled
 		for range amountEmpty {
 			collector.visitNextLink(counter)
 		}
@@ -156,7 +72,7 @@ func (collector *CollectorStruct) CollectorRepopulateFixedNumber(
 	collector.counterSync(func(counter *counter) {
 
 		amountFilled := counter.finishedCounter + counter.workingCounter
-		amountEmpty := _QUEUEMAXLEN_ - amountFilled
+		amountEmpty := _WORKSPACES_ - amountFilled
 		if amountEmpty < amountToScrape {
 			amountDidntFit = amountToScrape - amountEmpty
 			amountToScrape = amountEmpty
@@ -264,14 +180,14 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 	context := &collector.context
 	collector.counter.finishedCounter = 0
 	collector.counter.workingCounter = 0
-	context.emptyIndexes = make(chan WorkspaceID, _QUEUEMAXLEN_)
-	for x := range _QUEUEMAXLEN_ {
+	context.emptyIndexes = make(chan WorkspaceID, _WORKSPACES_)
+	for x := range _WORKSPACES_ {
 		context.emptyIndexes <- WorkspaceID(x)
 	}
-	context.finishedIndexes = make(chan WorkspaceID, _QUEUEMAXLEN_)
+	context.finishedIndexes = make(chan WorkspaceID, _WORKSPACES_)
 	context.linkQueue = make(chan URLString, _LINKQUEUELEN_)
 	context.priorityLinkQueue = make(chan URLString, _LINKQUEUELEN_)
-	context.workspaceBuffer = [_QUEUEMAXLEN_][]string{}
+	context.workspaceBuffer = [_WORKSPACES_][]string{}
 
 	c := colly.NewCollector()
 	collector.collectorColly = c
