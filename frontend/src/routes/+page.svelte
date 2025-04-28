@@ -1,11 +1,16 @@
 <script lang="ts">
+
 	interface SearchResult {
-		title: string;
-		path: string;
-		type: string;
-		source: string;
-		desc: string;
+		Path: string;
+		Score: int;
+		Source: int;
 	} /*fix how interface should look to correspond with backend*/
+
+	interface SearchResponse {
+		Query: string;
+		Results: SearchResult[];
+	}
+
 
 	let query: string = '';
 	let submittedQuery = '';
@@ -15,26 +20,26 @@
 	async function search(): Promise<void> {
 		searched = true;
 		submittedQuery = query;
-		/*
-        const res = await fetch(`http://localhost:8080/search?q=${query}`); /*change to url we are using for backend
+        const res = await fetch(`http://localhost:8080/search?q=${query}`);
         results = await res.json() as SearchResult[];
-        */
-		results = [
-			{
-				title: 'result 1',
-				path: 'https://en.wikipedia.org/wiki/Bear',
-				type: 'File',
-				source: 'OSPP',
-				desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
-			},
-			{
-				title: 'result 2',
-				path: 'https://en.wikipedia.org/wiki/Bear',
-				type: 'Webbsite',
-				source: 'Wikipedia',
-				desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
-			}
-		];
+		console.log(results);
+		results = results.Results;
+		// results = [
+		// 	{
+		// 		title: 'result 1',
+		// 		path: 'https://en.wikipedia.org/wiki/Bear',
+		// 		type: 'File',
+		// 		source: 'OSPP',
+		// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
+		// 	},
+		// 	{
+		// 		title: 'result 2',
+		// 		path: 'https://en.wikipedia.org/wiki/Bear',
+		// 		type: 'Webbsite',
+		// 		source: 'Wikipedia',
+		// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
+		// 	}
+		// ];
 	}
 </script>
 
@@ -62,9 +67,9 @@
 				>
 					<div id="resultBox">
 						<div  id="resultDiv">
-							<h3 style="font-size: 1.4rem;">{res.title}</h3>
+							<h3 style="font-size: 1.4rem;">{res.Path}</h3>
 							<small>
-								{res.type}, {res.source} 
+								{res.Score}, {res.Source} 
 							</small>
 						</div>
 						<p style="color: #4E4E4E;">{res.desc}</p> 
