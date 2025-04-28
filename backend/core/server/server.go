@@ -163,6 +163,7 @@ func Run(args []string) {
 	log.Println("Server started at", serverAddress)
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
+		enableCors(&writer)
 		serverParams := serverFuncParams{server: server, writer: writer, db: db}
 
 		switch html.EscapeString(request.URL.Path) {
@@ -179,6 +180,10 @@ func Run(args []string) {
 	http.HandleFunc("/", queryHandler)
 
 	log.Fatal(server.ListenAndServe())
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func checkIOError(err error) {
