@@ -12,7 +12,10 @@ import (
 
 type Document indexing.UnnormalizedDocument
 
-func Normalize(doc indexing.UnnormalizedDocument, normalizer normalize.Normalizer) Document {
+func Normalize(
+	doc indexing.UnnormalizedDocument,
+	normalizer normalize.Normalizer,
+) Document {
 
 	freqMap := make(utils.FrequencyMap)
 

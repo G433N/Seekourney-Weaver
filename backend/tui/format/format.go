@@ -28,7 +28,10 @@ func PrintSearchResponse(response utils.SearchResponse) {
 
 	// Perform search using the folder and reverse mapping
 
-	log.Printf("--- Search results for query '%s' ---\n", Bold(Italic(response.Query)))
+	log.Printf(
+		"--- Search results for query '%s' ---\n",
+		Bold(Italic(response.Query)),
+	)
 	for n, result := range response.Results {
 		path := string(result.Path)
 		score := int(result.Score)
@@ -44,6 +47,12 @@ func PrintSearchResponse(response utils.SearchResponse) {
 		}
 
 		link := termlink.Link(path, path)
-		log.Printf("%d. Path: %s Score: %s, Source: %s\n", n, LightBlue(Bold(link)), Green(strconv.Itoa(score)), Bold(source))
+		log.Printf(
+			"%d. Path: %s Score: %s, Source: %s\n",
+			n,
+			LightBlue(Bold(link)),
+			Green(strconv.Itoa(score)),
+			Bold(source),
+		)
 	}
 }

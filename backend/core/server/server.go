@@ -16,7 +16,10 @@ import (
 	"seekourney/core/search"
 	"seekourney/indexer/localtext"
 	"seekourney/utils"
+	"seekourney/utils/words"
 	"strings"
+
+	"github.com/lib/pq"
 )
 
 const (
@@ -76,8 +79,12 @@ func index() folder.Folder {
 	// Load local file config
 	localConfig := localtext.Load(Config)
 
-	// TODO: Later when documents comes over the network, we can still use the same code. since it is an iterator
-	folder := folder.FromIter(Config.Normalizer, localConfig.IndexDir("test_data"))
+	// TODO: Later when documents comes over the network, we can still use the
+	// same code. since it is an iterator
+	folder := folder.FromIter(
+		Config.Normalizer,
+		localConfig.IndexDir("test_data"),
+	)
 
 	rm := folder.ReverseMappingLocal()
 
@@ -87,7 +94,9 @@ func index() folder.Folder {
 	log.Printf("Files: %d, Words: %d\n", files, words)
 
 	if files == 0 {
-		log.Fatal("No files found, run make downloadTestFiles to download test files")
+		log.Fatal(
+			"No files found, run make downloadTestFiles to download test files",
+		)
 	}
 
 	return folder
@@ -127,6 +136,8 @@ func Run(args []string) {
 
 	go startContainer()
 
+	Folder = index()
+
 	db := connectToDB()
 
 	loadFromDisc := true
@@ -136,13 +147,12 @@ func Run(args []string) {
 	} else if len(args) == 1 {
 		switch args[0] {
 		case "load":
-			loadFromDisc = true
+			loadFromDisc = false
 		}
 	}
 
 	if !loadFromDisc {
 		log.Println("Indexing files")
-		Folder = index()
 		insertFolder(db, &Folder)
 	} else {
 		log.Println("Loading from disk")
@@ -162,6 +172,7 @@ func Run(args []string) {
 			handleAll(serverParams)
 		case "/search":
 			handleSearch(serverParams, request.URL.Query()["q"])
+			handleSearchSql(serverParams, request.URL.Query()["q"])
 		case "/add":
 			handleAdd(serverParams, request.URL.Query()["p"])
 		case "/quit":
@@ -194,11 +205,90 @@ func handleAll(serverParams serverFuncParams) {
 	queryAll(serverParams.db, serverParams.writer)
 }
 
+type sqlResult struct {
+	path  utils.Path
+	score utils.Frequency
+}
+
+func (sqlPath sqlResult) SQLScan(rows *sql.Rows) (sqlResult, error) {
+	var path utils.Path
+	var score utils.Frequency
+	err := rows.Scan(&path, &score)
+	if err != nil {
+		return sqlResult{}, err
+	}
+	return sqlResult{
+		path:  path,
+		score: score,
+	}, nil
+}
+
+func (sqlPath sqlResult) IntoKey() string {
+	return string(sqlPath.path)
+}
+
+func (sqlPath sqlResult) IntoValue() utils.Frequency {
+	return sqlPath.score
+}
+
+func freqMap(db *sql.DB, word utils.Word) (utils.WordFrequencyMap, error) {
+
+	wordStr := string(word)
+
+	json := JsonValue("words", wordStr, "score")
+	q := Select().Queries("path", json).From("document").Where("words ?& $1")
+
+	w := []string{wordStr}
+	rows, err := db.Query(string(q), pq.StringArray(w))
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = rows.Close()
+		checkIOError(err)
+	}()
+
+	rMap, err := ScanRowsIntoMapRaw[sqlResult](rows, func(k string) utils.Path {
+		return utils.Path(k)
+	}, func(v utils.Frequency) utils.Frequency {
+		return v
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rMap, nil
+}
+
+func handleSearchSql(serverParams serverFuncParams, keys []string) {
+
+	defer recoverSQLError(serverParams.writer)
+	// queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
+
+	for _, key := range keys {
+		for word := range words.WordsIter(key) {
+
+			log.Printf("Word: %s\n", word)
+
+			rMap, err := freqMap(serverParams.db, word)
+
+			if err != nil {
+				log.Printf("Error: %s\n", err)
+				continue
+			}
+
+			for path, score := range rMap {
+				log.Printf("Path: %s, Score: %d\n", path, score)
+			}
+		}
+	}
+}
+
 // Handles a /search request, queries database for rows containing ALL keys and
 // wrties output to response writer
 func handleSearch(serverParams serverFuncParams, keys []string) {
-	defer recoverSQLError(serverParams.writer)
-	// queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
 
 	if len(keys) == 0 {
 		fmt.Fprintf(serverParams.writer, emptyJSON)

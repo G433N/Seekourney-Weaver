@@ -11,9 +11,18 @@ import (
 )
 
 var ( // Can't use const here
-	testDocAlpha = document.Normalize(indexing.DocNew("these are", 42), normalize.ToLower)
-	testDocBeta  = document.Normalize(indexing.DocNew("some bogus", 43), normalize.ToLower)
-	testDocGamma = document.Normalize(indexing.DocNew("file path", 44), normalize.ToLower)
+	testDocAlpha = document.Normalize(
+		indexing.DocNew("these are", 42),
+		normalize.ToLower,
+	)
+	testDocBeta = document.Normalize(
+		indexing.DocNew("some bogus", 43),
+		normalize.ToLower,
+	)
+	testDocGamma = document.Normalize(
+		indexing.DocNew("file path", 44),
+		normalize.ToLower,
+	)
 	// testDocDelta   document.Document = document.New("not important", 45)
 	// testDocEpsilon document.Document = document.New("for testing", 46)
 )

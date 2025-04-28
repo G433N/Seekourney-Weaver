@@ -137,10 +137,16 @@ func Search(
 		doc, ok := f.GetDoc(path)
 
 		if !ok {
-			log.Fatalf("Document %s not found in folder, this should be imposible\n", path)
+			log.Fatalf(
+				"Document %s not found in folder, this should be imposible\n",
+				path,
+			)
 		}
 
-		results = append(results, SearchResult{Path: path, Score: score, Source: doc.Source})
+		results = append(
+			results,
+			SearchResult{Path: path, Score: score, Source: doc.Source},
+		)
 	}
 
 	// Sort results by value
