@@ -458,7 +458,12 @@ func TestIndexManyPartialSuccess(t *testing.T) {
 		endpoint:         _TESTURI_,
 	}
 
-	paths := []utils.Path{testIndexFilePath1, testIndexFilePath2, testIndexFolderPath1, testIndexFilePath1}
+	paths := []utils.Path{
+		testIndexFilePath1,
+		testIndexFilePath2,
+		testIndexFolderPath1,
+		testIndexFilePath1,
+	}
 	// First fails, second fails, third succeeds, fourth fails.
 	manyDocs, errStruct := IndexMany(info, paths)
 	assert.True(t, gock.IsDone())

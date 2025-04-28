@@ -203,7 +203,10 @@ func newIndexErrors(numberOfPaths int) IndexErrors {
 // unnormalised documents, and shuts down the indexer.
 // If startup failed, all error fields will have errors.
 // Startup error field must be checked before attemp to index into documents.
-func IndexMany(info IndexerInfo, paths []utils.Path) ([][]indexing.UnnormalizedDocument, IndexErrors) {
+func IndexMany(
+	info IndexerInfo,
+	paths []utils.Path,
+) ([][]indexing.UnnormalizedDocument, IndexErrors) {
 	manyDocs := make([][]indexing.UnnormalizedDocument, len(paths))
 	errs := newIndexErrors(len(paths))
 
@@ -212,7 +215,9 @@ func IndexMany(info IndexerInfo, paths []utils.Path) ([][]indexing.UnnormalizedD
 	if errs.Startup != nil {
 		errs.Shutdown = errors.New("failed startup prevents indexing attempt")
 		for i := range errs.Indexing {
-			errs.Indexing[i] = errors.New("failed startup prevents shutdown attempt")
+			errs.Indexing[i] = errors.New(
+				"failed startup prevents shutdown attempt",
+			)
 		}
 		return manyDocs, errs
 	}
@@ -233,7 +238,10 @@ func IndexMany(info IndexerInfo, paths []utils.Path) ([][]indexing.UnnormalizedD
 // If startup failed, all error fields will have errors.
 // Startup error field must be checked before attemp to index into documents.
 // Indexing slice in errors struct will always have 1 element.
-func IndexOne(info IndexerInfo, path utils.Path) ([]indexing.UnnormalizedDocument, IndexErrors) {
+func IndexOne(
+	info IndexerInfo,
+	path utils.Path,
+) ([]indexing.UnnormalizedDocument, IndexErrors) {
 	nestedDocs, errs := IndexMany(info, []utils.Path{path})
 	if errs.Startup != nil {
 		return []indexing.UnnormalizedDocument{}, errs
