@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"seekourney/core/config"
 	"seekourney/core/database"
+	"seekourney/core/document"
 	"seekourney/core/folder"
 	"seekourney/core/search"
 	"seekourney/indexer/localtext"
@@ -70,7 +71,6 @@ func stopContainer() {
 var Config *config.Config
 
 func index() folder.Folder {
-
 	// Load local file config
 	localConfig := localtext.Load(Config)
 
@@ -195,11 +195,37 @@ func recoverSQLError(writer io.Writer) {
 	}
 }
 
+func sendJSON(writer io.Writer, data any) {
+
+	jsonResponse, err := json.Marshal(data)
+	if err != nil {
+		sendError(writer, "JSON failed", err)
+		return
+	}
+
+	_, err = fmt.Fprintf(writer, "%s\n", jsonResponse)
+	if err != nil {
+		sendError(writer, "IO failed", err)
+		return
+	}
+}
+
 // Handles an /all request, queries all rows in database and writes output to
 // response writer
 func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
-	queryAll(serverParams.db, serverParams.writer)
+	var doc document.Document
+	query := database.Select().Queries(doc.SQLGetFields()...).From("document")
+
+	docs, err := database.Exec[document.Document](serverParams.db, string(query))
+
+	if err != nil {
+		sendError(serverParams.writer, "SQL failed", err)
+		return
+	}
+
+	sendJSON(serverParams.writer, docs)
+
 }
 
 func handleSearchSql(serverParams serverFuncParams, keys []string) {
@@ -220,17 +246,7 @@ func handleSearchSql(serverParams serverFuncParams, keys []string) {
 		Results: results,
 	}
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		sendError(serverParams.writer, "JSON failed", err)
-		return
-	}
-
-	_, err = fmt.Fprintf(serverParams.writer, "%s\n", jsonResponse)
-	if err != nil {
-		sendError(serverParams.writer, "IO failed", err)
-		return
-	}
+	sendJSON(serverParams.writer, response)
 }
 
 func sendError(writer io.Writer, msg string, err error) {
@@ -240,20 +256,8 @@ func sendError(writer io.Writer, msg string, err error) {
 
 // Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
-	for _, path := range paths {
-		_, err := insertRow(
-			serverParams.db,
-			Page{path: path, pathType: pathTypeFile},
-		)
-		if err != nil {
-			_, ioErr := fmt.Fprintf(
-				serverParams.writer,
-				"SQL failed: %s\n",
-				err,
-			)
-			checkIOError(ioErr)
-		}
-	}
+	// TODO: Albins pr should impl this
+	panic("Not implemented")
 }
 
 // Handles a /quit request, cleanly shutsdown the database container and server

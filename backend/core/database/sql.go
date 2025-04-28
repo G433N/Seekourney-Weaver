@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
+	"io"
 	"iter"
 	"seekourney/utils"
 	"strconv"
@@ -85,7 +87,7 @@ func ScanRowsIntoMap[T interface {
 	SQLScan[T]
 	IntoMap[K, V]
 }, K comparable, V any](Rows *sql.Rows) (map[K]V, error) {
-	return ScanRowsIntoMapRaw[T, K, V, K, V](
+	return ScanRowsIntoMapRaw[T](
 		Rows,
 		func(k K) K { return k },
 		func(v V) V { return v },
@@ -218,4 +220,26 @@ func (s SelectQuery) From(table string) SelectFrom {
 
 func (s SelectFrom) Where(condition string) SelectWhere {
 	return SelectWhere(string(s) + " " + _WHERE_ + " " + condition)
+}
+
+// TODO: ewgdjjhk
+func Exec[T SQLScan[T]](db *sql.DB, query string, args ...any) (_ []T, resErr error) {
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err = rows.Close()
+		if resErr != nil {
+			resErr = err
+		}
+	}()
+
+	obj, err := ScanRows[T](rows)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }

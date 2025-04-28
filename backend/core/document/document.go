@@ -1,6 +1,7 @@
 package document
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"seekourney/core/normalize"
@@ -95,4 +96,29 @@ func (doc Document) SQLGetValues() []any {
 	}
 
 	return []any{doc.Path, "file", bytes}
+}
+
+func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
+	var path utils.Path
+	var source string
+	var words []byte
+
+	err := rows.Scan(&path, &source, &words)
+	if err != nil {
+		return Document{}, err
+	}
+
+	var freqMap utils.FrequencyMap
+
+	err = json.Unmarshal(words, &freqMap)
+	if err != nil {
+		log.Printf("Error unmarshalling dict: %s", err)
+		return Document{}, err
+	}
+
+	return Document{
+		Path:   path,
+		Source: utils.SourceLocal,
+		Words:  freqMap,
+	}, nil
 }

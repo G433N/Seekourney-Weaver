@@ -47,6 +47,7 @@ func FreqMap(db *sql.DB, word utils.Word) (utils.WordFrequencyMap, error) {
 	if err != nil {
 		return nil, err
 	}
+	/// TODO: Extact this into Exec and rename that function
 	defer func() {
 		err = rows.Close()
 		if err != nil {

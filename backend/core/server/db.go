@@ -3,7 +3,6 @@ package server
 import (
 	"database/sql"
 	"fmt"
-	"io"
 	"time"
 )
 
@@ -53,56 +52,4 @@ func checkSQLError(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func insertRow(db *sql.DB, page Page) (sql.Result, error) {
-	insert := `INSERT INTO "page"("path", "type") values($1, $2)`
-	fmt.Printf("%s (%s)\n", insert, page.path)
-	return db.Exec(insert, page.path, page.pathType)
-}
-
-// func insertRowWithJSON(db *sql.DB, page Page) (sql.Result, error) {
-// 	insertStmt := `INSERT INTO "page"("path", "type", "dict") values($1, $2,
-// $3)`
-// 	return db.Exec(insertStmt, page.path, page.pathType, page.dict)
-// }
-
-// Writes the contents of database rows to the given writer
-func writeRows(writer io.Writer, rows *sql.Rows) {
-	for rows.Next() {
-		var id int64
-		var path string
-		var pathType string
-		var dict string
-
-		err := rows.Scan(&id, &path, &pathType, &dict)
-		checkSQLError(err)
-
-		_, err = fmt.Fprintf(
-			writer,
-			"id: %d\npath: %s\npathType: %s\ndict: %s\n\n",
-			id,
-			path,
-			pathType,
-			dict,
-		)
-		checkIOError(err)
-	}
-}
-
-// Querys the database for all rows.
-// Writes output to writer
-func queryAll(db *sql.DB, writer io.Writer) {
-	query := `SELECT * FROM document`
-
-	fmt.Printf("%s\n", query)
-
-	rows, err := db.Query(query)
-	checkSQLError(err)
-	defer func() {
-		err = rows.Close()
-		checkIOError(err)
-	}()
-
-	writeRows(writer, rows)
 }
