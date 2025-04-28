@@ -3,7 +3,10 @@ package server
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
+
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 // Used for database enumerable type, can be either 'web' or 'file'
@@ -16,13 +19,6 @@ const (
 
 type JSONString string
 
-type Page struct {
-	// id       int64
-	path     string
-	pathType PathType
-	// dict     JSONString
-}
-
 // Attempts to connect to the database, will retry every half second for
 // 5 seconds in case the docker container is still starting up.
 // Returns a pointer to a database file descriptor if the connection succeeds.
@@ -34,11 +30,18 @@ func connectToDB() *sql.DB {
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
+	log.Println("Connecting to database")
 	fmt.Print("Waiting for database.")
 	for range retries {
-		db, _ := sql.Open("postgres", psqlconn)
-		if err := db.Ping(); err == nil {
-			fmt.Println("\nDatabase ready")
+		db, err := sql.Open("postgres", psqlconn)
+
+		if err != nil {
+			log.Println("Error opening database connection:", err)
+		}
+
+		if err = db.Ping(); err == nil {
+			fmt.Println("")
+			log.Println("Database ready")
 			return db
 		}
 		time.Sleep(500 * time.Millisecond)

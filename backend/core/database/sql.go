@@ -2,8 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
-	"io"
 	"iter"
 	"seekourney/utils"
 	"strconv"
@@ -42,56 +40,6 @@ func scan[T SQLScan[T]](rows *sql.Rows) (T, error) {
 	var obj T
 
 	return obj.SQLScan(rows)
-}
-
-func ScanRows[T SQLScan[T]](riws *sql.Rows) ([]T, error) {
-
-	var objects []T
-
-	for result := range ScanRowsIter[T](riws) {
-		if result.Err != nil {
-			return nil, result.Err
-		}
-
-		objects = append(objects, result.Value)
-	}
-
-	return objects, nil
-}
-
-func ScanRowsIntoMapRaw[T interface {
-	SQLScan[T]
-	IntoMap[K, V]
-}, K comparable, V any,
-	K1 comparable, V1 any](Rows *sql.Rows,
-	keyConv func(K) K1,
-	valueConv func(V) V1) (map[K1]V1, error) {
-	objects := make(map[K1]V1)
-
-	for result := range ScanRowsIter[T](Rows) {
-		if result.Err != nil {
-			return nil, result.Err
-		}
-
-		obj := result.Value
-		key := keyConv(obj.IntoKey())
-		value := valueConv(obj.IntoValue())
-
-		objects[key] = value
-	}
-
-	return objects, nil
-}
-
-func ScanRowsIntoMap[T interface {
-	SQLScan[T]
-	IntoMap[K, V]
-}, K comparable, V any](Rows *sql.Rows) (map[K]V, error) {
-	return ScanRowsIntoMapRaw[T](
-		Rows,
-		func(k K) K { return k },
-		func(v V) V { return v },
-	)
 }
 
 func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
@@ -222,12 +170,13 @@ func (s SelectFrom) Where(condition string) SelectWhere {
 	return SelectWhere(string(s) + " " + _WHERE_ + " " + condition)
 }
 
-// TODO: ewgdjjhk
-func Exec[T SQLScan[T]](db *sql.DB, query string, args ...any) (_ []T, resErr error) {
+// ExecExec executes a SQL statement and returns the result into obj
+// The insert function is used to insert the result into obj
+func ExecScan[T SQLScan[T], U any](db *sql.DB, query string, obj *U, insert func(*U, T), args ...any) (resErr error) {
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer func() {
@@ -237,9 +186,13 @@ func Exec[T SQLScan[T]](db *sql.DB, query string, args ...any) (_ []T, resErr er
 		}
 	}()
 
-	obj, err := ScanRows[T](rows)
-	if err != nil {
-		return nil, err
+	for row := range ScanRowsIter[T](rows) {
+		if row.Err != nil {
+			return row.Err
+		}
+
+		insert(obj, row.Value)
 	}
-	return obj, nil
+
+	return nil
 }

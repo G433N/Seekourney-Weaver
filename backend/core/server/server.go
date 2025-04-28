@@ -217,7 +217,12 @@ func handleAll(serverParams serverFuncParams) {
 	var doc document.Document
 	query := database.Select().Queries(doc.SQLGetFields()...).From("document")
 
-	docs, err := database.Exec[document.Document](serverParams.db, string(query))
+	insert := func(docs *[]document.Document, doc document.Document) {
+		*docs = append(*docs, doc)
+	}
+
+	docs := make([]document.Document, 0)
+	err := database.ExecScan[document.Document](serverParams.db, string(query), &docs, insert)
 
 	if err != nil {
 		sendError(serverParams.writer, "SQL failed", err)
