@@ -68,11 +68,8 @@ func stopContainer() {
 }
 
 var Config *config.Config
-var Folder folder.Folder
 
 func index() folder.Folder {
-	// Load config
-	Config = config.Load()
 
 	// Load local file config
 	localConfig := localtext.Load(Config)
@@ -132,9 +129,11 @@ query under the key 'p'
 */
 func Run(args []string) {
 
-	go startContainer()
+	// Load config
 
-	Folder = index()
+	Config = config.Load()
+
+	go startContainer()
 
 	db := connectToDB()
 
@@ -151,7 +150,8 @@ func Run(args []string) {
 
 	if !loadFromDisc {
 		log.Println("Indexing files")
-		insertFolder(db, &Folder)
+		fold := index()
+		insertFolder(db, &fold)
 	} else {
 		log.Println("Loading from disk")
 	}
