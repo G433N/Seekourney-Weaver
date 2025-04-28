@@ -13,6 +13,8 @@ import (
 // Type alias
 type DocMap map[utils.Path]document.Document
 
+// TODO: this needs a complete rewrite
+
 // Abstract collection of documents
 // The folder struct will start as a singleton, but later expanded such that we
 // can multiple folders to sort documents into groups

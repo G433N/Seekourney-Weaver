@@ -165,7 +165,10 @@ func Search(
 
 /// New
 
-func SqlSearch(config *config.Config, db *sql.DB, query utils.Query) []SearchResult {
+func SqlSearch(
+	config *config.Config,
+	db *sql.DB,
+	query utils.Query) []SearchResult {
 
 	result := make(utils.ScoreMap)
 
@@ -185,19 +188,6 @@ func SqlSearch(config *config.Config, db *sql.DB, query utils.Query) []SearchRes
 	}
 
 	return topN(scoreMapIntoSearchResult(result), 10)
-}
-
-func naiveCalculate(wordMap utils.WordFrequencyMap) utils.Score {
-	t := timing.Measure(timing.Search)
-	defer t.Stop()
-
-	score := utils.Score(0)
-
-	for _, freq := range wordMap {
-		score += utils.Score(freq)
-	}
-
-	return score
 }
 
 func scoreMapIntoSearchResult(scores utils.ScoreMap) []SearchResult {

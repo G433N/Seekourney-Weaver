@@ -207,7 +207,7 @@ func handleSearchSql(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
 
 	if len(keys) == 0 {
-		fmt.Fprintf(serverParams.writer, emptyJSON)
+		sendError(serverParams.writer, "No keys given", nil)
 		return
 	}
 
@@ -222,43 +222,20 @@ func handleSearchSql(serverParams serverFuncParams, keys []string) {
 
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
-		fmt.Fprintf(serverParams.writer, "JSON failed: %s\n", err)
+		sendError(serverParams.writer, "JSON failed", err)
 		return
 	}
 
-	fmt.Fprintf(serverParams.writer, "%s\n", jsonResponse)
-
+	_, err = fmt.Fprintf(serverParams.writer, "%s\n", jsonResponse)
+	if err != nil {
+		sendError(serverParams.writer, "IO failed", err)
+		return
+	}
 }
 
-// Handles a /search request, queries database for rows containing ALL keys and
-// wrties output to response writer
-func handleSearch(serverParams serverFuncParams, keys []string) {
-
-	if len(keys) == 0 {
-		fmt.Fprintf(serverParams.writer, emptyJSON)
-		return
-	}
-
-	// TODO: All this is wrong
-
-	query := strings.Join(keys, " ")
-
-	rm := Folder.ReverseMappingLocal()
-
-	results := search.Search(Config, &Folder, rm, query)
-	response := utils.SearchResponse{
-		Query:   query,
-		Results: results,
-	}
-
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		fmt.Fprintf(serverParams.writer, "JSON failed: %s\n", err)
-		return
-	}
-
-	fmt.Fprintf(serverParams.writer, "%s\n", jsonResponse)
-
+func sendError(writer io.Writer, msg string, err error) {
+	_, ioErr := fmt.Fprintf(writer, "%s: %s\n", msg, err)
+	checkIOError(ioErr)
 }
 
 // Handles an /add request, inserts a row to the database for each path given

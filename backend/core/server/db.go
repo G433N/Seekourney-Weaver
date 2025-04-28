@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 // Used for database enumerable type, can be either 'web' or 'file'
@@ -90,27 +88,6 @@ func writeRows(writer io.Writer, rows *sql.Rows) {
 		)
 		checkIOError(err)
 	}
-}
-
-// Querys the database for rows containing ALL the given keys.
-// Writes output to writer
-func queryJSONKeysAll(db *sql.DB, writer io.Writer, keys []string) {
-	query := `SELECT * FROM page WHERE dict ?& $1`
-
-	if len(keys) == 0 {
-		panic(`No keys given`)
-	}
-
-	fmt.Printf("%s (%s)\n", query, keys)
-
-	rows, err := db.Query(query, pq.StringArray(keys))
-	checkSQLError(err)
-	defer func() {
-		err = rows.Close()
-		checkIOError(err)
-	}()
-
-	writeRows(writer, rows)
 }
 
 // Querys the database for all rows.

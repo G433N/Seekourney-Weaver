@@ -28,7 +28,8 @@ type SQLScan[Self any] interface {
 	SQLScan(rows *sql.Rows) (Self, error)
 }
 
-type IntoMap[K comparable, V any] interface { // NOTE: Might want to extrect this
+type IntoMap[K comparable, V any] interface {
+	// NOTE: Might want to extrect this
 
 	IntoKey() K
 
