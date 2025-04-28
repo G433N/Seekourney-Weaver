@@ -6,69 +6,6 @@ import (
 	"sync"
 )
 
-const _PRIOQUEUEMAXLEN_ = 100
-const _STACKMAXLEN_ = 1_000_000
-
-type (
-	hostPath   string
-	innerPath  string
-	URLCompact struct {
-		webFileBool bool
-		host        int
-		inner       innerPath
-	}
-
-	filter struct {
-		filehosts []hostPath
-		webhosts  []hostPath
-		filterMap map[hostPath]filterMapInner
-	}
-	filterMapInner struct {
-		webFileBool bool
-		index       int
-		filterMap   map[innerPath]bool
-	}
-
-	linkInputWrap struct {
-		prio bool
-		URL  *URLCompact
-	}
-
-	PriorityQueue struct {
-		lock sync.Mutex
-
-		Queue [_PRIOQUEUEMAXLEN_]*URLCompact
-
-		read int
-
-		write int
-
-		len int
-	}
-	storageStack struct {
-		lock sync.Mutex
-
-		Stack []*URLCompact
-	}
-
-	linkHandler struct {
-		filter       filter
-		storageStack storageStack
-
-		priorityQueue PriorityQueue
-
-		inputChan chan linkInputWrap
-
-		outputChan chan URLString
-
-		outputSem Sync.Semaphore
-
-		storedSem       Sync.Semaphore
-		quit            bool
-		handlersWorking sync.WaitGroup
-	}
-)
-
 func (stack *storageStack) pop() (*URLCompact, bool) {
 	stack.lock.Lock()
 	defer stack.lock.Unlock()

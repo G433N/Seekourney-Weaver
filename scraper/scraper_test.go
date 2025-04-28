@@ -1,13 +1,12 @@
 package scraper
 
 import (
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 )
-
-//"file:///home/vilma/Coding/School/OSPP/Seekourney-Weaver/new.html"
 
 func TestLongLocalWikipediaHtml(t *testing.T) {
 	dir, err := filepath.Abs(".")
@@ -27,12 +26,10 @@ func TestLongLocalWikipediaHtml(t *testing.T) {
 	readStrings := newScraper.ReadFinished()
 	var fullString string
 
-	for _, x := range readStrings {
-		fullString += x
-
-	}
+	fullString = strings.Join(readStrings, " ")
 
 	iterator := strings.SplitSeq(fullString, "	")
+
 	fullString = ""
 	for x := range iterator {
 		if x != "" {
@@ -44,6 +41,7 @@ func TestLongLocalWikipediaHtml(t *testing.T) {
 	for x := range iterator {
 		if x != "" {
 			fullString += x + " "
+
 		}
 	}
 	iterator = strings.SplitSeq(fullString, " ")
@@ -62,11 +60,22 @@ func TestLongLocalWikipediaHtml(t *testing.T) {
 		"References",
 		"Seekourney-Weaver/testingFiles/htmlTest1.html",
 		"Cucumbers grown to eat fresh are called slicing cucumbers.",
-		"Shoots Cucumber shoots are regularly consumed as a vegetable," +
+		"Cucumber shoots are regularly consumed as a vegetable," +
 			" especially in rural areas. In Thailand they are often served" +
 			" with a crab meat sauce." +
 			" They can also be stir fried or used in soups.",
 	}
+	fmt.Println(
+		"wawaw\n\n",
+		regexp.MustCompile(
+			"Shoots[^.]*[^.]*[^.]*",
+		).FindString(
+			fullString,
+		),
+		"\n",
+		"wawaw",
+	)
+
 	for _, x := range testStrings {
 		if !strings.Contains(fullString, x) {
 			t.Error("did not contain: ", x)
