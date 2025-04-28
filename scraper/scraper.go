@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -226,7 +227,7 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 	})
 
 	// triggered when a CSS selector matches an element
-	c.OnHTML("p, div.mw-heading", func(e *colly.HTMLElement) {
+	c.OnHTML("p, div.mw-heading, title, h1, h2, h3", func(e *colly.HTMLElement) {
 		// printing all URLs associated with the <p> tag on the page
 		mapValue := e.Response.Ctx.GetAny(_IDKEY_)
 		ID, ok := mapValue.(WorkspaceID)
@@ -240,10 +241,16 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 	// Find and visit all links
 	c.OnHTML(`[href]`, func(e *colly.HTMLElement) {
 		link, valid := linkFilter(e)
+		arr := strings.SplitAfter(e.Request.URL.EscapedPath(), `/`)
+		arr[len(arr)-1] = link
+		link = strings.Join(arr, "")
+		debugPrint(link)
 		if !valid {
 			return
 		}
-		link = string(settings.HtmlFileType) + link
+
+		link = e.Request.URL.Scheme + "://" + link
+
 		select {
 		case context.linkQueue <- URLString(link):
 		default:
