@@ -28,7 +28,11 @@ func DocNew(path utils.Path, source utils.Source) UnnormalizedDocument {
 // DocFromText creates a new document from a string
 // It takes a path, a source, and a string to index
 // It returns a Document
-func DocFromText(path utils.Path, source utils.Source, text string) UnnormalizedDocument {
+func DocFromText(
+	path utils.Path,
+	source utils.Source,
+	text string,
+) UnnormalizedDocument {
 	doc := DocNew(path, source)
 	doc.Words = IndexString(text)
 	return doc
@@ -37,7 +41,11 @@ func DocFromText(path utils.Path, source utils.Source, text string) Unnormalized
 // DocFromBytes creates a new document from a byte slice
 // It takes a path, a source, and a byte slice to index
 // It returns a Document
-func DocFromBytes(path utils.Path, source utils.Source, bytes []byte) UnnormalizedDocument {
+func DocFromBytes(
+	path utils.Path,
+	source utils.Source,
+	bytes []byte,
+) UnnormalizedDocument {
 	doc := DocNew(path, source)
 	doc.Words = IndexBytes(bytes)
 	return doc

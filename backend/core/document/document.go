@@ -1,7 +1,10 @@
 package document
 
 import (
+	"database/sql"
+	"encoding/json"
 	"log"
+	"seekourney/core/database"
 	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
@@ -72,4 +75,55 @@ func (doc *Document) GetWordsSorted() []Pair {
 		func(i, j int) bool { return pairs[i].Freq > pairs[j].Freq },
 	)
 	return pairs
+}
+
+// SQL
+
+// SQLGetName returns the name of the table in the database
+func (doc Document) SQLGetName() string {
+	return "document"
+}
+
+// SQLGetFields returns the fields to be inserted into the database
+func (doc Document) SQLGetFields() []string {
+	return []string{"path", "type", "words"}
+}
+
+// SQLGetValues returns the values to be inserted into the database
+func (doc Document) SQLGetValues() []any {
+
+	bytes, err := json.Marshal(doc.Words)
+
+	if err != nil {
+		log.Printf("Error marshalling dict: %s", err)
+		return []database.SQLValue{doc.Path, "file", nil}
+	}
+
+	return []database.SQLValue{doc.Path, "file", bytes}
+}
+
+// SQLScan scans a row from the database into a Document
+func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
+	var path utils.Path
+	var source string
+	var words []byte
+
+	err := rows.Scan(&path, &source, &words)
+	if err != nil {
+		return Document{}, err
+	}
+
+	var freqMap utils.FrequencyMap
+
+	err = json.Unmarshal(words, &freqMap)
+	if err != nil {
+		log.Printf("Error unmarshalling dict: %s", err)
+		return Document{}, err
+	}
+
+	return Document{
+		Path:   path,
+		Source: utils.SourceLocal,
+		Words:  freqMap,
+	}, nil
 }

@@ -16,8 +16,6 @@ type Config struct {
 	WalkDirConfig *utils.WalkDirConfig
 }
 
-// Can't name this folder since it conflicts with the folder package
-// type fold = folder.Folder
 type doc = indexing.UnnormalizedDocument
 
 // IndexFile creates a new document from a file

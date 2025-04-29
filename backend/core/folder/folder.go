@@ -13,6 +13,8 @@ import (
 // Type alias
 type DocMap map[utils.Path]document.Document
 
+// TODO: this needs a complete rewrite
+
 // Abstract collection of documents
 // The folder struct will start as a singleton, but later expanded such that we
 // can multiple folders to sort documents into groups
@@ -94,6 +96,12 @@ func (folder *Folder) GetDoc(path utils.Path) (document.Document, bool) {
 	return doc, ok
 }
 
+// GetDocs returns the documents in the folder
+func (folder *Folder) GetDocs() DocMap {
+	return folder.docs
+}
+
+// GetDocAmount returns the number of documents in the folder
 func (folder *Folder) GetDocAmount() int {
 	return len(folder.docs)
 }

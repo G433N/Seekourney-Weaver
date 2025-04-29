@@ -15,6 +15,8 @@ import (
 	"os/exec"
 	"os/signal"
 	"seekourney/core/config"
+	"seekourney/core/database"
+	"seekourney/core/document"
 	"seekourney/core/folder"
 	"seekourney/core/search"
 	"seekourney/indexer/localtext"
@@ -69,18 +71,22 @@ func stopContainer() {
 	}
 }
 
-var Config *config.Config
-var Folder folder.Folder
+// conf holds the config object for the server
+// Gets initialized in the Run function
+var conf *config.Config
 
+// index loads the local file config and creates a folder object
+// TODO: This function is temporay
 func index() folder.Folder {
-	// Load config
-	Config = config.Load()
-
 	// Load local file config
-	localConfig := localtext.Load(Config)
+	localConfig := localtext.Load(conf)
 
-	// TODO: Later when documents comes over the network, we can still use the same code. since it is an iterator
-	folder := folder.FromIter(Config.Normalizer, localConfig.IndexDir("test_data"))
+	// TODO: Later when documents comes over the network, we can still use the
+	// same code. since it is an iterator
+	folder := folder.FromIter(
+		conf.Normalizer,
+		localConfig.IndexDir("test_data"),
+	)
 
 	rm := folder.ReverseMappingLocal()
 
@@ -90,10 +96,25 @@ func index() folder.Folder {
 	log.Printf("Files: %d, Words: %d\n", files, words)
 
 	if files == 0 {
-		log.Fatal("No files found, run make downloadTestFiles to download test files")
+		log.Fatal(
+			"No files found, run make downloadTestFiles to download test files",
+		)
 	}
 
 	return folder
+}
+
+// insertFolder inserts all documents in the given folder into the database
+func insertFolder(db *sql.DB, folder *folder.Folder) {
+
+	for _, doc := range folder.GetDocs() {
+
+		_, err := database.InsertInto(db, doc)
+
+		if err != nil {
+			log.Printf("Error inserting row: %s\n", err)
+		}
+	}
 }
 
 /*
@@ -116,11 +137,32 @@ query under the key 'p'
 */
 func Run(args []string) {
 
+	// Load config
+
+	conf = config.Load()
+
 	go startContainer()
 
-	Folder = index()
-
 	db := connectToDB()
+
+	loadFromDisc := true
+
+	if len(args) > 1 {
+		log.Fatal("Too many arguments")
+	} else if len(args) == 1 {
+		switch args[0] {
+		case "load":
+			loadFromDisc = false
+		}
+	}
+
+	if !loadFromDisc {
+		log.Println("Indexing files")
+		fold := index()
+		insertFolder(db, &fold)
+	} else {
+		log.Println("Loading from disk")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 
@@ -129,25 +171,25 @@ func Run(args []string) {
 		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 
-	http.HandleFunc("/",
-		func(writer http.ResponseWriter, request *http.Request) {
-			serverParams := serverFuncParams{
-				writer: writer,
-				db:     db,
-				stop:   stop,
-			}
+	log.Println("Server started at", serverAddress)
 
-			switch html.EscapeString(request.URL.Path) {
-			case "/all":
-				handleAll(serverParams)
-			case "/search":
-				handleSearch(serverParams, request.URL.Query()["q"])
-			case "/add":
-				handleAdd(serverParams, request.URL.Query()["p"])
-			case "/quit":
-				handleQuit(serverParams)
-			}
-		})
+	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
+		enableCors(&writer)
+		serverParams := serverFuncParams{writer: writer, db: db}
+
+		switch html.EscapeString(request.URL.Path) {
+		case "/all":
+			handleAll(serverParams)
+		case "/search":
+			handleSearchSql(serverParams, request.URL.Query()["q"])
+		case "/add":
+			handleAdd(serverParams, request.URL.Query()["p"])
+		case "/quit":
+			handleQuit(serverParams)
+		}
+	}
+
+	http.HandleFunc("/", queryHandler)
 
 	go func() {
 		err := server.ListenAndServe()
@@ -156,7 +198,6 @@ func Run(args []string) {
 		}
 		stop()
 	}()
-	fmt.Println("Server online")
 
 	// Wait until server is finished
 	<-ctx.Done()
@@ -174,6 +215,10 @@ func Run(args []string) {
 	stopContainer()
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
 func checkIOError(err error) {
 	if err != nil {
 		panic(err)
@@ -188,65 +233,75 @@ func recoverSQLError(writer io.Writer) {
 	}
 }
 
+// sendJSON marshals the given data to JSON and writes it to the writer.
+func sendJSON(writer io.Writer, data any) {
+
+	jsonResponse, err := json.Marshal(data)
+	if err != nil {
+		sendError(writer, "JSON failed", err)
+		return
+	}
+
+	_, err = fmt.Fprintf(writer, "%s\n", jsonResponse)
+	if err != nil {
+		sendError(writer, "IO failed", err)
+		return
+	}
+}
+
 // Handles an /all request, queries all rows in database and writes output to
 // response writer
 func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
-	rows := queryAll(serverParams.db)
-	writeRows(serverParams.writer, rows)
-	unsafelyClose(rows)
-}
 
-// Handles a /search request, queries database for rows containing ALL keys and
-// wrties output to response writer
-func handleSearch(serverParams serverFuncParams, keys []string) {
-	defer recoverSQLError(serverParams.writer)
-	// queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
+	var doc document.Document
+	query := database.Select().Queries(doc.SQLGetFields()...).From("document")
 
-	if len(keys) == 0 {
-		fmt.Fprint(serverParams.writer, emptyJSON)
+	insert := func(docs *[]document.Document, doc document.Document) {
+		*docs = append(*docs, doc)
+	}
+
+	docs := make([]document.Document, 0)
+	err := database.ExecScan(serverParams.db, string(query), &docs, insert)
+
+	if err != nil {
+		sendError(serverParams.writer, "SQL failed", err)
 		return
 	}
 
-	// TODO: All this is wrong
+	sendJSON(serverParams.writer, docs)
+}
 
-	query := strings.Join(keys, " ")
+func handleSearchSql(serverParams serverFuncParams, keys []string) {
 
-	rm := Folder.ReverseMappingLocal()
+	defer recoverSQLError(serverParams.writer)
 
-	results := search.Search(Config, &Folder, rm, query)
+	if len(keys) == 0 {
+		sendError(serverParams.writer, "No keys given", nil)
+		return
+	}
+
+	query := utils.Query(strings.Join(keys, " "))
+
+	results := search.SqlSearch(conf, serverParams.db, query)
+
 	response := utils.SearchResponse{
 		Query:   query,
 		Results: results,
 	}
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		fmt.Fprintf(serverParams.writer, "JSON failed: %s\n", err)
-		return
-	}
+	sendJSON(serverParams.writer, response)
+}
 
-	fmt.Fprintf(serverParams.writer, "%s\n", jsonResponse)
-
+func sendError(writer io.Writer, msg string, err error) {
+	_, ioErr := fmt.Fprintf(writer, "%s: %s\n", msg, err)
+	checkIOError(ioErr)
 }
 
 // Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
-	for _, path := range paths {
-		_, err := insertRow(serverParams.db, Page{
-			path:     path,
-			pathType: PathTypeFile,
-			dict:     emptyJSON,
-		})
-		if err != nil {
-			_, ioErr := fmt.Fprintf(
-				serverParams.writer,
-				"SQL failed: %s\n",
-				err,
-			)
-			checkIOError(ioErr)
-		}
-	}
+	// TODO: Albins pr should impl this
+	panic("Not implemented")
 }
 
 // Handles a /quit request initiates the shutdown process by cancelling the
