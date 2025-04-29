@@ -230,7 +230,7 @@ func handleAll(serverParams serverFuncParams) {
 	}
 
 	docs := make([]document.Document, 0)
-	err := database.ExecScan[document.Document](serverParams.db, string(query), &docs, insert)
+	err := database.ExecScan(serverParams.db, string(query), &docs, insert)
 
 	if err != nil {
 		sendError(serverParams.writer, "SQL failed", err)

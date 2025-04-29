@@ -30,7 +30,7 @@ func PrintSearchResponse(response utils.SearchResponse) {
 
 	log.Printf(
 		"--- Search results for query '%s' ---\n",
-		Bold(Italic(response.Query)),
+		Bold(Italic(string(response.Query))),
 	)
 	for n, result := range response.Results {
 		path := string(result.Path)
