@@ -153,7 +153,8 @@ func DocumentFromDB(db *sql.DB, path utils.Path) (Document, error) {
 
 	var doc Document
 
-	query := database.Select().Queries(doc.SQLGetFields()...).From("document").Where("path = $1")
+	q1 := database.Select().Queries(doc.SQLGetFields()...)
+	query := q1.From("document").Where("path = $1")
 
 	insert := func(res *Document, doc Document) {
 		*res = doc
