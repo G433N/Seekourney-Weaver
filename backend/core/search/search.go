@@ -56,6 +56,9 @@ func SqlSearch(
 	return topN(scoreMapIntoSearchResult(result), 10)
 }
 
+// calculateIdf calculates the Inverse Document Frequency (IDF)
+// for a WordFrequencyMap.
+// See: https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Inverse_document_frequency
 func calculateIdf(freqMap utils.WordFrequencyMap, docAmount int) float64 {
 
 	popularity := float64(len(freqMap))
