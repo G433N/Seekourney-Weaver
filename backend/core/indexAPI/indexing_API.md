@@ -25,7 +25,7 @@ an error message should be written to `stderr`.
 
 ## Ports
 
-Allowed port numbers for indexers are any non-occupied port in the range [39 000, 39 449].
+Allowed port numbers for indexers are any non-occupied port in the range [39 000, 39 499].
 
 Currently occupied ports are:
 
