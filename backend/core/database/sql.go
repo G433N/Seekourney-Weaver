@@ -76,7 +76,7 @@ type SQLWrite interface {
 	SQLGetValues() []SQLValue
 }
 
-// objectTemplate is a type that represents a SQL Objecet row thing
+// objectTemplate is a type that represents a SQL Object row thing
 // TODO: Imporve this
 type objectTemplate string
 

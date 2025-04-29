@@ -31,6 +31,7 @@ func connectToDB() *sql.DB {
 		host, port, user, password, dbname)
 
 	log.Println("Connecting to database")
+	// Waiting animation
 	fmt.Print("Waiting for database.")
 	for range retries {
 		db, err := sql.Open("postgres", psqlconn)
@@ -40,6 +41,7 @@ func connectToDB() *sql.DB {
 		}
 
 		if err = db.Ping(); err == nil {
+			// Need to add a new line to "end" the waiting animation
 			fmt.Println("")
 			log.Println("Database ready")
 			return db
