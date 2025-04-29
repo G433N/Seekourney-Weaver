@@ -58,7 +58,7 @@ Indexer must respond with:
 
 Request for indexing of a folder or file takes the form:
 ```
-GET /indexfull/FILE_OR_FOLDERPATH`
+GET /indexfull/FILE_OR_FOLDERPATH
 ```
 Indexer must respond with:
 ```json
