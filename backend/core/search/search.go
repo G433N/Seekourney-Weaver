@@ -3,8 +3,10 @@ package search
 import (
 	"database/sql"
 	"log"
+	"math"
 	"seekourney/core/config"
 	"seekourney/core/database"
+	"seekourney/core/document"
 	"seekourney/utils"
 	"seekourney/utils/words"
 	"sort"
@@ -20,22 +22,48 @@ func SqlSearch(
 
 	result := make(utils.ScoreMap)
 
+	docAmount, err := database.RowAmount(db, "document")
+
+	if err != nil {
+		log.Printf("Error: %s\n", err)
+		panic(err)
+	}
+
 	for word := range words.WordsIter(string(query)) {
 		word = config.Normalizer.Word(word)
 
 		freqMap, err := database.FreqMap(db, word)
+		idf := calculateIdf(freqMap, docAmount)
 
 		if err != nil {
 			log.Printf("Error: %s\n", err)
 			continue
 		}
 
-		for path, freq := range freqMap {
-			result[path] += utils.Score(freq)
+		for path := range freqMap {
+			doc, err := document.DocumentFromDB(db, path)
+
+			if err != nil {
+				log.Printf("Error: %s\n", err)
+				continue
+			}
+
+			tf := doc.CalculateTf(word)
+			result[path] += utils.Score(tf * idf)
 		}
 	}
 
 	return topN(scoreMapIntoSearchResult(result), 10)
+}
+
+// calculateIdf calculates the Inverse Document Frequency (IDF)
+// for a WordFrequencyMap.
+// See: https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Inverse_document_frequency
+func calculateIdf(freqMap utils.WordFrequencyMap, docAmount int) float64 {
+
+	popularity := float64(len(freqMap))
+
+	return math.Log2(float64(docAmount) / (popularity + 1))
 }
 
 // scoreMapIntoSearchResult converts a ScoreMap into a slice of SearchResult.

@@ -171,6 +171,14 @@ func Run(args []string) {
 		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 
+	amount, err := database.RowAmount(db, "document")
+
+	if err == nil {
+		log.Printf("Row amount: %d\n", amount)
+	} else {
+		log.Printf("Error getting row amount: %s\n", err)
+	}
+
 	log.Println("Server started at", serverAddress)
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
@@ -203,7 +211,7 @@ func Run(args []string) {
 	<-ctx.Done()
 
 	fmt.Println("Shutting down")
-	err := server.Shutdown(context.Background())
+	err = server.Shutdown(context.Background())
 	if err != nil {
 		fmt.Println("Error while shutting down server: ", err)
 	}

@@ -14,6 +14,7 @@ import (
 
 type Document indexing.UnnormalizedDocument
 
+// Normalize normalizes the document using the provided normalizer
 func Normalize(
 	doc indexing.UnnormalizedDocument,
 	normalizer normalize.Normalizer,
@@ -126,4 +127,46 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 		Source: utils.SourceLocal,
 		Words:  freqMap,
 	}, nil
+}
+
+// GetWordCount returns the total number of words in the document
+func (doc *Document) GetWordCount() int {
+	count := 0
+	for _, v := range doc.Words {
+		count += int(v)
+	}
+	return count
+}
+
+// CalculateTf calculates the term frequency of a word in the document
+// See: https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency
+func (doc *Document) CalculateTf(word utils.Word) float64 {
+	// this will return 0 if the word is not in the document
+	freq := doc.Words[word]
+	return float64(freq) / float64(doc.GetWordCount())
+
+}
+
+// DocumentFromDB retrieves a document from the database
+func DocumentFromDB(db *sql.DB, path utils.Path) (Document, error) {
+
+	var doc Document
+
+	q1 := database.Select().Queries(doc.SQLGetFields()...)
+	query := q1.From("document").Where("path = $1")
+
+	insert := func(res *Document, doc Document) {
+		*res = doc
+	}
+
+	err := database.ExecScan(
+		db,
+		string(query),
+		&doc,
+		insert,
+		path,
+	)
+
+	return doc, err
+
 }

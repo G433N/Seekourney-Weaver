@@ -5,7 +5,7 @@ type Query string
 type Word string
 type Path string
 type Frequency int
-type Score int
+type Score float64
 
 type Source int
 
