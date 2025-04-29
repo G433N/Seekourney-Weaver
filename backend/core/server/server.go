@@ -70,6 +70,8 @@ func stopContainer() {
 
 var Config *config.Config
 
+// index loads the local file config and creates a folder object
+// TODO: This function is temporay
 func index() folder.Folder {
 	// Load local file config
 	localConfig := localtext.Load(Config)
@@ -97,6 +99,7 @@ func index() folder.Folder {
 	return folder
 }
 
+// insertFolder inserts all documents in the given folder into the database
 func insertFolder(db *sql.DB, folder *folder.Folder) {
 
 	for _, doc := range folder.GetDocs() {
@@ -252,7 +255,7 @@ func handleSearchSql(serverParams serverFuncParams, keys []string) {
 	results := search.SqlSearch(Config, serverParams.db, query)
 
 	response := utils.SearchResponse{
-		Query:   string(query), // TODO: Swap type
+		Query:   query,
 		Results: results,
 	}
 

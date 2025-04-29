@@ -21,27 +21,34 @@ const (
 
 /// Scan
 
+// SQLScan is an interface that defines a method for scanning a SQL row to an object of type Self.
 type SQLScan[Self any] interface {
 
+	// SQLScan scans a SQL row into an object of type Self.
 	// This method schould call the Scan method of the sql.Rows
 	// and assign the values to the fields of the object
 	SQLScan(rows *sql.Rows) (Self, error)
 }
 
+// IntoMap is an interface that defines a method for converting an object into a map.
 type IntoMap[K comparable, V any] interface {
 	// NOTE: Might want to extrect this
 
+	// IntoKey returns the key of the object
 	IntoKey() K
 
+	// IntoValue returns the value of the object
 	IntoValue() V
 }
 
+// scan is a helper function that scans a SQL row into an object of type T.
 func scan[T SQLScan[T]](rows *sql.Rows) (T, error) {
 	var obj T
-
 	return obj.SQLScan(rows)
 }
 
+// ScanRowsIter is a function that takes a sql.Rows object and returns an iterator of objects of type T.
+// Every row is scanned into an object of type T and yielded to the caller.
 func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 
 	return func(yield func(utils.Result[T]) bool) {
@@ -60,29 +67,40 @@ func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 	}
 }
 
-/// Write
+// / Write
 
+// SQLWrite is an interface that defines methods for writing SQL rows from a object
 type SQLWrite interface {
+
+	// SQLGetName returns the name of the SQL table
 	SQLGetName() string
 
+	// SQLGetFields returns the fields of the tables rows
 	SQLGetFields() []string
 
+	// SQLGetValues returns the values of a row
 	SQLGetValues() []any
 }
 
+// objectTemplate is a type that represents a SQL Objecet row thing TODO: Imporve this
 type objectTemplate string
+
+// valueSubstitution is a type that represents a SQL value substitution
 type valueSubstitution string
 
+// Statment is a type that represents a SQL statement
 type Statment string
 
 /// Insert
 
+// InsertInto executes an INSERT statement into the database
 func InsertInto(db *sql.DB, object SQLWrite) (sql.Result, error) {
 	stmt := InsertIntoStatment(object)
 
 	return db.Exec(string(stmt), object.SQLGetValues()...)
 }
 
+// InsertIntoStatment creates an INSERT statement from a SQLWrite object
 func InsertIntoStatment(template SQLWrite) Statment {
 
 	return insertIntoStatment(
@@ -91,6 +109,7 @@ func InsertIntoStatment(template SQLWrite) Statment {
 	)
 }
 
+// insertIntoStatment creates an INSERT statement from a template and a value substitution
 func insertIntoStatment(
 	template objectTemplate,
 	sub valueSubstitution,
@@ -102,8 +121,10 @@ func insertIntoStatment(
 		string(sub),
 	}
 	return Statment(strings.Join(list, " "))
+
 }
 
+// sqlTemplate creates a SQL template from a Go struct/object
 func sqlTemplate(template SQLWrite) objectTemplate {
 	name := template.SQLGetName()
 	fields := template.SQLGetFields()
@@ -111,6 +132,7 @@ func sqlTemplate(template SQLWrite) objectTemplate {
 	return objectTemplate(name + " (" + strings.Join(fields, ",") + ")")
 }
 
+// sqlValueSubstition creates a SQL value substitution from a Go struct/object
 func sqlValueSubstition(template SQLWrite) valueSubstitution {
 	values := template.SQLGetValues()
 

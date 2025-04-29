@@ -33,6 +33,7 @@ func (sqlResult sqlResult) IntoValue() utils.Frequency {
 	return sqlResult.score
 }
 
+// FreqMap returns a map of paths to frequencies for a given word.
 func FreqMap(db *sql.DB, word utils.Word) (utils.WordFrequencyMap, error) {
 
 	wordStr := string(word)

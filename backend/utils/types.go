@@ -31,7 +31,7 @@ type SearchResult struct {
 }
 
 type SearchResponse struct {
-	Query   string
+	Query   Query
 	Results []SearchResult
 }
 
