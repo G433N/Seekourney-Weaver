@@ -69,6 +69,8 @@ func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 
 // / Write
 
+type SQLValue = any
+
 // SQLWrite is an interface that defines methods for writing SQL rows from a object
 type SQLWrite interface {
 
@@ -79,7 +81,7 @@ type SQLWrite interface {
 	SQLGetFields() []string
 
 	// SQLGetValues returns the values of a row
-	SQLGetValues() []any
+	SQLGetValues() []SQLValue
 }
 
 // objectTemplate is a type that represents a SQL Objecet row thing TODO: Imporve this

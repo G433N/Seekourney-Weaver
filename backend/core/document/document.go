@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"seekourney/core/database"
 	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
@@ -92,10 +93,10 @@ func (doc Document) SQLGetValues() []any {
 
 	if err != nil {
 		log.Printf("Error marshalling dict: %s", err)
-		return []any{doc.Path, "file", nil}
+		return []database.SQLValue{doc.Path, "file", nil}
 	}
 
-	return []any{doc.Path, "file", bytes}
+	return []database.SQLValue{doc.Path, "file", bytes}
 }
 
 func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
