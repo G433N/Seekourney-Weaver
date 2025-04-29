@@ -4,13 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"seekourney/core/config"
 	"seekourney/core/database"
 	"seekourney/core/document"
@@ -22,23 +25,23 @@ import (
 )
 
 const (
-	serverAddress       string = ":8080"
-	containerStart      string = "./docker-start"
-	containerOutputFile string = "./docker.log"
-	host                string = "localhost"
-	port                int    = 5433
-	containerName       string = "go-postgres"
-	user                string = "go-postgres"
-	password            string = "go-postgres"
-	dbname              string = "go-postgres"
-	emptyJSON           string = "{}"
+	serverAddress       string     = ":8080"
+	containerStart      string     = "./docker-start"
+	containerOutputFile string     = "./docker.log"
+	host                string     = "localhost"
+	port                int        = 5433
+	containerName       string     = "go-postgres"
+	user                string     = "go-postgres"
+	password            string     = "go-postgres"
+	dbname              string     = "go-postgres"
+	emptyJSON           JSONString = "{}"
 )
 
 // Used to params used by server query handler functions
 type serverFuncParams struct {
-	server *http.Server
 	writer io.Writer
 	db     *sql.DB
+	stop   context.CancelFunc
 }
 
 // Starts the database container using the command defined in containerStart.
@@ -68,18 +71,20 @@ func stopContainer() {
 	}
 }
 
-var Config *config.Config
+// conf holds the config object for the server
+// Gets initialized in the Run function
+var conf *config.Config
 
 // index loads the local file config and creates a folder object
 // TODO: This function is temporay
 func index() folder.Folder {
 	// Load local file config
-	localConfig := localtext.Load(Config)
+	localConfig := localtext.Load(conf)
 
 	// TODO: Later when documents comes over the network, we can still use the
 	// same code. since it is an iterator
 	folder := folder.FromIter(
-		Config.Normalizer,
+		conf.Normalizer,
 		localConfig.IndexDir("test_data"),
 	)
 
@@ -134,7 +139,7 @@ func Run(args []string) {
 
 	// Load config
 
-	Config = config.Load()
+	conf = config.Load()
 
 	go startContainer()
 
@@ -159,8 +164,11 @@ func Run(args []string) {
 		log.Println("Loading from disk")
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+
 	server := &http.Server{
-		Addr: serverAddress,
+		Addr:        serverAddress,
+		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 
 	amount, err := database.RowAmount(db, "document")
@@ -175,7 +183,7 @@ func Run(args []string) {
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
 		enableCors(&writer)
-		serverParams := serverFuncParams{server: server, writer: writer, db: db}
+		serverParams := serverFuncParams{writer: writer, db: db}
 
 		switch html.EscapeString(request.URL.Path) {
 		case "/all":
@@ -188,9 +196,31 @@ func Run(args []string) {
 			handleQuit(serverParams)
 		}
 	}
+
 	http.HandleFunc("/", queryHandler)
 
-	log.Fatal(server.ListenAndServe())
+	go func() {
+		err := server.ListenAndServe()
+		if !errors.Is(err, http.ErrServerClosed) {
+			fmt.Println("Server encountered an error:", err)
+		}
+		stop()
+	}()
+
+	// Wait until server is finished
+	<-ctx.Done()
+
+	fmt.Println("Shutting down")
+	err := server.Shutdown(context.Background())
+	if err != nil {
+		fmt.Println("Error while shutting down server: ", err)
+	}
+	err = db.Close()
+	if err != nil {
+		fmt.Println("Error while closing database: ", err)
+	}
+
+	stopContainer()
 }
 
 func enableCors(w *http.ResponseWriter) {
@@ -211,6 +241,7 @@ func recoverSQLError(writer io.Writer) {
 	}
 }
 
+// sendJSON marshals the given data to JSON and writes it to the writer.
 func sendJSON(writer io.Writer, data any) {
 
 	jsonResponse, err := json.Marshal(data)
@@ -230,6 +261,7 @@ func sendJSON(writer io.Writer, data any) {
 // response writer
 func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
+
 	var doc document.Document
 	query := database.Select().Queries(doc.SQLGetFields()...).From("document")
 
@@ -246,7 +278,6 @@ func handleAll(serverParams serverFuncParams) {
 	}
 
 	sendJSON(serverParams.writer, docs)
-
 }
 
 func handleSearchSql(serverParams serverFuncParams, keys []string) {
@@ -260,7 +291,7 @@ func handleSearchSql(serverParams serverFuncParams, keys []string) {
 
 	query := utils.Query(strings.Join(keys, " "))
 
-	results := search.SqlSearch(Config, serverParams.db, query)
+	results := search.SqlSearch(conf, serverParams.db, query)
 
 	response := utils.SearchResponse{
 		Query:   query,
@@ -281,20 +312,11 @@ func handleAdd(serverParams serverFuncParams, paths []string) {
 	panic("Not implemented")
 }
 
-// Handles a /quit request, cleanly shutsdown the database container and server
+// Handles a /quit request initiates the shutdown process by cancelling the
+// server context
 func handleQuit(serverParams serverFuncParams) {
 	_, err := fmt.Fprintf(serverParams.writer, "Shutting down\n")
 	checkIOError(err)
 
-	err = serverParams.db.Close()
-	checkIOError(err)
-	stopContainer()
-
-	// This needs to be called as a goroutine because the handler needs to
-	// return
-	// before the server can shutdown
-	go func() {
-		err := serverParams.server.Shutdown(context.Background())
-		checkIOError(err)
-	}()
+	serverParams.stop()
 }

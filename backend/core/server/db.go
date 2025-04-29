@@ -12,17 +12,17 @@ import (
 // Used for database enumerable type, can be either 'web' or 'file'
 type PathType string
 
-const (
-	pathTypeWeb  PathType = "web"
-	pathTypeFile PathType = "file"
-)
+// const (
+// 	pathTypeWeb  PathType = "web"
+// 	pathTypeFile PathType = "file"
+// )
 
 type JSONString string
 
 // Attempts to connect to the database, will retry every half second for
 // 5 seconds in case the docker container is still starting up.
 // Returns a pointer to a database file descriptor if the connection succeeds.
-// Terminates with an error if it fails to connect.
+// Panics with an error if it fails to connect.
 func connectToDB() *sql.DB {
 	retries := 10
 
@@ -31,6 +31,7 @@ func connectToDB() *sql.DB {
 		host, port, user, password, dbname)
 
 	log.Println("Connecting to database")
+	// Waiting animation
 	fmt.Print("Waiting for database.")
 	for range retries {
 		db, err := sql.Open("postgres", psqlconn)
@@ -40,6 +41,7 @@ func connectToDB() *sql.DB {
 		}
 
 		if err = db.Ping(); err == nil {
+			// Need to add a new line to "end" the waiting animation
 			fmt.Println("")
 			log.Println("Database ready")
 			return db
@@ -49,10 +51,4 @@ func connectToDB() *sql.DB {
 	}
 	fmt.Print("\n")
 	panic("Could not connect to database, check docker.log for more info")
-}
-
-func checkSQLError(err error) {
-	if err != nil {
-		panic(err)
-	}
 }

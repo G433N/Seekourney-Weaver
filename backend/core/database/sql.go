@@ -21,7 +21,8 @@ const (
 
 /// Scan
 
-// SQLScan is an interface that defines a method for scanning a SQL row to an object of type Self.
+// SQLScan is an interface that defines a method
+// for scanning a SQL row to an object of type Self.
 type SQLScan[Self any] interface {
 
 	// SQLScan scans a SQL row into an object of type Self.
@@ -30,24 +31,14 @@ type SQLScan[Self any] interface {
 	SQLScan(rows *sql.Rows) (Self, error)
 }
 
-// IntoMap is an interface that defines a method for converting an object into a map.
-type IntoMap[K comparable, V any] interface {
-	// NOTE: Might want to extrect this
-
-	// IntoKey returns the key of the object
-	IntoKey() K
-
-	// IntoValue returns the value of the object
-	IntoValue() V
-}
-
 // scan is a helper function that scans a SQL row into an object of type T.
 func scan[T SQLScan[T]](rows *sql.Rows) (T, error) {
 	var obj T
 	return obj.SQLScan(rows)
 }
 
-// ScanRowsIter is a function that takes a sql.Rows object and returns an iterator of objects of type T.
+// ScanRowsIter is a function that takes a sql.Rows object and
+// returns an iterator of objects of type T.
 // Every row is scanned into an object of type T and yielded to the caller.
 func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 
@@ -71,7 +62,8 @@ func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 
 type SQLValue = any
 
-// SQLWrite is an interface that defines methods for writing SQL rows from a object
+// SQLWrite is an interface that defines methods
+// for writing SQL rows from a object
 type SQLWrite interface {
 
 	// SQLGetName returns the name of the SQL table
@@ -84,7 +76,8 @@ type SQLWrite interface {
 	SQLGetValues() []SQLValue
 }
 
-// objectTemplate is a type that represents a SQL Objecet row thing TODO: Imporve this
+// objectTemplate is a type that represents a SQL Object row thing
+// TODO: Imporve this
 type objectTemplate string
 
 // valueSubstitution is a type that represents a SQL value substitution
@@ -111,7 +104,8 @@ func InsertIntoStatment(template SQLWrite) Statment {
 	)
 }
 
-// insertIntoStatment creates an INSERT statement from a template and a value substitution
+// insertIntoStatment creates an INSERT statement from a template
+// and a value substitution
 func insertIntoStatment(
 	template objectTemplate,
 	sub valueSubstitution,
@@ -152,9 +146,16 @@ func sqlValueSubstition(template SQLWrite) valueSubstitution {
 
 /// Select
 
+// SelectStatment is a type that represents a SQL SELECT keyword
 type SelectStatment string
+
+// SelectQuery is a type that represents a SQL SELECT with a query
 type SelectQuery string
+
+// SelectFrom is a type that represents a SQL SELECT with a FROM clause
 type SelectFrom string
+
+// SelectWhere is a type that represents a SQL SELECT with a WHERE clause
 type SelectWhere string
 
 // / JsonValue creates a JSON_VALUE SELECT statement
@@ -178,25 +179,34 @@ func Select() SelectStatment {
 	return SelectStatment(_SELECT_)
 }
 
+// Queries adds a list of queries to the SQL statement
 func (s SelectStatment) Queries(query ...string) SelectQuery {
 	return SelectQuery(string(s) + " " + strings.Join(query, ", "))
 }
 
+// QueryAll adds a wildcard (*) to the SQL statement
 func (s SelectStatment) QueryAll() SelectQuery {
 	return s.Queries("*")
 }
 
+// From adds a FROM clause to the SQL statement
 func (s SelectQuery) From(table string) SelectFrom {
 	return SelectFrom(string(s) + " " + _FROM_ + " " + table)
 }
 
+// Where adds a WHERE clause to the SQL statement
 func (s SelectFrom) Where(condition string) SelectWhere {
 	return SelectWhere(string(s) + " " + _WHERE_ + " " + condition)
 }
 
 // ExecExec executes a SQL statement and returns the result into obj
 // The insert function is used to insert the result into obj
-func ExecScan[T SQLScan[T], U any](db *sql.DB, query string, obj *U, insert func(*U, T), args ...any) (resErr error) {
+func ExecScan[T SQLScan[T], U any](
+	db *sql.DB,
+	query string,
+	obj *U,
+	insert func(*U, T),
+	args ...any) (resErr error) {
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
