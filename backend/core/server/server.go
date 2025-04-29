@@ -163,6 +163,14 @@ func Run(args []string) {
 		Addr: serverAddress,
 	}
 
+	amount, err := database.RowAmount(db, "document")
+
+	if err == nil {
+		log.Printf("Row amount: %d\n", amount)
+	} else {
+		log.Printf("Error getting row amount: %s\n", err)
+	}
+
 	log.Println("Server started at", serverAddress)
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {

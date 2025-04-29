@@ -220,3 +220,32 @@ func ExecScan[T SQLScan[T], U any](db *sql.DB, query string, obj *U, insert func
 
 	return nil
 }
+
+type num int
+
+func (n num) SQLScan(rows *sql.Rows) (num, error) {
+	var i int
+	err := rows.Scan(&i)
+	if err != nil {
+		return 0, err
+	}
+	return num(i), nil
+}
+
+func RowAmount(db *sql.DB, table string) (int, error) {
+
+	query := Select().Queries("COUNT(*)").From(table)
+	var count num
+
+	insert := func(res *num, sqlRes num) {
+		*res = sqlRes
+	}
+
+	err := ExecScan(db, string(query), &count, insert)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}

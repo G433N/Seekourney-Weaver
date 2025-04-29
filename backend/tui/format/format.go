@@ -34,7 +34,7 @@ func PrintSearchResponse(response utils.SearchResponse) {
 	)
 	for n, result := range response.Results {
 		path := string(result.Path)
-		score := int(result.Score)
+		score := float64(result.Score)
 
 		var source string
 
@@ -51,7 +51,7 @@ func PrintSearchResponse(response utils.SearchResponse) {
 			"%d. Path: %s Score: %s, Source: %s\n",
 			n,
 			LightBlue(Bold(link)),
-			Green(strconv.Itoa(score)),
+			Green(strconv.FormatFloat(score, 'f', 2, 64)),
 			Bold(source),
 		)
 	}

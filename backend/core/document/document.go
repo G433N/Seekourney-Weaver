@@ -123,3 +123,41 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 		Words:  freqMap,
 	}, nil
 }
+
+func (doc *Document) GetWordCount() int {
+	count := 0
+	for _, v := range doc.Words {
+		count += int(v)
+	}
+	return count
+}
+
+func (doc *Document) CalculateTf(word utils.Word) float64 {
+	if _, ok := doc.Words[word]; !ok {
+		return 0
+	}
+	return float64(doc.Words[word]) / float64(doc.GetWordCount())
+
+}
+
+func DocumentFromDB(db *sql.DB, path utils.Path) (Document, error) {
+
+	var doc Document
+
+	query := database.Select().Queries(doc.SQLGetFields()...).From("document").Where("path = $1")
+
+	insert := func(res *Document, doc Document) {
+		*res = doc
+	}
+
+	err := database.ExecScan(
+		db,
+		string(query),
+		&doc,
+		insert,
+		path,
+	)
+
+	return doc, err
+
+}
