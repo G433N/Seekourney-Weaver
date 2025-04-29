@@ -22,7 +22,7 @@ type JSONString string
 // Attempts to connect to the database, will retry every half second for
 // 5 seconds in case the docker container is still starting up.
 // Returns a pointer to a database file descriptor if the connection succeeds.
-// Terminates with an error if it fails to connect.
+// Panics with an error if it fails to connect.
 func connectToDB() *sql.DB {
 	retries := 10
 
