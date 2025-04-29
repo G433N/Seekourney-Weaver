@@ -199,15 +199,15 @@ func newIndexErrors(numberOfPaths int) IndexErrors {
 	return errs
 }
 
-// Starts up an indexer, indexes many path which produces 0 or more
+// IndexMany starts up an indexer, indexes many path which produces 0 or more
 // unnormalised documents, and shuts down the indexer.
 // If startup failed, all error fields will have errors.
 // Startup error field must be checked before attemp to index into documents.
 func IndexMany(
 	info IndexerInfo,
 	paths []utils.Path,
-) ([][]indexing.UnnormalizedDocument, IndexErrors) {
-	manyDocs := make([][]indexing.UnnormalizedDocument, len(paths))
+) ([][]UnnormalizedDocument, IndexErrors) {
+	manyDocs := make([][]UnnormalizedDocument, len(paths))
 	errs := newIndexErrors(len(paths))
 
 	errs.Startup = startupIndexer(info)
@@ -233,7 +233,7 @@ func IndexMany(
 	return manyDocs, errs
 }
 
-// Starts up an indexer, indexes one path which produces 0 or more
+// IndexOne starts up an indexer, indexes one path which produces 0 or more
 // unnormalised documents, and shuts down the indexer.
 // If startup failed, all error fields will have errors.
 // Startup error field must be checked before attemp to index into documents.
@@ -241,10 +241,10 @@ func IndexMany(
 func IndexOne(
 	info IndexerInfo,
 	path utils.Path,
-) ([]indexing.UnnormalizedDocument, IndexErrors) {
+) ([]UnnormalizedDocument, IndexErrors) {
 	nestedDocs, errs := IndexMany(info, []utils.Path{path})
 	if errs.Startup != nil {
-		return []indexing.UnnormalizedDocument{}, errs
+		return []UnnormalizedDocument{}, errs
 	} else {
 		return nestedDocs[0], errs
 	}
