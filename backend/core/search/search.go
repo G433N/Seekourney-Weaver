@@ -11,10 +11,7 @@ import (
 	"sort"
 )
 
-type SearchResult struct {
-	Path  utils.Path
-	Value utils.Score
-}
+type SearchResult = utils.SearchResult
 
 // / scoreWord takes a folder, a reverse mapping and a word
 // It returns a map of document paths and their corresponding score of the word
@@ -136,13 +133,19 @@ func Search(
 
 	// Convert map to slice of SearchResult
 	results := make([]SearchResult, 0, len(searchResult))
-	for path, value := range searchResult {
-		results = append(results, SearchResult{Path: path, Value: value})
+	for path, score := range searchResult {
+		doc, ok := f.GetDoc(path)
+
+		if !ok {
+			log.Fatalf("Document %s not found in folder, this should be imposible\n", path)
+		}
+
+		results = append(results, SearchResult{Path: path, Score: score, Source: doc.Source})
 	}
 
 	// Sort results by value
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].Value > results[j].Value
+		return results[i].Score > results[j].Score
 	})
 
 	if len(results) < 10 {

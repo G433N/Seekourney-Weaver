@@ -3,15 +3,23 @@ package server
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
+	"seekourney/core/config"
+	"seekourney/core/folder"
+	"seekourney/core/search"
+	"seekourney/indexer/localtext"
+	"seekourney/utils"
+	"strings"
 )
 
 const (
@@ -61,6 +69,33 @@ func stopContainer() {
 	}
 }
 
+var Config *config.Config
+var Folder folder.Folder
+
+func index() folder.Folder {
+	// Load config
+	Config = config.Load()
+
+	// Load local file config
+	localConfig := localtext.Load(Config)
+
+	// TODO: Later when documents comes over the network, we can still use the same code. since it is an iterator
+	folder := folder.FromIter(Config.Normalizer, localConfig.IndexDir("test_data"))
+
+	rm := folder.ReverseMappingLocal()
+
+	files := folder.GetDocAmount()
+	words := len(rm)
+
+	log.Printf("Files: %d, Words: %d\n", files, words)
+
+	if files == 0 {
+		log.Fatal("No files found, run make downloadTestFiles to download test files")
+	}
+
+	return folder
+}
+
 /*
 Runs a http server with a postgres instance within docker container,
 can be accessed for example by `curl 'http://localhost:8080/search?q=key1'`
@@ -80,7 +115,10 @@ query under the key 'p'
 /quit - Shuts down the server
 */
 func Run(args []string) {
+
 	go startContainer()
+
+	Folder = index()
 
 	db := connectToDB()
 
@@ -163,9 +201,33 @@ func handleAll(serverParams serverFuncParams) {
 // wrties output to response writer
 func handleSearch(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
-	rows := queryJSONKeysAll(serverParams.db, keys)
-	writeRows(serverParams.writer, rows)
-	unsafelyClose(rows)
+	// queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
+
+	if len(keys) == 0 {
+		fmt.Fprint(serverParams.writer, emptyJSON)
+		return
+	}
+
+	// TODO: All this is wrong
+
+	query := strings.Join(keys, " ")
+
+	rm := Folder.ReverseMappingLocal()
+
+	results := search.Search(Config, &Folder, rm, query)
+	response := utils.SearchResponse{
+		Query:   query,
+		Results: results,
+	}
+
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		fmt.Fprintf(serverParams.writer, "JSON failed: %s\n", err)
+		return
+	}
+
+	fmt.Fprintf(serverParams.writer, "%s\n", jsonResponse)
+
 }
 
 // Handles an /add request, inserts a row to the database for each path given
