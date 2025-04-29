@@ -8,17 +8,18 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"seekourney/core/config"
 	"seekourney/core/folder"
 	"seekourney/core/search"
 	"seekourney/indexer/localtext"
 	"seekourney/utils"
 	"strings"
-	"os/signal"
 )
 
 const (
@@ -203,7 +204,7 @@ func handleSearch(serverParams serverFuncParams, keys []string) {
 	// queryJSONKeysAll(serverParams.db, serverParams.writer, keys)
 
 	if len(keys) == 0 {
-		fmt.Fprintf(serverParams.writer, emptyJSON)
+		fmt.Fprint(serverParams.writer, emptyJSON)
 		return
 	}
 
