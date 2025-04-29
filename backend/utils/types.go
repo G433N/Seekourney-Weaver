@@ -39,3 +39,11 @@ type Result[T any] struct {
 	Value T
 	Err   error
 }
+
+// All FileType-s are lower-case letters without dot, e.g. "html" or "md"
+type FileType string
+
+// Port number for http request-responses.
+// Value for indexing API must be within range
+// [indexAPI.MININDEXERPORT, indexAPI.MAXINDEXERPORT]
+type Port uint
