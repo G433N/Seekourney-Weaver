@@ -28,27 +28,12 @@ const (
 
 // See indexing_API.md for corresponding JSON formatting.
 
-type responseDoc struct {
-	Path   utils.Path         `json:"path"`
-	Source utils.Source       `json:"source"`
-	Words  utils.FrequencyMap `json:"words"`
-}
-
-// Normally corresponds to "data" value in indexerResponse.
-type responseData struct {
-	Message   string        `json:"message"`
-	Documents []responseDoc `json:"documents"`
-}
-
-// Generic response from indexer.
-type indexerResponse struct {
-	Status string       `json:"status"`
-	Data   responseData `json:"data"`
-}
+type IndexerResponse = indexing.IndexerResponse
+type ResponseData = indexing.ResponseData
 
 // responseToStruct converts an HTTP response to an indexerResponse struct.
-func responseToStruct(resp *http.Response) (indexerResponse, error) {
-	parsedResp := indexerResponse{}
+func responseToStruct(resp *http.Response) (IndexerResponse, error) {
+	parsedResp := IndexerResponse{}
 	rawJSON, err := io.ReadAll(resp.Body)
 	if err != nil {
 		panic(err)

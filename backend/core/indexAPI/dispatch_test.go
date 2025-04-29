@@ -3,6 +3,7 @@ package indexAPI
 import (
 	"os/exec"
 	"reflect"
+	"seekourney/indexing"
 	"seekourney/utils"
 	"testing"
 
@@ -14,19 +15,19 @@ const (
 	_TESTURI_ restEndpoint = restEndpoint(_ENDPOINTPREFIX_ + "39100")
 )
 
-var testResponseFail indexerResponse = indexerResponse{
+var testResponseFail IndexerResponse = IndexerResponse{
 	Status: _STATUSFAILURE_,
-	Data:   responseData{Message: "failed to server response"},
+	Data:   ResponseData{Message: "failed to server response"},
 }
 
-var testResponsePong indexerResponse = indexerResponse{
+var testResponsePong IndexerResponse = IndexerResponse{
 	Status: _STATUSSUCCESSFUL_,
-	Data:   responseData{Message: _PONG_},
+	Data:   ResponseData{Message: _PONG_},
 }
 
-var testResponseExiting indexerResponse = indexerResponse{
+var testResponseExiting IndexerResponse = IndexerResponse{
 	Status: _STATUSSUCCESSFUL_,
-	Data:   responseData{Message: _EXITING_},
+	Data:   ResponseData{Message: _EXITING_},
 }
 
 // waitOnTestCMD is used instead of shutdownIndexerGraceful for some tests.
@@ -158,7 +159,7 @@ const testIndexFolderPath1 utils.Path = "home/george/my_cool_text_files"
 const testIndexFilePath1 utils.Path = "home/george/my_cool_text_files/first.txt"
 const testIndexFilePath2 utils.Path = "home/george/my_cool_text_files/other.txt"
 
-var testResponseDoc1 responseDoc = responseDoc{
+var testResponseDoc1 indexing.UnnormalizedDocument = indexing.UnnormalizedDocument{
 	Path:   testIndexFilePath1,
 	Source: utils.SourceLocal,
 	Words: utils.FrequencyMap{
@@ -170,7 +171,7 @@ var testResponseDoc1 responseDoc = responseDoc{
 	},
 }
 
-var testResponseDoc2 responseDoc = responseDoc{
+var testResponseDoc2 indexing.UnnormalizedDocument = indexing.UnnormalizedDocument{
 	Path:   testIndexFilePath2,
 	Source: utils.SourceLocal,
 	Words: utils.FrequencyMap{
@@ -179,16 +180,16 @@ var testResponseDoc2 responseDoc = responseDoc{
 	},
 }
 
-var testIndexingResponse1 indexerResponse = indexerResponse{
+var testIndexingResponse1 IndexerResponse = IndexerResponse{
 	Status: _STATUSSUCCESSFUL_,
-	Data: responseData{
-		Documents: []responseDoc{testResponseDoc1},
+	Data: ResponseData{
+		Documents: []indexing.UnnormalizedDocument{testResponseDoc1},
 	},
 }
-var testIndexingResponse2 indexerResponse = indexerResponse{
+var testIndexingResponse2 IndexerResponse = IndexerResponse{
 	Status: _STATUSSUCCESSFUL_,
-	Data: responseData{
-		Documents: []responseDoc{testResponseDoc1, testResponseDoc2},
+	Data: ResponseData{
+		Documents: []indexing.UnnormalizedDocument{testResponseDoc1, testResponseDoc2},
 	},
 }
 
