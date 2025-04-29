@@ -3,7 +3,6 @@ package indexAPI
 import (
 	"os/exec"
 	"reflect"
-	"seekourney/indexing"
 	"seekourney/utils"
 	"testing"
 
@@ -159,7 +158,7 @@ const testIndexFolderPath1 utils.Path = "home/george/my_cool_text_files"
 const testIndexFilePath1 utils.Path = "home/george/my_cool_text_files/first.txt"
 const testIndexFilePath2 utils.Path = "home/george/my_cool_text_files/other.txt"
 
-var testResponseDoc1 indexing.UnnormalizedDocument = indexing.UnnormalizedDocument{
+var testResponseDoc1 UnnormalizedDocument = UnnormalizedDocument{
 	Path:   testIndexFilePath1,
 	Source: utils.SourceLocal,
 	Words: utils.FrequencyMap{
@@ -171,7 +170,7 @@ var testResponseDoc1 indexing.UnnormalizedDocument = indexing.UnnormalizedDocume
 	},
 }
 
-var testResponseDoc2 indexing.UnnormalizedDocument = indexing.UnnormalizedDocument{
+var testResponseDoc2 UnnormalizedDocument = UnnormalizedDocument{
 	Path:   testIndexFilePath2,
 	Source: utils.SourceLocal,
 	Words: utils.FrequencyMap{
@@ -183,13 +182,16 @@ var testResponseDoc2 indexing.UnnormalizedDocument = indexing.UnnormalizedDocume
 var testIndexingResponse1 IndexerResponse = IndexerResponse{
 	Status: _STATUSSUCCESSFUL_,
 	Data: ResponseData{
-		Documents: []indexing.UnnormalizedDocument{testResponseDoc1},
+		Documents: []UnnormalizedDocument{testResponseDoc1},
 	},
 }
 var testIndexingResponse2 IndexerResponse = IndexerResponse{
 	Status: _STATUSSUCCESSFUL_,
 	Data: ResponseData{
-		Documents: []indexing.UnnormalizedDocument{testResponseDoc1, testResponseDoc2},
+		Documents: []UnnormalizedDocument{
+			testResponseDoc1,
+			testResponseDoc2,
+		},
 	},
 }
 

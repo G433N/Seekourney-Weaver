@@ -30,6 +30,7 @@ const (
 
 type IndexerResponse = indexing.IndexerResponse
 type ResponseData = indexing.ResponseData
+type UnnormalizedDocument = indexing.UnnormalizedDocument
 
 // responseToStruct converts an HTTP response to an indexerResponse struct.
 func responseToStruct(resp *http.Response) (IndexerResponse, error) {
@@ -143,8 +144,8 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 func requestIndexing(
 	info IndexerInfo,
 	path utils.Path,
-) ([]indexing.UnnormalizedDocument, error) {
-	var docs []indexing.UnnormalizedDocument
+) ([]UnnormalizedDocument, error) {
+	var docs []UnnormalizedDocument
 
 	client := http.Client{
 		Timeout: _LONGTIMEOUT_,
@@ -169,7 +170,7 @@ func requestIndexing(
 
 	parsedDocs := parsedResp.Data.Documents
 	for _, parsedDoc := range parsedDocs {
-		docs = append(docs, indexing.UnnormalizedDocument(parsedDoc))
+		docs = append(docs, UnnormalizedDocument(parsedDoc))
 	}
 	return docs, nil
 }
