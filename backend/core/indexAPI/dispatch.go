@@ -30,7 +30,7 @@ const (
 
 type responseDoc struct {
 	Path   utils.Path         `json:"path"`
-	Source indexing.Source    `json:"source"`
+	Source utils.Source       `json:"source"`
 	Words  utils.FrequencyMap `json:"words"`
 }
 

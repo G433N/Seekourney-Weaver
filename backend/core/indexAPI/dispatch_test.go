@@ -3,7 +3,6 @@ package indexAPI
 import (
 	"os/exec"
 	"reflect"
-	"seekourney/indexing"
 	"seekourney/utils"
 	"testing"
 
@@ -161,7 +160,7 @@ const testIndexFilePath2 utils.Path = "home/george/my_cool_text_files/other.txt"
 
 var testResponseDoc1 responseDoc = responseDoc{
 	Path:   testIndexFilePath1,
-	Source: indexing.SourceLocal,
+	Source: utils.SourceLocal,
 	Words: utils.FrequencyMap{
 		"blue":   5,
 		"black":  2,
@@ -173,7 +172,7 @@ var testResponseDoc1 responseDoc = responseDoc{
 
 var testResponseDoc2 responseDoc = responseDoc{
 	Path:   testIndexFilePath2,
-	Source: indexing.SourceLocal,
+	Source: utils.SourceLocal,
 	Words: utils.FrequencyMap{
 		"wood":  234,
 		"steel": 52,
@@ -213,7 +212,7 @@ func TestRequestIndexingSimple(t *testing.T) {
 
 	assert.Equal(t, len(docs), 1)
 	assert.Equal(t, docs[0].Path, testIndexFilePath1)
-	assert.Equal(t, docs[0].Source, indexing.SourceLocal)
+	assert.Equal(t, docs[0].Source, utils.SourceLocal)
 	assert.True(t, reflect.DeepEqual(docs[0].Words, testResponseDoc1.Words))
 }
 

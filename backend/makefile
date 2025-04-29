@@ -12,7 +12,10 @@ endif
 
 
 server:
-> go run core/main.go server
+> go run core/main.go 
+
+load:
+> go run core/main.go load 
 
 test:
 > go test -v ./...

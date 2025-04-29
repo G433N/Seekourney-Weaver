@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -96,7 +97,12 @@ func searchForTerms(terms []string) {
 
 	bytes, _ := io.ReadAll(response.Body)
 	result := utils.SearchResponse{}
-	json.Unmarshal(bytes, &result)
+	err = json.Unmarshal(bytes, &result)
+	if err != nil {
+		log.Println("Error unmarshalling JSON:", err)
+		log.Println("Response:", string(bytes))
+		return
+	}
 
 	format.PrintSearchResponse(result)
 }
