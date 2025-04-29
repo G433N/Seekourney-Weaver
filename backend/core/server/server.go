@@ -68,18 +68,19 @@ func stopContainer() {
 	}
 }
 
-var Config *config.Config
+// conf holds the config object for the server, gets initialized in the Run function
+var conf *config.Config
 
 // index loads the local file config and creates a folder object
 // TODO: This function is temporay
 func index() folder.Folder {
 	// Load local file config
-	localConfig := localtext.Load(Config)
+	localConfig := localtext.Load(conf)
 
 	// TODO: Later when documents comes over the network, we can still use the
 	// same code. since it is an iterator
 	folder := folder.FromIter(
-		Config.Normalizer,
+		conf.Normalizer,
 		localConfig.IndexDir("test_data"),
 	)
 
@@ -134,7 +135,7 @@ func Run(args []string) {
 
 	// Load config
 
-	Config = config.Load()
+	conf = config.Load()
 
 	go startContainer()
 
@@ -203,6 +204,7 @@ func recoverSQLError(writer io.Writer) {
 	}
 }
 
+// sendJSON marshals the given data to JSON and writes it to the writer.
 func sendJSON(writer io.Writer, data any) {
 
 	jsonResponse, err := json.Marshal(data)
@@ -252,7 +254,7 @@ func handleSearchSql(serverParams serverFuncParams, keys []string) {
 
 	query := utils.Query(strings.Join(keys, " "))
 
-	results := search.SqlSearch(Config, serverParams.db, query)
+	results := search.SqlSearch(conf, serverParams.db, query)
 
 	response := utils.SearchResponse{
 		Query:   query,

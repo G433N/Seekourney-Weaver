@@ -79,14 +79,17 @@ func (doc *Document) GetWordsSorted() []Pair {
 
 // SQL
 
+// SQLGetName returns the name of the table in the database
 func (doc Document) SQLGetName() string {
 	return "document"
 }
 
+// SQLGetFields returns the fields to be inserted into the database
 func (doc Document) SQLGetFields() []string {
 	return []string{"path", "type", "words"}
 }
 
+// SQLGetValues returns the values to be inserted into the database
 func (doc Document) SQLGetValues() []any {
 
 	bytes, err := json.Marshal(doc.Words)
@@ -99,6 +102,7 @@ func (doc Document) SQLGetValues() []any {
 	return []database.SQLValue{doc.Path, "file", bytes}
 }
 
+// SQLScan scans a row from the database into a Document
 func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 	var path utils.Path
 	var source string

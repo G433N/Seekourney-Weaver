@@ -30,17 +30,6 @@ type SQLScan[Self any] interface {
 	SQLScan(rows *sql.Rows) (Self, error)
 }
 
-// IntoMap is an interface that defines a method for converting an object into a map.
-type IntoMap[K comparable, V any] interface {
-	// NOTE: Might want to extrect this
-
-	// IntoKey returns the key of the object
-	IntoKey() K
-
-	// IntoValue returns the value of the object
-	IntoValue() V
-}
-
 // scan is a helper function that scans a SQL row into an object of type T.
 func scan[T SQLScan[T]](rows *sql.Rows) (T, error) {
 	var obj T
@@ -152,9 +141,16 @@ func sqlValueSubstition(template SQLWrite) valueSubstitution {
 
 /// Select
 
+// SelectStatment is a type that represents a SQL SELECT keyword
 type SelectStatment string
+
+// SelectQuery is a type that represents a SQL SELECT with a query
 type SelectQuery string
+
+// SelectFrom is a type that represents a SQL SELECT with a FROM clause
 type SelectFrom string
+
+// SelectWhere is a type that represents a SQL SELECT with a WHERE clause
 type SelectWhere string
 
 // / JsonValue creates a JSON_VALUE SELECT statement
@@ -178,18 +174,22 @@ func Select() SelectStatment {
 	return SelectStatment(_SELECT_)
 }
 
+// Queries adds a list of queries to the SQL statement
 func (s SelectStatment) Queries(query ...string) SelectQuery {
 	return SelectQuery(string(s) + " " + strings.Join(query, ", "))
 }
 
+// QueryAll adds a wildcard (*) to the SQL statement
 func (s SelectStatment) QueryAll() SelectQuery {
 	return s.Queries("*")
 }
 
+// From adds a FROM clause to the SQL statement
 func (s SelectQuery) From(table string) SelectFrom {
 	return SelectFrom(string(s) + " " + _FROM_ + " " + table)
 }
 
+// Where adds a WHERE clause to the SQL statement
 func (s SelectFrom) Where(condition string) SelectWhere {
 	return SelectWhere(string(s) + " " + _WHERE_ + " " + condition)
 }

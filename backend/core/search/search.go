@@ -12,6 +12,7 @@ import (
 
 type SearchResult = utils.SearchResult
 
+// SqlSearch performs a search in the database using SQL.
 func SqlSearch(
 	config *config.Config,
 	db *sql.DB,
@@ -37,6 +38,7 @@ func SqlSearch(
 	return topN(scoreMapIntoSearchResult(result), 10)
 }
 
+// scoreMapIntoSearchResult converts a ScoreMap into a slice of SearchResult.
 func scoreMapIntoSearchResult(scores utils.ScoreMap) []SearchResult {
 	results := make([]SearchResult, 0, len(scores))
 
@@ -51,6 +53,7 @@ func scoreMapIntoSearchResult(scores utils.ScoreMap) []SearchResult {
 	return results
 }
 
+// topN returns the top n results from the given results slice.
 func topN(
 	results []SearchResult,
 	n int,
