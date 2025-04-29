@@ -7,21 +7,30 @@ import (
 
 const UTF8Prefix = 0b10000000
 
-// isAscii returns true if the byte is an ASCII character.
-func isAscii(char byte) bool {
+// IsAscii returns true if the byte is an ASCII character.
+func IsAscii(char byte) bool {
 	return char&0b10000000 == 0
 }
 
-// isUTF8 returns true if the byte is a UTF-8 character.
-func isUTF8(char byte) bool {
+// IsUTF8 returns true if the byte is a UTF-8 character.
+func IsUTF8(char byte) bool {
 	return char&UTF8Prefix != 0
 }
 
-// isASCIIAlphaNumeric returns true if the byte is an ASCII alphanumeric
+// IsASCIIAlphaNumeric returns true if the byte is an ASCII alphanumeric
 // character.
-func isASCIIAlphaNumeric(char byte) bool {
-	return (char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') ||
-		(char >= '0' && char <= '9')
+func IsASCIIAlphaNumeric(char byte) bool {
+	return IsASCIIAlpha(char) || IsASCIIDigit(char)
+}
+
+// IsASCIIAlpha returns true if the byte is an ASCII alphabetic character.
+func IsASCIIAlpha(char byte) bool {
+	return (char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z')
+}
+
+// IsASCIIDigit returns true if the byte is an ASCII digit character.
+func IsASCIIDigit(char byte) bool {
+	return char >= '0' && char <= '9'
 }
 
 // charLen returns the number of bytes in a UTF-8 character.
@@ -29,7 +38,7 @@ func isASCIIAlphaNumeric(char byte) bool {
 // If the byte is not valid, it returns 0.
 // If the byte is a continuation byte, it returns -1.
 func charLen(char byte) int {
-	if isAscii(char) {
+	if IsAscii(char) {
 		return 1
 	}
 
@@ -57,11 +66,11 @@ func wordSplit(char byte) bool {
 
 	// TODO: Check if UTF-8 chars have any characters we want to splkit words
 	// with
-	if isUTF8(char) {
+	if IsUTF8(char) {
 		return false
 	}
 
-	return !isASCIIAlphaNumeric(char)
+	return !IsASCIIAlphaNumeric(char)
 
 }
 

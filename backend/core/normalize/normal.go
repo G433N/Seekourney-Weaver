@@ -1,6 +1,7 @@
 package normalize
 
 import (
+	"seekourney/core/normalize/stemming"
 	"seekourney/utils"
 	"strings"
 )
@@ -25,7 +26,7 @@ func (norm Normalizer) Word(str utils.Word) utils.Word {
 	case ToLower:
 		return utils.Word(strings.ToLower(string(str)))
 	case Stemming:
-		panic("not implemented")
+		return stemming.Stem(str)
 	}
 	return str
 }
