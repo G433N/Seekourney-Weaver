@@ -211,7 +211,7 @@ func Run(args []string) {
 	<-ctx.Done()
 
 	fmt.Println("Shutting down")
-	err := server.Shutdown(context.Background())
+	err = server.Shutdown(context.Background())
 	if err != nil {
 		fmt.Println("Error while shutting down server: ", err)
 	}
