@@ -21,7 +21,8 @@ const (
 
 /// Scan
 
-// SQLScan is an interface that defines a method for scanning a SQL row to an object of type Self.
+// SQLScan is an interface that defines a method
+// for scanning a SQL row to an object of type Self.
 type SQLScan[Self any] interface {
 
 	// SQLScan scans a SQL row into an object of type Self.
@@ -36,7 +37,8 @@ func scan[T SQLScan[T]](rows *sql.Rows) (T, error) {
 	return obj.SQLScan(rows)
 }
 
-// ScanRowsIter is a function that takes a sql.Rows object and returns an iterator of objects of type T.
+// ScanRowsIter is a function that takes a sql.Rows object and
+// returns an iterator of objects of type T.
 // Every row is scanned into an object of type T and yielded to the caller.
 func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 
@@ -60,7 +62,8 @@ func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 
 type SQLValue = any
 
-// SQLWrite is an interface that defines methods for writing SQL rows from a object
+// SQLWrite is an interface that defines methods
+// for writing SQL rows from a object
 type SQLWrite interface {
 
 	// SQLGetName returns the name of the SQL table
@@ -73,7 +76,8 @@ type SQLWrite interface {
 	SQLGetValues() []SQLValue
 }
 
-// objectTemplate is a type that represents a SQL Objecet row thing TODO: Imporve this
+// objectTemplate is a type that represents a SQL Objecet row thing
+// TODO: Imporve this
 type objectTemplate string
 
 // valueSubstitution is a type that represents a SQL value substitution
@@ -100,7 +104,8 @@ func InsertIntoStatment(template SQLWrite) Statment {
 	)
 }
 
-// insertIntoStatment creates an INSERT statement from a template and a value substitution
+// insertIntoStatment creates an INSERT statement from a template
+// and a value substitution
 func insertIntoStatment(
 	template objectTemplate,
 	sub valueSubstitution,
@@ -196,7 +201,12 @@ func (s SelectFrom) Where(condition string) SelectWhere {
 
 // ExecExec executes a SQL statement and returns the result into obj
 // The insert function is used to insert the result into obj
-func ExecScan[T SQLScan[T], U any](db *sql.DB, query string, obj *U, insert func(*U, T), args ...any) (resErr error) {
+func ExecScan[T SQLScan[T], U any](
+	db *sql.DB,
+	query string,
+	obj *U,
+	insert func(*U, T),
+	args ...any) (resErr error) {
 
 	rows, err := db.Query(query, args...)
 	if err != nil {

@@ -68,7 +68,8 @@ func stopContainer() {
 	}
 }
 
-// conf holds the config object for the server, gets initialized in the Run function
+// conf holds the config object for the server
+// Gets initialized in the Run function
 var conf *config.Config
 
 // index loads the local file config and creates a folder object

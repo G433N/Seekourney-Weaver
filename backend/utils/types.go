@@ -21,7 +21,7 @@ type FrequencyMap map[Word]Frequency
 type ScoreMap map[Path]Score
 type ReverseMap map[Word][]Path
 
-// WordFrequencyMap is maps paths to their frequency of a word for a list documents
+// WordFrequencyMap is maps paths to their frequency for every document
 type WordFrequencyMap map[Path]Frequency
 
 type SearchResult struct {

@@ -12,10 +12,10 @@ import (
 // Used for database enumerable type, can be either 'web' or 'file'
 type PathType string
 
-const (
-	pathTypeWeb  PathType = "web"
-	pathTypeFile PathType = "file"
-)
+// const (
+// 	pathTypeWeb  PathType = "web"
+// 	pathTypeFile PathType = "file"
+// )
 
 type JSONString string
 
@@ -49,10 +49,4 @@ func connectToDB() *sql.DB {
 	}
 	fmt.Print("\n")
 	panic("Could not connect to database, check docker.log for more info")
-}
-
-func checkSQLError(err error) {
-	if err != nil {
-		panic(err)
-	}
 }

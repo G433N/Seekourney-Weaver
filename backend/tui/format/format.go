@@ -38,11 +38,12 @@ func PrintSearchResponse(response utils.SearchResponse) {
 
 		var source string
 
-		if result.Source == utils.SourceLocal {
+		switch result.Source {
+		case utils.SourceLocal:
 			source = "local"
-		} else if result.Source == utils.SourceWeb {
+		case utils.SourceWeb:
 			source = "web"
-		} else {
+		default:
 			source = "unknown"
 		}
 
