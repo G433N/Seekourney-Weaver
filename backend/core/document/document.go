@@ -141,10 +141,9 @@ func (doc *Document) GetWordCount() int {
 // CalculateTf calculates the term frequency of a word in the document
 // See: https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency
 func (doc *Document) CalculateTf(word utils.Word) float64 {
-	if _, ok := doc.Words[word]; !ok {
-		return 0
-	}
-	return float64(doc.Words[word]) / float64(doc.GetWordCount())
+	// this will return 0 if the word is not in the document
+	freq := doc.Words[word]
+	return float64(freq) / float64(doc.GetWordCount())
 
 }
 

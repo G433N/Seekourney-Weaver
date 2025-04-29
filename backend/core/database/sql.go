@@ -231,23 +231,26 @@ func ExecScan[T SQLScan[T], U any](
 	return nil
 }
 
-type num int
+// sqlInt is used to scan an int from a SQL row
+// we use this new type to bypass the local type restriction for methods
+// int is non local
+type sqlInt int
 
-func (n num) SQLScan(rows *sql.Rows) (num, error) {
+func (n sqlInt) SQLScan(rows *sql.Rows) (sqlInt, error) {
 	var i int
 	err := rows.Scan(&i)
 	if err != nil {
 		return 0, err
 	}
-	return num(i), nil
+	return sqlInt(i), nil
 }
 
 func RowAmount(db *sql.DB, table string) (int, error) {
 
 	query := Select().Queries("COUNT(*)").From(table)
-	var count num
+	var count sqlInt
 
-	insert := func(res *num, sqlRes num) {
+	insert := func(res *sqlInt, sqlRes sqlInt) {
 		*res = sqlRes
 	}
 
