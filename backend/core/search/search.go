@@ -32,7 +32,7 @@ func SqlSearch(
 		word = config.Normalizer.Word(word)
 
 		freqMap, err := database.FreqMap(db, word)
-		calculateIdf(freqMap, docAmount)
+		idf := calculateIdf(freqMap, docAmount)
 
 		if err != nil {
 			log.Printf("Error: %s\n", err)
@@ -47,7 +47,8 @@ func SqlSearch(
 				continue
 			}
 
-			result[path] += utils.Score(doc.CalculateTf(word) * calculateIdf(freqMap, docAmount))
+			tf := doc.CalculateTf(word)
+			result[path] += utils.Score(tf * idf)
 		}
 	}
 
