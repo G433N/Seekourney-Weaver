@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"io"
-	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -17,26 +18,27 @@ import (
 	"seekourney/indexer/localtext"
 	"seekourney/utils"
 	"strings"
+	"os/signal"
 )
 
 const (
-	serverAddress       string = ":8080"
-	containerStart      string = "./docker-start"
-	containerOutputFile string = "./docker.log"
-	host                string = "localhost"
-	port                int    = 5433
-	containerName       string = "go-postgres"
-	user                string = "go-postgres"
-	password            string = "go-postgres"
-	dbname              string = "go-postgres"
-	emptyJSON           string = "{}"
+	serverAddress       string     = ":8080"
+	containerStart      string     = "./docker-start"
+	containerOutputFile string     = "./docker.log"
+	host                string     = "localhost"
+	port                int        = 5433
+	containerName       string     = "go-postgres"
+	user                string     = "go-postgres"
+	password            string     = "go-postgres"
+	dbname              string     = "go-postgres"
+	emptyJSON           JSONString = "{}"
 )
 
 // Used to params used by server query handler functions
 type serverFuncParams struct {
-	server *http.Server
 	writer io.Writer
 	db     *sql.DB
+	stop   context.CancelFunc
 }
 
 // Starts the database container using the command defined in containerStart.
@@ -119,27 +121,56 @@ func Run(args []string) {
 
 	db := connectToDB()
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+
 	server := &http.Server{
-		Addr: serverAddress,
+		Addr:        serverAddress,
+		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 
-	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
-		serverParams := serverFuncParams{server: server, writer: writer, db: db}
+	http.HandleFunc("/",
+		func(writer http.ResponseWriter, request *http.Request) {
+			serverParams := serverFuncParams{
+				writer: writer,
+				db:     db,
+				stop:   stop,
+			}
 
-		switch html.EscapeString(request.URL.Path) {
-		case "/all":
-			handleAll(serverParams)
-		case "/search":
-			handleSearch(serverParams, request.URL.Query()["q"])
-		case "/add":
-			handleAdd(serverParams, request.URL.Query()["p"])
-		case "/quit":
-			handleQuit(serverParams)
+			switch html.EscapeString(request.URL.Path) {
+			case "/all":
+				handleAll(serverParams)
+			case "/search":
+				handleSearch(serverParams, request.URL.Query()["q"])
+			case "/add":
+				handleAdd(serverParams, request.URL.Query()["p"])
+			case "/quit":
+				handleQuit(serverParams)
+			}
+		})
+
+	go func() {
+		err := server.ListenAndServe()
+		if !errors.Is(err, http.ErrServerClosed) {
+			fmt.Println("Server encountered an error:", err)
 		}
-	}
-	http.HandleFunc("/", queryHandler)
+		stop()
+	}()
+	fmt.Println("Server online")
 
-	log.Fatal(server.ListenAndServe())
+	// Wait until server is finished
+	<-ctx.Done()
+
+	fmt.Println("Shutting down")
+	err := server.Shutdown(context.Background())
+	if err != nil {
+		fmt.Println("Error while shutting down server: ", err)
+	}
+	err = db.Close()
+	if err != nil {
+		fmt.Println("Error while closing database: ", err)
+	}
+
+	stopContainer()
 }
 
 func checkIOError(err error) {
@@ -160,7 +191,9 @@ func recoverSQLError(writer io.Writer) {
 // response writer
 func handleAll(serverParams serverFuncParams) {
 	defer recoverSQLError(serverParams.writer)
-	queryAll(serverParams.db, serverParams.writer)
+	rows := queryAll(serverParams.db)
+	writeRows(serverParams.writer, rows)
+	unsafelyClose(rows)
 }
 
 // Handles a /search request, queries database for rows containing ALL keys and
@@ -199,10 +232,11 @@ func handleSearch(serverParams serverFuncParams, keys []string) {
 // Handles an /add request, inserts a row to the database for each path given
 func handleAdd(serverParams serverFuncParams, paths []string) {
 	for _, path := range paths {
-		_, err := insertRow(
-			serverParams.db,
-			Page{path: path, pathType: pathTypeFile},
-		)
+		_, err := insertRow(serverParams.db, Page{
+			path:     path,
+			pathType: PathTypeFile,
+			dict:     emptyJSON,
+		})
 		if err != nil {
 			_, ioErr := fmt.Fprintf(
 				serverParams.writer,
@@ -214,20 +248,11 @@ func handleAdd(serverParams serverFuncParams, paths []string) {
 	}
 }
 
-// Handles a /quit request, cleanly shutsdown the database container and server
+// Handles a /quit request initiates the shutdown process by cancelling the
+// server context
 func handleQuit(serverParams serverFuncParams) {
 	_, err := fmt.Fprintf(serverParams.writer, "Shutting down\n")
 	checkIOError(err)
 
-	err = serverParams.db.Close()
-	checkIOError(err)
-	stopContainer()
-
-	// This needs to be called as a goroutine because the handler needs to
-	// return
-	// before the server can shutdown
-	go func() {
-		err := serverParams.server.Shutdown(context.Background())
-		checkIOError(err)
-	}()
+	serverParams.stop()
 }

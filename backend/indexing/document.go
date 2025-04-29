@@ -47,5 +47,10 @@ func DocFromBytes(path utils.Path, source utils.Source, bytes []byte) Unnormaliz
 
 // DebugPrint prints information about the document
 func (doc *UnnormalizedDocument) DebugPrint() {
-	log.Printf("Document = {Path: %s, Type: %d, Length: %d}", doc.Path, doc.Source, len(doc.Words))
+	log.Printf(
+		"Document = {Path: %s, Type: %d, Length: %d}",
+		doc.Path,
+		doc.Source,
+		len(doc.Words),
+	)
 }

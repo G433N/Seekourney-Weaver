@@ -1,7 +1,7 @@
 # Start server
 
 ```bash
-$ go run core/main.go server
+$ make server
 ```
 
 
@@ -10,7 +10,7 @@ The server can now be accessed at http://localhost:8080 or using the client demo
 # Run tests
 
 ```bash
-$ go test ./...
+$ make test
 ```
 
 # Run application or tests on save
@@ -20,8 +20,8 @@ $ go test ./...
 Install `watchexec` using your package manager.
 
 ```bash
-$ watchexec -e go -r go run core/main.go
-$ watchexec -e go -r go test ./...
+$ watchexec -e go -r make server
+$ watchexec -e go -r make test
 ```
 
 
@@ -51,7 +51,7 @@ See server api for more information about possible commands
 # Package structure
 
 ```
-backend - Server and search code, nothing should depend on this package
+core - Server and search code, nothing should depend on this package
 indexing - Indexers depend on this package
 indexer - Indexers for different file types
 tui - Tui client for the server
