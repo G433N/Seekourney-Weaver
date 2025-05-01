@@ -8,8 +8,10 @@ on:
 # Only run if "ready for review" label exists on PR.
 jobs:
   frontend-ci:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review')
-    if: contains(github.event.pull_request.labels.*.name, 'frontend')
+    if: | 
+      contains(github.event.pull_request.labels.*.name, 'ready for review') && 
+      contains(github.event.pull_request.labels.*.name, 'frontend')
+
     runs-on: ubuntu-latest
 
     steps:
@@ -31,15 +33,17 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
-        run: npx playwright install
+        run: |
+          npm install
+          npx playwright install
 
       - name: Build frontend
         run: npm run build
 
       - name: Run frontend Unit Tests
-        run: timeout 10 npm run test
-        run: timeout 10 npx playwright test
+        run: |
+          timeout 10 npm run test
+          timeout 10 npx playwright test
 
       - name: Frontend Linting
         run: npx prettier --check
