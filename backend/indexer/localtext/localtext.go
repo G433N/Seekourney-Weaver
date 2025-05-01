@@ -106,7 +106,7 @@ func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 // Default creates a new config with default values.
 func Default(config *config.Config) *Config {
 	wdConfig := utils.NewWalkDirConfig().
-		SetAllowedExts([]string{
+		SetAllowedExtns([]string{
 			".txt",
 			".md",
 			".json",
