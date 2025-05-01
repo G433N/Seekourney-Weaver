@@ -24,7 +24,7 @@ const (
 	all       = "/all"
 )
 
-// Prints a usage string and terminates
+// argumentError prints a usage string and terminates client process.
 func argumentError() {
 	fmt.Println("usage: client <command> [<args>]")
 	fmt.Println()
@@ -36,6 +36,8 @@ func argumentError() {
 	os.Exit(1)
 }
 
+// init runs before any other code in this package.
+// https://golangdocs.com/init-function-in-golang
 func init() {
 	// Initialize the timing package
 	timing.Init(timing.Default())
@@ -70,21 +72,24 @@ func main() {
 	}
 }
 
-// Panics on a given error if an error occured sending a request
+// checkHTTPError panics on a given error if an error
+// occured when sending a request.
 func checkHTTPError(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-// Prints a HTTP response to stdout
+// printResponse prints a HTTP response to stdout.
 func printResponse(response *http.Response) {
 	bytes, _ := io.ReadAll(response.Body)
 	fmt.Print(string(bytes))
 }
 
+// searchForTerms requests a search for given terms through Core,
+// and prints the results.
+// Handler for command /search.
 func searchForTerms(terms []string) {
-
 	sw := timing.Measure(timing.Search)
 	defer sw.Stop()
 
@@ -107,6 +112,9 @@ func searchForTerms(terms []string) {
 	format.PrintSearchResponse(result)
 }
 
+// addPath adds given paths to the database through Core,
+// and prints the response.
+// Handler for command /add.
 func addPath(paths []string) {
 	values := url.Values{}
 	for _, term := range paths {
@@ -117,12 +125,17 @@ func addPath(paths []string) {
 	printResponse(response)
 }
 
+// getAll fetches all paths stored in database through Core,
+// and prints them.
+// Handler for command /all.
 func getAll() {
 	response, err := http.Get(link + all)
 	checkHTTPError(err)
 	printResponse(response)
 }
 
+// shutdownServer remotely shuts down Core.
+// Handler for command /quit.
 func shutdownServer() {
 	response, err := http.Get(link + quit)
 	checkHTTPError(err)
