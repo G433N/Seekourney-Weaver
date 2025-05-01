@@ -30,7 +30,7 @@ const (
 func connectToDB() *sql.DB {
 	psqlconn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		_HOST_, _DBPORT_, _USER_, _PASSWORD_, _DBNAME_)
 
 	log.Println("Connecting to database")
 	// Waiting animation
