@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	_TESTURI_ restEndpoint = restEndpoint(_ENDPOINTPREFIX_ + "39100")
+	_TESTURI_ utils.Endpoint = utils.Endpoint(_ENDPOINTPREFIX_ + "39100")
 )
 
 var testResponseFail IndexerResponse = IndexerResponse{

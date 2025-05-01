@@ -15,13 +15,13 @@ import (
 
 // Strings for building URLs in HTTP requests
 const (
-	link      = "http://localhost:8080"
-	search    = "/search?"
-	searchKey = "q"
-	add       = "/add?"
-	addKey    = "p"
-	quit      = "/quit"
-	all       = "/all"
+	_COREENDPOINT_ utils.Endpoint = "http://localhost:8080"
+	_SEARCH_       string         = "/search?"
+	_SEARCHKEY_    string         = "q"
+	_ADD_          string         = "/add?"
+	_ADDKEY_       string         = "p"
+	_QUIT_         string         = "/quit"
+	_ALL_          string         = "/all"
 )
 
 // argumentError prints a usage string and terminates client process.
@@ -95,9 +95,11 @@ func searchForTerms(terms []string) {
 
 	values := url.Values{}
 	for _, term := range terms {
-		values.Add(searchKey, term)
+		values.Add(_SEARCHKEY_, term)
 	}
-	response, err := http.Get(link + search + values.Encode())
+	response, err := http.Get(
+		string(_COREENDPOINT_) + _SEARCH_ + values.Encode(),
+	)
 	checkHTTPError(err)
 
 	bytes, _ := io.ReadAll(response.Body)
@@ -118,9 +120,9 @@ func searchForTerms(terms []string) {
 func addPath(paths []string) {
 	values := url.Values{}
 	for _, term := range paths {
-		values.Add(addKey, term)
+		values.Add(_ADDKEY_, term)
 	}
-	response, err := http.Get(link + add + values.Encode())
+	response, err := http.Get(string(_COREENDPOINT_) + _ADD_ + values.Encode())
 	checkHTTPError(err)
 	printResponse(response)
 }
@@ -129,7 +131,7 @@ func addPath(paths []string) {
 // and prints them.
 // Handler for command /all.
 func getAll() {
-	response, err := http.Get(link + all)
+	response, err := http.Get(string(_COREENDPOINT_) + _ALL_)
 	checkHTTPError(err)
 	printResponse(response)
 }
@@ -137,7 +139,7 @@ func getAll() {
 // shutdownServer remotely shuts down Core.
 // Handler for command /quit.
 func shutdownServer() {
-	response, err := http.Get(link + quit)
+	response, err := http.Get(string(_COREENDPOINT_) + _QUIT_)
 	checkHTTPError(err)
 	printResponse(response)
 }

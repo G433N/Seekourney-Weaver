@@ -72,3 +72,7 @@ type FileType string
 // Value for indexing API must be within range
 // [MININDEXERPORT, MAXINDEXERPORT].
 type Port uint
+
+// Address including port acting as endpoint for http request.
+// E.g. "http://localhost:39010"
+type Endpoint string
