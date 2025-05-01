@@ -43,7 +43,8 @@ type Result[T any] struct {
 // All FileType-s are lower-case letters without dot, e.g. "html" or "md"
 type FileType string
 
-// Port number for http request-responses.
+// Port is a port number used in http request-responses to-from
+// indexers, Core, and DB.
 // Value for indexing API must be within range
-// [indexAPI.MININDEXERPORT, indexAPI.MAXINDEXERPORT]
+// [MININDEXERPORT, MAXINDEXERPORT]
 type Port uint

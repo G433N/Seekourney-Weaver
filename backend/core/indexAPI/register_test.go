@@ -13,15 +13,20 @@ func resetRegistration() {
 	indexersForFileType = make(map[utils.FileType][]RegisterID)
 }
 
+const (
+	_MINPORT_ utils.Port = utils.MININDEXERPORT
+	_MAXPORT_ utils.Port = utils.MAXINDEXERPORT
+)
+
 func TestIsValidPort(t *testing.T) {
 	assert.False(t, isValidPort(42))
-	assert.False(t, isValidPort(MININDEXERPORT-1))
-	assert.True(t, isValidPort(MININDEXERPORT))
-	const middleOfRange utils.Port = MININDEXERPORT +
-		((MAXINDEXERPORT - MININDEXERPORT) / 2)
+	assert.False(t, isValidPort(_MINPORT_-1))
+	assert.True(t, isValidPort(_MINPORT_))
+	const middleOfRange utils.Port = _MINPORT_ +
+		((_MAXPORT_ - _MINPORT_) / 2)
 	assert.True(t, isValidPort(middleOfRange))
-	assert.True(t, isValidPort(MAXINDEXERPORT))
-	assert.False(t, isValidPort(MAXINDEXERPORT+1))
+	assert.True(t, isValidPort(_MAXPORT_))
+	assert.False(t, isValidPort(_MAXPORT_+1))
 }
 
 // TODO isUnoccupied and with register
