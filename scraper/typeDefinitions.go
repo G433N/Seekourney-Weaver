@@ -11,7 +11,7 @@ import (
 const (
 
 	// Used for enabling debug prints
-	_DEBUG_ = true
+	_DEBUG_ = false
 	// Total amount of worspaces in the collector
 	_WORKSPACES_ = 5
 	// Buffer size of the link and priority link channels
@@ -46,12 +46,7 @@ type (
 		settings settings
 	}
 	context struct {
-
-		// buffered queue channel of links scraped from previously visited sites
-		linkQueue chan URLString
-
-		// buffered queue channel of links inputed to the scraper
-		priorityLinkQueue chan URLString
+		linkHandler *linkHandler
 
 		// worspace for the collectors async requests
 		// each request gets their own index
@@ -91,7 +86,7 @@ type (
 
 	linkHandler struct {
 		filter       filter
-		storageStack storageStack
+		storageStack Sync.Stack[*URLCompact]
 
 		priorityQueue PriorityQueue
 
@@ -113,8 +108,7 @@ type (
 	}
 
 	filter struct {
-		filehosts []hostPath
-		webhosts  []hostPath
+		webhosts  Sync.ArrayPlus[hostPath]
 		filterMap map[hostPath]filterMapInner
 	}
 	filterMapInner struct {
@@ -139,11 +133,6 @@ type (
 
 		len int
 	}
-	storageStack struct {
-		lock sync.Mutex
-
-		Stack []*URLCompact
-	}
 )
 
 //------------------------------------------------------------//
@@ -151,9 +140,12 @@ type (
 //------------------------------------------------------------//
 
 var (
-	//Matches when the link is in the same main domain as the current webbsite
+	//Matches when the link does have the same host as the current webbsite
 	shortendLinkRegex = regexp.MustCompile(`^/[a-zA-Z]`)
 	//Parts of wikipedia not worth indexing
 	WikipediaBadRegex = regexp.MustCompile(
 		`/wiki/(File|Wikipedia|Special|User)|/static/|/w/`)
+	//Matches when the link doesn't have the same host as the current webbsite
+	fullLocalLinkRegex = regexp.MustCompile(`^file://`)
+	fullWebLinkRegex   = regexp.MustCompile(`^https://`)
 )
