@@ -1,5 +1,6 @@
 package timing
 
+// WatchID is the ID for each used stopwatch.
 type WatchID = int
 
 // TODO: Make this a config file instead
@@ -15,9 +16,9 @@ const (
 	FolderFromIter
 )
 
-// Defualt config for the stopwatches
-func Default() Config {
-	return Config{
+// Default creates the default config for the stopwatches.
+func Default() WatchesConfig {
+	return WatchesConfig{
 		Search: StopwatchInfo{
 			print: true,
 			name:  "Search",
