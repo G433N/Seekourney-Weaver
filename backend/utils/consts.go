@@ -5,3 +5,8 @@ const (
 	MININDEXERPORT Port = 39000
 	MAXINDEXERPORT Port = 39499
 )
+
+// Database tables.
+const (
+	TABLEDOCUMENT string = "document"
+)

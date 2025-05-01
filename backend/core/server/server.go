@@ -37,10 +37,6 @@ const (
 	_EMPTYJSON_           JSONString = "{}"
 )
 
-const (
-	_TABLEDOCUMENT_ string = "document"
-)
-
 // HTTP requests.
 const (
 	_ALL_    string = "/all"
@@ -183,7 +179,7 @@ func Run(args []string) {
 		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 
-	amount, err := database.RowAmount(db, _TABLEDOCUMENT_)
+	amount, err := database.RowAmount(db, utils.TABLEDOCUMENT)
 
 	if err == nil {
 		log.Printf("Row amount: %d\n", amount)
@@ -285,7 +281,7 @@ func handleAll(serverParams serverFuncParams) {
 	var doc document.Document
 	query := database.Select().
 		Queries(doc.SQLGetFields()...).
-		From(_TABLEDOCUMENT_)
+		From(utils.TABLEDOCUMENT)
 
 	insert := func(docs *[]document.Document, doc document.Document) {
 		*docs = append(*docs, doc)
