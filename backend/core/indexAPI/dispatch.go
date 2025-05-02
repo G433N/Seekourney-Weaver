@@ -39,8 +39,8 @@ type IndexErrors struct {
 	Indexing []error
 }
 
-// responseToStruct converts an HTTP response to an indexerResponse struct.
-func responseToStruct(resp *http.Response) (IndexerResponse, error) {
+// parseResponse converts an HTTP response to an indexerResponse struct.
+func parseResponse(resp *http.Response) (IndexerResponse, error) {
 	parsedResp := IndexerResponse{}
 	rawJSON, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -87,7 +87,7 @@ func startupIndexer(info IndexerInfo) error {
 	}
 	defer closeResponse(resp)
 
-	parsedResp, err := responseToStruct(resp)
+	parsedResp, err := parseResponse(resp)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 	}
 	defer closeResponse(resp)
 
-	parsedResp, err := responseToStruct(resp)
+	parsedResp, err := parseResponse(resp)
 	if err != nil {
 		return err
 	}
@@ -152,34 +152,28 @@ func requestIndexing(
 	info IndexerInfo,
 	path utils.Path,
 ) ([]UnnormalizedDocument, error) {
-	var docs []UnnormalizedDocument
-
 	client := http.Client{
 		Timeout: _LONGTIMEOUT_,
 	}
 	resp, err := client.Get(string(info.endpoint) + _INDEXFULL_ + "/" +
 		string(path))
 	if err != nil {
-		return docs, err
+		return []UnnormalizedDocument{}, err
 	}
 	defer closeResponse(resp)
 
-	parsedResp, err := responseToStruct(resp)
+	parsedResp, err := parseResponse(resp)
 	if err != nil {
-		return docs, err
+		return []UnnormalizedDocument{}, err
 	}
 	if parsedResp.Status != indexing.STATUSSUCCESSFUL {
-		return docs, errors.New(
+		return []UnnormalizedDocument{}, errors.New(
 			"indexer " + info.name + " failed indexing request with message: " +
 				parsedResp.Data.Message,
 		)
 	}
 
-	parsedDocs := parsedResp.Data.Documents
-	for _, parsedDoc := range parsedDocs {
-		docs = append(docs, UnnormalizedDocument(parsedDoc))
-	}
-	return docs, nil
+	return parsedResp.Data.Documents, nil
 }
 
 // newIndexErrors creates an IndexErrors struct with nil as default values.
