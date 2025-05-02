@@ -13,17 +13,13 @@ import (
 // See indexing_API.md for more information.
 
 const (
-	_PING_             string        = "/ping"
-	_SHUTDOWN_         string        = "/shutdown"
-	_INDEXFULL_        string        = "/indexfull"
-	_INDEXDIFF_        string        = "/indexdiff"
-	_SHORTTIMEOUT_     time.Duration = 2 * time.Second
-	_MEDIUMTIMEOUT_    time.Duration = 5 * time.Second
-	_LONGTIMEOUT_      time.Duration = 600 * time.Second
-	_STATUSSUCCESSFUL_ string        = "success"
-	_STATUSFAILURE_    string        = "fail"
-	_PONG_             string        = "pong"
-	_EXITING_          string        = "exiting"
+	_PING_          string        = "/ping"
+	_SHUTDOWN_      string        = "/shutdown"
+	_INDEXFULL_     string        = "/indexfull"
+	_INDEXDIFF_     string        = "/indexdiff"
+	_SHORTTIMEOUT_  time.Duration = 2 * time.Second
+	_MEDIUMTIMEOUT_ time.Duration = 5 * time.Second
+	_LONGTIMEOUT_   time.Duration = 600 * time.Second
 )
 
 // See indexing_API.md for corresponding JSON formatting.
@@ -95,8 +91,8 @@ func startupIndexer(info IndexerInfo) error {
 	if err != nil {
 		return err
 	}
-	if parsedResp.Status == _STATUSSUCCESSFUL_ &&
-		parsedResp.Data.Message == _PONG_ {
+	if parsedResp.Status == indexing.STATUSSUCCESSFUL &&
+		parsedResp.Data.Message == indexing.MESSAGEPONG {
 		return nil
 	} else {
 		return errors.New("Ping response from indexer " + info.name +
@@ -138,8 +134,8 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 	if err != nil {
 		return err
 	}
-	if parsedResp.Status != _STATUSSUCCESSFUL_ ||
-		parsedResp.Data.Message != _EXITING_ {
+	if parsedResp.Status != indexing.STATUSSUCCESSFUL ||
+		parsedResp.Data.Message != indexing.MESSAGEEXITING {
 		defer carelessShutdown(info)
 		return errors.New("JSON response to indexer shutdown request failed" +
 			" to match expected format")
@@ -172,7 +168,7 @@ func requestIndexing(
 	if err != nil {
 		return docs, err
 	}
-	if parsedResp.Status != _STATUSSUCCESSFUL_ {
+	if parsedResp.Status != indexing.STATUSSUCCESSFUL {
 		return docs, errors.New(
 			"indexer " + info.name + " failed indexing request with message: " +
 				parsedResp.Data.Message,

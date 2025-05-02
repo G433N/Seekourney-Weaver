@@ -3,6 +3,7 @@ package indexAPI
 import (
 	"os/exec"
 	"reflect"
+	"seekourney/indexing"
 	"seekourney/utils"
 	"testing"
 
@@ -13,21 +14,6 @@ import (
 const (
 	_TESTURI_ utils.Endpoint = utils.Endpoint(_ENDPOINTPREFIX_ + "39100")
 )
-
-var testResponseFail IndexerResponse = IndexerResponse{
-	Status: _STATUSFAILURE_,
-	Data:   ResponseData{Message: "failed to server response"},
-}
-
-var testResponsePong IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
-	Data:   ResponseData{Message: _PONG_},
-}
-
-var testResponseExiting IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
-	Data:   ResponseData{Message: _EXITING_},
-}
 
 // waitOnTestCMD is used instead of shutdownIndexerGraceful for some tests.
 // This is needed as shutdownIndexerGraceful will force kill if
@@ -43,7 +29,7 @@ func TestStartupPingFail(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail(""))
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -62,7 +48,7 @@ func TestStartupPingSuccess(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePong())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -101,7 +87,7 @@ func TestShutdownValidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePong())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -116,7 +102,7 @@ func TestShutdownValidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseExiting)
+		JSON(indexing.ResponseExiting())
 
 	assert.NoError(t, shutdownIndexerGraceful(info))
 	assert.True(t, gock.IsDone())
@@ -131,7 +117,7 @@ func TestShutdownInvalidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePong())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -146,7 +132,7 @@ func TestShutdownInvalidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failing to shut down indexer"))
 
 	assert.Error(t, shutdownIndexerGraceful(info))
 	assert.True(t, gock.IsDone())
@@ -179,14 +165,15 @@ var testResponseDoc2 UnnormalizedDocument = UnnormalizedDocument{
 	},
 }
 
+// TODO TEMP until POST requests exist
 var testIndexingResponse1 IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
+	Status: indexing.STATUSSUCCESSFUL,
 	Data: ResponseData{
 		Documents: []UnnormalizedDocument{testResponseDoc1},
 	},
 }
 var testIndexingResponse2 IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
+	Status: indexing.STATUSSUCCESSFUL,
 	Data: ResponseData{
 		Documents: []UnnormalizedDocument{
 			testResponseDoc1,
@@ -255,7 +242,7 @@ func TestRequestIndexingFail(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failed to index requested path"))
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -312,7 +299,7 @@ func TestIndexOneSuccess(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePong())
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
 		Reply(200).
@@ -320,7 +307,7 @@ func TestIndexOneSuccess(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseExiting)
+		JSON(indexing.ResponseExiting())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -344,7 +331,7 @@ func TestIndexOneStartupFail(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failed to startup indexer"))
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -367,15 +354,15 @@ func TestIndexOneIndexFail(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePong())
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failed to index requested path"))
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseExiting)
+		JSON(indexing.ResponseExiting())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -397,7 +384,7 @@ func TestIndexOneShutdownFail(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePong())
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
 		Reply(200).
@@ -405,7 +392,7 @@ func TestIndexOneShutdownFail(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("unable to shut down"))
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -429,15 +416,15 @@ func TestIndexManyPartialSuccess(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePong())
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failed to index path"))
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath2)).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failed to index path"))
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFolderPath1)).
 		Reply(200).
@@ -445,11 +432,11 @@ func TestIndexManyPartialSuccess(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failed to index path"))
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseExiting)
+		JSON(indexing.ResponseExiting())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
