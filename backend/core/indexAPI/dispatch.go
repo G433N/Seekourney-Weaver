@@ -32,6 +32,17 @@ type IndexerResponse = indexing.IndexerResponse
 type ResponseData = indexing.ResponseData
 type UnnormalizedDocument = indexing.UnnormalizedDocument
 
+// IndexErrors contains errors in the corresponding fields for an attempt to
+// index a slice of paths.
+// If startup errored, all other fields will also contain errors.
+// It is possible for indexing to succeed but for shutdown to have failed.
+// If that is the case, only Shutdown field will contain an error.
+type IndexErrors struct {
+	Startup  error
+	Shutdown error
+	Indexing []error
+}
+
 // responseToStruct converts an HTTP response to an indexerResponse struct.
 func responseToStruct(resp *http.Response) (IndexerResponse, error) {
 	parsedResp := IndexerResponse{}
@@ -173,4 +184,68 @@ func requestIndexing(
 		docs = append(docs, UnnormalizedDocument(parsedDoc))
 	}
 	return docs, nil
+}
+
+// newIndexErrors creates an IndexErrors struct with nil as default values.
+func newIndexErrors(numberOfPaths int) IndexErrors {
+	errs := IndexErrors{
+		Startup:  nil,
+		Shutdown: nil,
+		Indexing: make([]error, numberOfPaths),
+	}
+	for i := range errs.Indexing {
+		errs.Indexing[i] = nil
+	}
+	return errs
+}
+
+// IndexMany starts up an indexer, indexes many path which produces 0 or more
+// unnormalised documents, and shuts down the indexer.
+// If startup failed, all error fields will have errors.
+// Startup error field must be checked before attemp to index into documents.
+func IndexMany(
+	info IndexerInfo,
+	paths []utils.Path,
+) ([][]UnnormalizedDocument, IndexErrors) {
+	manyDocs := make([][]UnnormalizedDocument, len(paths))
+	errs := newIndexErrors(len(paths))
+
+	errs.Startup = startupIndexer(info)
+	// If startup fails, everything else fails.
+	if errs.Startup != nil {
+		errs.Shutdown = errors.New("failed startup prevents indexing attempt")
+		for i := range errs.Indexing {
+			errs.Indexing[i] = errors.New(
+				"failed startup prevents shutdown attempt",
+			)
+		}
+		return manyDocs, errs
+	}
+
+	for i := range errs.Indexing {
+		docs, err := requestIndexing(info, paths[i])
+		manyDocs[i] = docs
+		errs.Indexing[i] = err
+	}
+
+	errs.Shutdown = shutdownIndexerGraceful(info)
+
+	return manyDocs, errs
+}
+
+// IndexOne starts up an indexer, indexes one path which produces 0 or more
+// unnormalised documents, and shuts down the indexer.
+// If startup failed, all error fields will have errors.
+// Startup error field must be checked before attemp to index into documents.
+// Indexing slice in errors struct will always have 1 element.
+func IndexOne(
+	info IndexerInfo,
+	path utils.Path,
+) ([]UnnormalizedDocument, IndexErrors) {
+	nestedDocs, errs := IndexMany(info, []utils.Path{path})
+	if errs.Startup != nil {
+		return []UnnormalizedDocument{}, errs
+	} else {
+		return nestedDocs[0], errs
+	}
 }
