@@ -3,6 +3,7 @@ package indexAPI
 import (
 	"errors"
 	"os/exec"
+	"seekourney/indexing"
 	"seekourney/utils"
 	"slices"
 	"strconv"
@@ -47,11 +48,6 @@ var newIndexerID = func() func() RegisterID {
 	}
 }()
 
-// isValidPort checks if port value is within designated range for indexer API.
-func isValidPort(port utils.Port) bool {
-	return port >= utils.MININDEXERPORT && port <= utils.MAXINDEXERPORT
-}
-
 // isUnoccupiedPort checks if another indexer already has been registered
 // with given port.
 func isUnoccupiedPort(port utils.Port) bool {
@@ -70,7 +66,7 @@ func RegisterIndexer(
 ) (RegisterID, error) {
 	// TODO more validation?
 
-	if !isValidPort(port) {
+	if !indexing.IsValidPort(port) {
 		return 0, errors.New(
 			"tried to register new indexer " + name +
 				" with port " + strconv.Itoa(int(port)) +
