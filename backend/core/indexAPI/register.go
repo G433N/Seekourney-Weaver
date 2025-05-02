@@ -15,10 +15,6 @@ import (
 // they shall have the same RegisterID.
 type RegisterID uint
 
-// Address including port acting as endpoint for http request.
-// E.g. "http://localhost:39010"
-type restEndpoint string
-
 // IndexerInfo contains information about a registered indexer
 // which is needed to startup, shutdown and make requests to the indexer.
 type IndexerInfo struct {
@@ -26,13 +22,11 @@ type IndexerInfo struct {
 	cmd              *exec.Cmd
 	fileTypesHandled []utils.FileType
 	id               RegisterID
-	endpoint         restEndpoint
+	endpoint         utils.Endpoint
 }
 
 const (
-	MININDEXERPORT   utils.Port = 39000
-	MAXINDEXERPORT   utils.Port = 39499
-	_ENDPOINTPREFIX_ string     = "http://localhost:"
+	_ENDPOINTPREFIX_ string = "http://localhost:"
 )
 
 // TODO figure out usage without global vars
@@ -55,7 +49,7 @@ var newIndexerID = func() func() RegisterID {
 
 // isValidPort checks if port value is within designated range for indexer API.
 func isValidPort(port utils.Port) bool {
-	return port >= MININDEXERPORT && port <= MAXINDEXERPORT
+	return port >= utils.MININDEXERPORT && port <= utils.MAXINDEXERPORT
 }
 
 // isUnoccupiedPort checks if another indexer already has been registered
@@ -99,7 +93,7 @@ func RegisterIndexer(
 		cmd:              cmd,
 		fileTypesHandled: fileTypesHandled,
 		id:               newIndexerID(),
-		endpoint: restEndpoint(
+		endpoint: utils.Endpoint(
 			_ENDPOINTPREFIX_ + strconv.Itoa(int(port)),
 		),
 	}
