@@ -1,4 +1,4 @@
-name: Default CI
+name: Frontend CI
 
 on:
   pull_request:
@@ -13,6 +13,9 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'frontend')
 
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -46,4 +49,4 @@ jobs:
           timeout 10 npx playwright test
 
       - name: Frontend Linting
-        run: npx prettier --check
+        run: npx eslint .
