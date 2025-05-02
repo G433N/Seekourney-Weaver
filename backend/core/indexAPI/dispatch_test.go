@@ -246,23 +246,21 @@ func TestRequestIndexingInvalidJSON(t *testing.T) {
 	assert.Error(t, outcomeErr)
 }
 
-// TODO convert
-func TestNewIndexErrorsLow(t *testing.T) {
-	errs := newIndexErrors(1)
-	assert.NoError(t, errs.Startup)
-	assert.NoError(t, errs.Shutdown)
-	assert.Equal(t, len(errs.Indexing), 1)
-	assert.NoError(t, errs.Indexing[0])
+func TestNewDispatchErrorsLow(t *testing.T) {
+	errs := newDispatchErrors(1)
+	assert.True(t, errs.IndexerWasRunning)
+	assert.NoError(t, errs.StartupAttempt)
+	assert.Equal(t, len(errs.DispatchAttempt), 1)
+	assert.NoError(t, errs.DispatchAttempt[0])
 }
 
-// TODO convert
-func TestNewIndexErrorsHigh(t *testing.T) {
-	errs := newIndexErrors(42)
-	assert.NoError(t, errs.Startup)
-	assert.NoError(t, errs.Shutdown)
-	assert.Equal(t, len(errs.Indexing), 42)
-	for i := range errs.Indexing {
-		assert.NoError(t, errs.Indexing[i])
+func TestNewDispatchErrorsHigh(t *testing.T) {
+	errs := newDispatchErrors(42)
+	assert.True(t, errs.IndexerWasRunning)
+	assert.NoError(t, errs.StartupAttempt)
+	assert.Equal(t, len(errs.DispatchAttempt), 42)
+	for i := range errs.DispatchAttempt {
+		assert.NoError(t, errs.DispatchAttempt[i])
 	}
 }
 
@@ -447,7 +445,7 @@ func TestDispatchOneSuccessIsRunning(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
 		Reply(200).
-		JSON(testIndexingResponse1)
+		JSON(indexing.ResponseSuccess(""))
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
