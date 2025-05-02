@@ -81,7 +81,7 @@ func stopContainer() {
 }
 
 // conf holds the config object for the server.
-// Gets initialized in the Run function
+// Gets initialized in the Run function.
 var conf *config.Config
 
 // index loads the local file config and creates a folder object.
@@ -129,20 +129,20 @@ func insertFolder(db *sql.DB, folder *folder.Folder) {
 /*
 Run runs an http server with a postgres instance within docker container.
 It can be accessed for example by `curl 'http://localhost:8080/search?q=key1'`
-or using the client package: `go run . client <command>`
+or using the client package: `go run . client <command>`.
 
 The server accepts the following paths as commands:
 
 /all - Lists all paths in database, probably won't be used in production but
-helpful for tests
+helpful for tests.
 
 /search - Query database, will return all paths containing given keywords.
-Keywords are sent using http query under the key 'q'
+Keywords are sent using http query under the key 'q'.
 
 /add - adds one or several paths to the database, paths are sent using http
-query under the key 'p'
+query under the key 'p'.
 
-/quit - Shuts down the server
+/quit - Shuts down the server.
 */
 func Run(args []string) {
 

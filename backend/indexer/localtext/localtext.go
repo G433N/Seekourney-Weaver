@@ -92,7 +92,7 @@ func IndexIterParallel(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 }
 
 // IndexDir is an iterator that recursivly indexes a dictonary and
-// all its subfolders
+// all its subfolders.
 func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 	walk := config.WalkDirConfig.WalkDir(path)
 

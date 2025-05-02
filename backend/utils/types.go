@@ -74,5 +74,5 @@ type FileType string
 type Port uint
 
 // Address including port acting as endpoint for http request.
-// E.g. "http://localhost:39010"
+// E.g. "http://localhost:39010".
 type Endpoint string
