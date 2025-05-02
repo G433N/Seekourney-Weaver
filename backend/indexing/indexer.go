@@ -26,3 +26,15 @@ func IndexString(str string) utils.FrequencyMap {
 	chars := []byte(str)
 	return IndexBytes(chars)
 }
+
+type Context struct {
+	client *IndexerClient
+}
+
+func (cxt *Context) Log(msg string, args ...any) {
+	cxt.client.Log(msg, args...)
+}
+
+func (cxt *Context) Send(doc UnnormalizedDocument) {
+	cxt.client.Log("Sending document: %s", doc.Path)
+}
