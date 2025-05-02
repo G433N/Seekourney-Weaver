@@ -39,6 +39,13 @@ type IndexErrors struct {
 	Indexing []error
 }
 
+// DispatchErrors fields indicate status of made dispatch attempts.
+type DispatchErrors struct {
+	IndexerWasRunning bool
+	StartupAttempt    error
+	DispatchAttempt   []error
+}
+
 // parseResponse converts an HTTP response to an indexerResponse struct.
 func parseResponse(resp *http.Response) (IndexerResponse, error) {
 	parsedResp := IndexerResponse{}
@@ -146,7 +153,7 @@ func shutdownIndexerGraceful(info IndexerInfo) error {
 	return info.cmd.Wait()
 }
 
-// requestIndexing requests indexer to index and return
+/* // requestIndexing requests indexer to index and return
 // an array of indexed documents, through the indexing API.
 func requestIndexing(
 	info IndexerInfo,
@@ -174,6 +181,41 @@ func requestIndexing(
 	}
 
 	return parsedResp.Data.Documents, nil
+} */
+
+// requestIndexing requests indexer to index and return
+// an array of indexed documents, through the indexing API.
+func requestIndexing(
+	info IndexerInfo,
+	path utils.Path,
+) (indexerResponding error, responseOutcome error) {
+	client := http.Client{
+		Timeout: _SHORTTIMEOUT_,
+	}
+	resp, err := client.Get(string(info.endpoint) + _INDEXFULL_ + "/" +
+		string(path))
+	if err != nil {
+		return errors.New("indexer did not respond to indexing request"), err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return errors.New("indexer did not respond to indexing request, " +
+				"alternatively did not respond with ok statuscode"),
+			errors.New("request failed because indexer did not respond")
+	}
+	defer closeResponse(resp)
+
+	parsedResp, err := parseResponse(resp)
+	if err != nil {
+		return nil, err
+	}
+	if parsedResp.Status != indexing.STATUSSUCCESSFUL {
+		return nil, errors.New(
+			"indexer " + info.name + " failed indexing request with message: " +
+				parsedResp.Data.Message,
+		)
+	}
+
+	return nil, nil
 }
 
 // newIndexErrors creates an IndexErrors struct with nil as default values.
@@ -189,7 +231,7 @@ func newIndexErrors(numberOfPaths int) IndexErrors {
 	return errs
 }
 
-// IndexMany starts up an indexer, indexes many path which produces 0 or more
+/* // IndexMany starts up an indexer, indexes many path which produces 0 or more
 // unnormalised documents, and shuts down the indexer.
 // If startup failed, all error fields will have errors.
 // Startup error field must be checked before attemp to index into documents.
@@ -221,21 +263,66 @@ func IndexMany(
 	errs.Shutdown = shutdownIndexerGraceful(info)
 
 	return manyDocs, errs
+} */
+
+// newDispatchErrors creates a DispatchErrors struct with nil as default values.
+// Indexer running bool is true by default.
+func newDispatchErrors(numberOfPaths int) DispatchErrors {
+	errs := DispatchErrors{
+		IndexerWasRunning: true,
+		StartupAttempt:    nil,
+		DispatchAttempt:   make([]error, numberOfPaths),
+	}
+	for i := range numberOfPaths {
+		errs.DispatchAttempt[i] = nil
+	}
+	return errs
 }
 
-// IndexOne starts up an indexer, indexes one path which produces 0 or more
-// unnormalised documents, and shuts down the indexer.
-// If startup failed, all error fields will have errors.
-// Startup error field must be checked before attemp to index into documents.
-// Indexing slice in errors struct will always have 1 element.
-func IndexOne(
+// DispatchMany starts up an indexer if it is not already running,
+// requests indexing of paths, one at a time.
+// All error fields will be non-nil on startup fail.
+func DispatchMany(
 	info IndexerInfo,
-	path utils.Path,
-) ([]UnnormalizedDocument, IndexErrors) {
-	nestedDocs, errs := IndexMany(info, []utils.Path{path})
-	if errs.Startup != nil {
-		return []UnnormalizedDocument{}, errs
-	} else {
-		return nestedDocs[0], errs
+	paths []utils.Path,
+) DispatchErrors {
+	errs := newDispatchErrors(len(paths))
+
+	for i, path := range paths {
+		respondingErr, outcomeErr := requestIndexing(info, path)
+		errs.DispatchAttempt[i] = outcomeErr
+
+		if respondingErr != nil {
+			errs.IndexerWasRunning = false
+			err := startupIndexer(info)
+			// If startup fails, everything else fails.
+			if err != nil {
+				errs.StartupAttempt = errors.New(
+					"indexer startup failded with reason: " + err.Error())
+				for i := range errs.DispatchAttempt {
+					errs.DispatchAttempt[i] = errors.New(
+						"failed startup prevents dispatch attempt",
+					)
+				}
+				return errs
+			} else {
+				respondingErr, outcomeErr := requestIndexing(info, path)
+				errs.DispatchAttempt[i] = outcomeErr
+				if respondingErr != nil {
+					panic("indexer was just started, " +
+						"but failed to respond to indexing request")
+				}
+			}
+		}
 	}
+
+	return errs
+}
+
+// DispatchOne starts up an indexer if it is not already running,
+// requests indexing of one path.
+// All error fields will be non-nil on startup fail.
+// Dispatch attempt field will always have 1 element.
+func DispatchOne(info IndexerInfo, path utils.Path) DispatchErrors {
+	return DispatchMany(info, []utils.Path{path})
 }
