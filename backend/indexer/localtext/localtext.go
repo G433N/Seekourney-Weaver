@@ -1,4 +1,4 @@
-package localtext
+package main
 
 import (
 	"iter"

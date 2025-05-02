@@ -19,7 +19,6 @@ import (
 	"seekourney/core/document"
 	"seekourney/core/folder"
 	"seekourney/core/search"
-	"seekourney/indexer/localtext"
 	"seekourney/utils"
 	"strings"
 )
@@ -86,32 +85,32 @@ var conf *config.Config
 
 // index loads the local file config and creates a folder object.
 // TODO: This function is temporay
-func index() folder.Folder {
-	// Load local file config
-	localConfig := localtext.Load(conf)
-
-	// TODO: Later when documents comes over the network, we can still use the
-	// same code. since it is an iterator
-	folder := folder.FromIter(
-		conf.Normalizer,
-		localConfig.IndexDir("test_data"),
-	)
-
-	rm := folder.ReverseMappingLocal()
-
-	files := folder.GetDocAmount()
-	words := len(rm)
-
-	log.Printf("Files: %d, Words: %d\n", files, words)
-
-	if files == 0 {
-		log.Fatal(
-			"No files found, run make downloadTestFiles to download test files",
-		)
-	}
-
-	return folder
-}
+// func index() folder.Folder {
+// 	// Load local file config
+// 	localConfig := localtext.Load(conf)
+//
+// 	// TODO: Later when documents comes over the network, we can still use the
+// 	// same code. since it is an iterator
+// 	folder := folder.FromIter(
+// 		conf.Normalizer,
+// 		localConfig.IndexDir("test_data"),
+// 	)
+//
+// 	rm := folder.ReverseMappingLocal()
+//
+// 	files := folder.GetDocAmount()
+// 	words := len(rm)
+//
+// 	log.Printf("Files: %d, Words: %d\n", files, words)
+//
+// 	if files == 0 {
+// 		log.Fatal(
+// 			"No files found, run make downloadTestFiles to download test files",
+// 		)
+// 	}
+//
+// 	return folder
+// }
 
 // insertFolder inserts all documents in the given folder into the database.
 func insertFolder(db *sql.DB, folder *folder.Folder) {
@@ -153,25 +152,6 @@ func Run(args []string) {
 
 	db := connectToDB()
 
-	loadFromDisc := true
-
-	if len(args) > 1 {
-		log.Fatal("Too many arguments")
-	} else if len(args) == 1 {
-		switch args[0] {
-		case "load":
-			loadFromDisc = false
-		}
-	}
-
-	if !loadFromDisc {
-		log.Println("Indexing files")
-		fold := index()
-		insertFolder(db, &fold)
-	} else {
-		log.Println("Loading from disk")
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	server := &http.Server{
@@ -202,6 +182,11 @@ func Run(args []string) {
 			handleAdd(serverParams, request.URL.Query()["p"])
 		case _QUIT_:
 			handleQuit(serverParams)
+		case "/log":
+			msg := request.URL.Query().Get("msg")
+			log.Printf("Log: %s\n", msg)
+		default:
+			log.Println("Unknown path:", request.URL)
 		}
 	}
 
