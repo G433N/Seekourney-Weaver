@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"seekourney/indexing"
 	"seekourney/tui/format"
 	"seekourney/utils"
 	"seekourney/utils/timing"
@@ -32,6 +33,7 @@ func argumentError() {
 	fmt.Println("  all                 request all pages in database")
 	fmt.Println("  search [key ...]    request all pages containing keys")
 	fmt.Println("  add    [path ...]   add paths to database")
+	fmt.Println("  index  [path ...]   test indexing of paths")
 	fmt.Println("  quit                request the server to shutdown")
 	os.Exit(1)
 }
@@ -65,6 +67,8 @@ func main() {
 		addPath(args[2:])
 	case "all":
 		getAll()
+	case "index":
+		index(args[2:])
 	case "quit":
 		shutdownServer()
 	default:
@@ -142,4 +146,43 @@ func shutdownServer() {
 	response, err := http.Get(string(_COREENDPOINT_) + _QUIT_)
 	checkHTTPError(err)
 	printResponse(response)
+}
+
+func index(paths []string) {
+
+	log.Println("Indexing paths:", paths)
+
+	for _, path := range paths {
+
+		Type, err := indexing.SourceTypeFromPath(utils.Path(path))
+
+		if err != nil {
+			log.Println("Error getting source type:", err)
+			return
+		}
+
+		settings := &indexing.Settings{
+			Path:      utils.Path(path),
+			Type:      Type,
+			Recursive: false,
+			Parrallel: false,
+		}
+		url, err := settings.IntoURL(utils.MININDEXERPORT)
+		if err != nil {
+			log.Println("Error converting settings to URL:", err)
+			return
+		}
+		resp, err := http.Get(url)
+		if err != nil {
+			log.Println("Error sending request:", err)
+			return
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			log.Println("Error response from server:", resp.Status)
+			return
+		}
+
+		log.Printf("Sent %s successfully\n", path)
+	}
 }

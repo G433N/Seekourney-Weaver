@@ -4,13 +4,12 @@ import (
 	"iter"
 	"log"
 	"os"
-	"seekourney/core/config"
 	"seekourney/indexing"
 	"seekourney/utils"
 	"seekourney/utils/timing"
 )
 
-const TEXTCONFIGFILE utils.Path = "localtext.json"
+const _TEXTCONFIGFILE_ utils.Path = "localtext.json"
 
 // Config is the options config for the text indexer.
 type Config struct {
@@ -104,7 +103,7 @@ func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 }
 
 // Default creates a new config with default values.
-func Default(config *config.Config) *Config {
+func Default(config *Config) *Config {
 	wdConfig := utils.NewWalkDirConfig().
 		SetAllowedExtns([]string{
 			".txt",
@@ -118,7 +117,7 @@ func Default(config *config.Config) *Config {
 		})
 	return &Config{
 		WalkDirConfig:     wdConfig,
-		ParrallelIndexing: config.ParrallelIndexing,
+		ParrallelIndexing: false,
 	}
 }
 
@@ -129,8 +128,8 @@ func (Config) ConfigName() string {
 
 // Load tries to load a config from localtext.json.
 // If it does not exist, a new config with default values will be loaded.
-func Load(config *config.Config) *Config {
-	path := TEXTCONFIGFILE
+func Load(config *Config) *Config {
+	path := _TEXTCONFIGFILE_
 	return utils.LoadOrElse(path, func() *Config {
 		return Default(config)
 	}, func() *Config { return &Config{} })
