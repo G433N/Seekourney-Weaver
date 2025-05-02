@@ -2,9 +2,9 @@
 
 	interface SearchResult {
 		Path: string;
-		Score: int;
-		Source: int;
-	} /*fix how interface should look to correspond with backend*/
+		Score: number;
+		Source: number;
+	}
 
 	interface SearchResponse {
 		Query: string;
@@ -21,9 +21,9 @@
 		searched = true;
 		submittedQuery = query;
         const res = await fetch(`http://localhost:8080/search?q=${query}`);
-        results = await res.json() as SearchResult[];
+        const json = await res.json() as SearchResponse;
+		results = json.Results;
 		console.log(results);
-		results = results.Results;
 		// results = [
 		// 	{
 		// 		title: 'result 1',
@@ -60,7 +60,7 @@
 	{#if searched == true && results.length > 0}
 			{#each results as res}
 				<a 
-					href={res.path} 
+					href={res.Path} 
 					target="_blank" 
 					rel="noopener noreferrer"
 					style="display: block; text-decoration: none; color: inherit;"
@@ -72,7 +72,7 @@
 								{res.Score}, {res.Source} 
 							</small>
 						</div>
-						<p style="color: #4E4E4E;">{res.desc}</p> 
+						<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 					</div>
 				</a>
 			{/each}
