@@ -47,7 +47,7 @@
 
 	<div id="searchDiv">
 		<input 
-			bind:value={query} 
+			bind:value={query}
 			type="text" 
 			placeholder="Write your search here!"
 		/>
