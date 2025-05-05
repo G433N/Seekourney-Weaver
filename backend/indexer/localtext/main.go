@@ -4,7 +4,7 @@ import (
 	"seekourney/indexing"
 )
 
-func f(cxt indexing.Context, settings indexing.Settings) {
+func index(cxt indexing.Context, settings indexing.Settings) {
 
 	switch settings.Type {
 	case indexing.FileSource:
@@ -23,32 +23,21 @@ func main() {
 
 	client := indexing.NewClient("LocalText")
 
-	client.Start(f)
+	client.Start(index)
 
 }
 
 func HandleFile(cxt indexing.Context, settings indexing.Settings) {
-	doc, err := IndexFile(settings.Path)
-	if err != nil {
-		cxt.Log("Error indexing file: %s, %s", settings.Path, err)
-		return
-	}
-
-	cxt.Log("Indexed file: %s", settings.Path)
-
-	cxt.Send(doc)
+	IndexFile(settings.Path, cxt)
 }
 
 func HandleDir(cxt indexing.Context, settings indexing.Settings) {
 
 	config := Load(&Config{})
 
-	for path, doc := range config.IndexDir(settings.Path) {
-
-		cxt.Log("Indexed file: %s", path)
-		cxt.Send(doc)
+	for path := range config.WalkDirConfig.WalkDir(settings.Path) {
+		IndexFile(path, cxt)
 	}
-
 }
 
 func HandleUrl(cxt indexing.Context, settings indexing.Settings) {

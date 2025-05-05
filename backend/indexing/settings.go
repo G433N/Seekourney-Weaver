@@ -30,6 +30,8 @@ type Settings struct {
 	Config    *string // TODO: Implement this
 }
 
+// TODO: Transfer via http body (json) instead of URL
+
 // SettingsFromRequest converts the request into a Settings struct.
 func (client *IndexerClient) SettingsFromRequest(
 	request *http.Request) (Settings, error) {
