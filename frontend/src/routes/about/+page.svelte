@@ -1,11 +1,22 @@
 <main style="max-width: 800px;">
     <h2> About Seekourny Weaver</h2>
     <div id="aboutBox">
-        <p> Our system is a powerful search engine designed to help users quickly find relevant information through a simple web interface. Working quietly in the background, it continuously scans and indexes files and whitelisted websites, ensuring that the data is always up to date and easy to access. </p>
+        <p> 
+            Our system is a powerful search engine designed to help users quickly find relevant information through 
+            a simple web interface. Working quietly in the background, it continuously scans and indexes files and 
+            whitelisted websites, ensuring that the data is always up to date and easy to access. 
+        </p>
  
-        <p> With just a few clicks in the settings, you decide exactly what to include in your search. Only want results from your local files? Simply uncheck a box. Need faster results? Choose how many CPU cores you want to dedicate to searching. You can even plug in your own custom scraper to gather data tailored to your needs.</p>
+        <p> 
+            With just a few clicks in the settings, you decide exactly what to include in your search. Only want 
+            results from your local files? Simply uncheck a box. Need faster results? Choose how many CPU cores 
+            you want to dedicate to searching. You can even plug in your own custom indexer to gather data tailored 
+            to your needs.
+        </p>
              
-        <p> It’s your search — optimized your way.</p>
+        <p> 
+            It’s your search — optimized your way.
+        </p>
     </div>
 
 </main>

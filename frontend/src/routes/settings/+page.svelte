@@ -52,7 +52,7 @@
         {/if}
     </div>
 
-    <button class="custom-scraper">Add a custom scraper</button>
+    <button class="custom-scraper">Add a custom indexer</button>
 </main>
 
 
