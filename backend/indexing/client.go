@@ -78,10 +78,18 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 
 			f(cxt, settings)
 
+		case "/ping":
+			_, err := fmt.Fprintf(writer, "%s", string(ResponsePong()))
+			client.Log("Responded to ping request from Core")
+			utils.PanicOnError(err)
+		case "/shutdown":
+			_, err := fmt.Fprintf(writer, "%s", string(ResponseExiting()))
+			client.Log("Shutdown triggered by Core, shutting down indexer")
+			utils.PanicOnError(err)
+			os.Exit(0)
 		default:
 			log.Println("Unknown path:", request.URL)
 			client.Log("Unknown path: %s", request.URL)
-
 		}
 	}
 
