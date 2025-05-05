@@ -58,14 +58,14 @@ func startContainer() {
 	container := exec.Command("/bin/sh", _CONTAINERSTART_)
 
 	outfile, err := os.Create(_CONTAINEROUTPUTFILE_)
-	checkIOError(err)
+	utils.PanicOnError(err)
 	container.Stdout = outfile
 	container.Stderr = outfile
 
 	err = container.Run()
-	checkIOError(err)
+	utils.PanicOnError(err)
 	err = outfile.Close()
-	checkIOError(err)
+	utils.PanicOnError(err)
 }
 
 // stopContainer signals the database container to stop,
@@ -221,26 +221,19 @@ func enableCORS(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
-// checkIOError panics on non-nil error.
-func checkIOError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 // recoverSQLError calls recover and writes a message to writer
 // if an SQL function panic'd.
 func recoverSQLError(writer io.Writer) {
 	if err := recover(); err != nil {
 		_, ioErr := fmt.Fprintf(writer, "SQL failed: %s\n", err)
-		checkIOError(ioErr)
+		utils.PanicOnError(ioErr)
 	}
 }
 
 // sendError writes msg and err to the writer.
 func sendError(writer io.Writer, msg string, err error) {
 	_, ioErr := fmt.Fprintf(writer, "%s: %s\n", msg, err)
-	checkIOError(ioErr)
+	utils.PanicOnError(ioErr)
 }
 
 // sendJSON marshals the given data to JSON and writes it to the writer.
@@ -313,7 +306,7 @@ func handleAdd(serverParams serverFuncParams, paths []string) {
 // by cancelling the server context.
 func handleQuit(serverParams serverFuncParams) {
 	_, err := fmt.Fprintf(serverParams.writer, "Shutting down\n")
-	checkIOError(err)
+	utils.PanicOnError(err)
 
 	serverParams.stop()
 }
