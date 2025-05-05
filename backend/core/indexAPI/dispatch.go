@@ -15,8 +15,7 @@ import (
 const (
 	_PING_          string        = "/ping"
 	_SHUTDOWN_      string        = "/shutdown"
-	_INDEXFULL_     string        = "/indexfull"
-	_INDEXDIFF_     string        = "/indexdiff"
+	_INDEX_         string        = "/indexfull"
 	_SHORTTIMEOUT_  time.Duration = 2 * time.Second
 	_MEDIUMTIMEOUT_ time.Duration = 5 * time.Second
 	_LONGTIMEOUT_   time.Duration = 600 * time.Second
@@ -153,7 +152,7 @@ func requestIndexing(
 	client := http.Client{
 		Timeout: _SHORTTIMEOUT_,
 	}
-	resp, err := client.Get(string(info.endpoint) + _INDEXFULL_ + "/" +
+	resp, err := client.Get(string(info.endpoint) + _INDEX_ + "/" +
 		string(path))
 	if err != nil {
 		return errors.New("indexer did not respond to indexing request"), err

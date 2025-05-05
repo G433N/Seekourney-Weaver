@@ -145,7 +145,7 @@ const _TESTPATH3_ utils.Path = "home/george/my_cool_text_files/other.txt"
 func TestRequestIndexingSuccess(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(indexing.ResponseSuccess(""))
 	info := IndexerInfo{
@@ -166,7 +166,7 @@ func TestRequestIndexingSuccess(t *testing.T) {
 func TestRequestIndexingFail(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(indexing.ResponseFail("failed to index requested path"))
 	info := IndexerInfo{
@@ -188,7 +188,7 @@ func TestRequestIndexingFail(t *testing.T) {
 func TestRequestIndexingInvalidJSON(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(map[string]string{"invalid": "JSON data send back"})
 	info := IndexerInfo{
@@ -227,7 +227,7 @@ func TestNewDispatchErrorsHigh(t *testing.T) {
 func TestDispatchOneSuccessIsRunning(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(indexing.ResponseSuccess(""))
 	info := IndexerInfo{
@@ -250,7 +250,7 @@ func TestDispatchOneSuccessIsRunning(t *testing.T) {
 func TestDispatchOneSuccessNotRunning(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(500).
 		JSON("")
 	gock.New(string(_TESTURI_)).
@@ -258,7 +258,7 @@ func TestDispatchOneSuccessNotRunning(t *testing.T) {
 		Reply(200).
 		JSON(indexing.ResponsePong())
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(indexing.ResponseSuccess(""))
 	info := IndexerInfo{
@@ -280,7 +280,7 @@ func TestDispatchOneSuccessNotRunning(t *testing.T) {
 func TestDispatchOneStartupFail(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(500).
 		JSON("")
 	gock.New(string(_TESTURI_)).
@@ -306,7 +306,7 @@ func TestDispatchOneStartupFail(t *testing.T) {
 func TestDispatchOneIndexFail(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(indexing.ResponseFail("unable to fulfill indexing request"))
 	info := IndexerInfo{
@@ -328,19 +328,19 @@ func TestDispatchOneIndexFail(t *testing.T) {
 func TestDispatchManyPartialSuccess(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(indexing.ResponseFail("unable to index requested path"))
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH3_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH3_)).
 		Reply(200).
 		JSON(indexing.ResponseFail("unable to index requested path"))
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH1_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH1_)).
 		Reply(200).
 		JSON(indexing.ResponseSuccess("handling indexing request"))
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(_TESTPATH2_)).
+		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
 		JSON(indexing.ResponseFail("unable to index requested path"))
 	info := IndexerInfo{
