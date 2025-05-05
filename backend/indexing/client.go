@@ -3,6 +3,7 @@ package indexing
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"html"
 	"log"
@@ -16,26 +17,59 @@ import (
 )
 
 type IndexerClient struct {
-	Port utils.Port
-	Name string
+	Port       utils.Port
+	Name       string
+	Parallel   bool
+	ConfigPath *utils.Path
+	channel    chan *UnnormalizedDocument
 }
 
 func NewClient(name string) *IndexerClient {
+	portFlag := flag.Uint("port", 0,
+		"Port to run the indexer on, in the range of 34000-34999")
+	parrallelFlag := flag.Bool("par", false, "Run in parallel, Optional")
+	configFlag := flag.String("conf", "", "Config file to use, Optional")
+
+	flag.Parse()
+
+	var port utils.Port
+
+	if *portFlag != 0 {
+		temp, ok := IntoPort(*portFlag)
+		if !ok {
+			log.Fatalf("Port %d is out of range", *portFlag)
+		}
+		port = temp
+	} else {
+		port = utils.MININDEXERPORT
+	}
+
+	parrallel := *parrallelFlag
+
+	var configPath *utils.Path
+
+	if *configFlag != "" {
+		temp := utils.Path(*configFlag)
+		configPath = &temp
+	}
+
+	channel := make(chan *UnnormalizedDocument, 100)
 
 	client := &IndexerClient{
-		Port: utils.Port(0),
-		Name: name,
+		Port:       port,
+		Name:       name,
+		Parallel:   parrallel,
+		ConfigPath: configPath,
+		channel:    channel,
 	}
 
-	args := os.Args
-	port, err := GetPort(args)
-	if err != nil {
-
-		port = utils.MININDEXERPORT
-		client.Log("Error getting port: %s Using default %d", err, port)
-	}
-
-	client.Port = port
+	go func() {
+		for doc := range client.channel {
+			if doc != nil {
+				client.Log("Document received: %s", doc.Path)
+			}
+		}
+	}()
 
 	client.Log("Client initialized")
 	return client
@@ -72,9 +106,7 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 				client.Log("Indexing URL: %s", settings.Path)
 			}
 
-			cxt := Context{
-				client: client,
-			}
+			cxt := NewContext(client)
 
 			f(cxt, settings)
 

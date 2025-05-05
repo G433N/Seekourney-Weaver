@@ -10,6 +10,17 @@ type Context struct {
 	metadata *docMetadata
 }
 
+func NewContext(client *IndexerClient) Context {
+	if client == nil {
+		panic("client cannot be nil")
+	}
+
+	return Context{
+		client:   client,
+		metadata: nil,
+	}
+}
+
 func (cxt *Context) Log(msg string, args ...any) {
 	cxt.client.Log(msg, args...)
 }
@@ -46,18 +57,27 @@ func (cxt *Context) Done(f *func(*UnnormalizedDocument)) {
 		panic("Use StartDoc before Done")
 	}
 
-	doc, err := cxt.metadata.index()
+	if cxt.client.Parallel {
+		go index(cxt.client, *cxt.metadata, f)
+	} else {
+		index(cxt.client, *cxt.metadata, f)
+	}
+
+	cxt.metadata = nil
+}
+
+func index(client *IndexerClient, metadata docMetadata, f *func(*UnnormalizedDocument)) {
+
+	doc, err := metadata.index()
 	if err != nil {
-		cxt.Log("Error indexing document: %s", err)
+		client.Log("Error indexing document: %s", err)
 		return
 	}
-	cxt.metadata = nil
 
 	if f != nil {
 		(*f)(doc)
 	}
-
-	cxt.send(doc)
+	client.channel <- doc
 }
 
 func (cxt *Context) send(doc *UnnormalizedDocument) {

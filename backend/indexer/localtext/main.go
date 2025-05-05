@@ -1,29 +1,30 @@
 package main
 
-import (
-	"seekourney/indexing"
-)
+import "seekourney/indexing"
 
-func index(cxt indexing.Context, settings indexing.Settings) {
+func index(config *Config, cxt indexing.Context, settings indexing.Settings) {
 
 	switch settings.Type {
 	case indexing.FileSource:
 		HandleFile(cxt, settings)
 	case indexing.DirSource:
-		HandleDir(cxt, settings)
+		HandleDir(config, cxt, settings)
 	case indexing.UrlSource:
 		HandleUrl(cxt, settings)
 	default:
 		cxt.Log("Unknown source type: %s", settings.Type)
 	}
-
 }
 
 func main() {
 
 	client := indexing.NewClient("LocalText")
 
-	client.Start(index)
+	config := Load(client.ConfigPath, &Config{})
+
+	client.Start(func(cxt indexing.Context, settings indexing.Settings) {
+		index(config, cxt, settings)
+	})
 
 }
 
@@ -31,9 +32,7 @@ func HandleFile(cxt indexing.Context, settings indexing.Settings) {
 	IndexFile(settings.Path, cxt)
 }
 
-func HandleDir(cxt indexing.Context, settings indexing.Settings) {
-
-	config := Load(&Config{})
+func HandleDir(config *Config, cxt indexing.Context, settings indexing.Settings) {
 
 	for path := range config.WalkDirConfig.WalkDir(settings.Path) {
 		IndexFile(path, cxt)
