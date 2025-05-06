@@ -1,5 +1,12 @@
 # REST API for indexers
 
+**Note that `indexing` package implements all of the indexing side of the API.
+A small amount of boiler-plate needs to be imported for it to run.
+The purpose of this file is for documentation and for those who wish to
+write an indexer in a language besides Go.**
+
+
+
 The general standard for the API's requests and responses follow the
 [jsend](https://github.com/omniti-labs/jsend) specifications which are very minimal.
 
@@ -11,12 +18,7 @@ as responses will always be in json-format.
 Note that JSON specifications do not support trailing commas.
 Adding trailing commas in JSON responses may cause the parser to fail.
 
-
 Only absolute file paths are used for requests.
-
-A request for indexing a folder path (as opposed to a single file)
-should always recursively index sub-folders within the given folder path.
-
 
 While the main server starts up an indexer, it will check `stderr`.
 If the initial ping-request is not able to be responded to,
@@ -27,16 +29,8 @@ an error message should be written to `stderr`.
 
 Allowed port numbers for indexers are any non-occupied port in the range [39 000, 39 499].
 
-Currently occupied ports are:
-
-```
-port 39000, reserved for meta-indexer
-port 39001, used by built-in textfile indexer
-port 39002, used by built-in PDF indexer
-port 39003, used by built-in XML indexer
-port 39004, used by built-in web crawler (HTML)
-port 39005, used by built-in Golang indexer
-```
+The port for a given indexer is calculated dynamically and sent as
+command-line argument when starting up indexer.
 
 
 ## Possible requests and responses
@@ -58,9 +52,33 @@ Indexer must respond with:
 
 Request for indexing of a folder or file takes the form:
 ```
-GET /indexfull/FILE_OR_FOLDERPATH
+POST /index/FILE_OR_FOLDERPATH
 ```
 Indexer must respond with:
+```json
+{
+    "status": "success",
+    "data": {
+        "message": "OPTIONAL MESSAGE",
+    }
+}
+```
+Alternatively, if indexing request cannot be handled:
+```json
+{
+    "status": "fail",
+    "data": {
+        "message": "HUMAN-READABLE ERROR MESSAGE",
+    }
+}
+```
+The indexer then runs indexing on the given path and sends its own HTTP request
+to Core:
+```
+POST /push/docs
+to localhost port 8080
+```
+With request:
 ```json
 {
     "status": "success",
@@ -99,38 +117,13 @@ Alternatively, if indexing failed:
 **`"source"` value in response must be `0` for a local file,
 or `1` for web file (e.g. HTML).**
 
-**Example:**
-Main server requests indexing of a single text file with an active text indexer.
-```
-GET /indexfull/home/george/my_cool_text_files/mount_vesuvius.txt
-```
-The text indexer may respond with:
-```json
-{
-    "status": "success",
-    "data": {
-        "documents":[
-            {
-                "path": "home/george/my_cool_text_files/mount_vesuvius.txt",
-                "source": 0,
-                "words": {
-                    "volcano": 3,
-                    "italy": 1,
-                    "the": 65,
-                    "erupt": 12,
-                } 
-            },
-        ],
-    }
-}
-```
-Note that `"documents"` array only contains a single element.
+Note that if none or only a single document was produced the `"documents"`
+field should still be present.
 For consistency, an array with the same key is
 still used in the response when indexing a single file.
 
 
-A shutdown request will be sent to the indexer once all files/folders that
-needed to be indexed have been.
+A shutdown request may be sent to the indexer from Core (main server).
 ```
 GET /shutdown
 ```
@@ -144,14 +137,3 @@ Indexer must respond with:
 }
 ```
 And immediately exit all it's associated processes.
-
-
-## Future extentions
-
-In the future, Seekourney Weaver may support handling indexing the difference
-between some number of given documents and their new unindexed state.
-The request by the main server will be the following:
-```
-GET /indexdiff/FILEPATH`
-```
-JSON response follows same format as for `GET /indexfull`
