@@ -92,7 +92,9 @@ func (indexer *ActiveIndexer) GetRequest(args ...string) (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", errors.New("indexer did not respond to request: " + err.Error())
+		return "", errors.New(
+			"indexer did not respond to request: " + err.Error(),
+		)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

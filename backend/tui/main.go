@@ -156,7 +156,11 @@ func pushDocs() {
 		}}
 
 	bodyReader := bytes.NewReader(indexing.ResponseDocs(testdocs))
-	req, err := http.NewRequest(http.MethodPost, string(_COREENDPOINT_)+_PUSHDOCS_, bodyReader)
+	req, err := http.NewRequest(
+		http.MethodPost,
+		string(_COREENDPOINT_)+_PUSHDOCS_,
+		bodyReader,
+	)
 	utils.PanicOnError(err)
 
 	resp, err := http.DefaultClient.Do(req)

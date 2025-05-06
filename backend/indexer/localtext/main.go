@@ -32,7 +32,11 @@ func HandleFile(cxt indexing.Context, settings indexing.Settings) {
 	IndexFile(settings.Path, cxt)
 }
 
-func HandleDir(config *Config, cxt indexing.Context, settings indexing.Settings) {
+func HandleDir(
+	config *Config,
+	cxt indexing.Context,
+	settings indexing.Settings,
+) {
 
 	for path := range config.WalkDirConfig.WalkDir(settings.Path) {
 		IndexFile(path, cxt)

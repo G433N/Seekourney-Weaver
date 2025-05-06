@@ -66,7 +66,11 @@ func (cxt *Context) Done(f *func(*UnnormalizedDocument)) {
 	cxt.metadata = nil
 }
 
-func index(client *IndexerClient, metadata docMetadata, f *func(*UnnormalizedDocument)) {
+func index(
+	client *IndexerClient,
+	metadata docMetadata,
+	f *func(*UnnormalizedDocument),
+) {
 
 	doc, err := metadata.index()
 	if err != nil {
