@@ -27,7 +27,6 @@ type Settings struct {
 	Type      SourceType
 	Recursive bool
 	Parrallel bool
-	Config    *string // TODO: Implement this
 }
 
 // TODO: Transfer via http body (json) instead of URL

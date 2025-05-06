@@ -5,14 +5,22 @@ import (
 	"encoding/json"
 	"log"
 	"seekourney/core/database"
+	"seekourney/core/indexAPI"
 	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
 	"seekourney/utils/timing"
 	"sort"
+	"time"
 )
 
-type Document indexing.UnnormalizedDocument
+type udoc = indexing.UnnormalizedDocument
+
+type Document struct {
+	udoc
+	SourceID    indexAPI.SourceCollectionID
+	LastIndexed time.Time
+}
 
 // Normalize normalizes the document using the provided normalizer
 func Normalize(
@@ -28,9 +36,11 @@ func Normalize(
 	}
 
 	return Document{
-		Path:   doc.Path,
-		Source: doc.Source,
-		Words:  freqMap,
+		udoc: udoc{
+			Path:   doc.Path,
+			Source: doc.Source,
+			Words:  freqMap,
+		},
 	}
 }
 
