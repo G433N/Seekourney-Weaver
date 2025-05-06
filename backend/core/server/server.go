@@ -22,7 +22,6 @@ import (
 	"seekourney/core/search"
 	"seekourney/utils"
 	"strings"
-	"time"
 )
 
 const (
@@ -128,9 +127,8 @@ func insertFolder(db *sql.DB, folder *folder.Folder) {
 }
 
 func test() {
-	time.Sleep(5 * time.Second)
 	// Test index registration
-	cmd := indexAPI.CMDFromString("./indexer/localtext/localtext")
+	cmd := "go run indexer/localtext/main.go indexer/localtext/localtext.go"
 	_, err := indexAPI.RegisterIndexer(cmd)
 
 	if err != nil {

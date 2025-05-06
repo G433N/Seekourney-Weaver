@@ -110,6 +110,9 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 
 			f(cxt, settings)
 
+		case "/name":
+			_, err := fmt.Fprintf(writer, "%s\n", string(client.Name))
+			utils.PanicOnError(err)
 		case "/ping":
 			_, err := fmt.Fprintf(writer, "%s", string(ResponsePong()))
 			client.Log("Responded to ping request from Core")

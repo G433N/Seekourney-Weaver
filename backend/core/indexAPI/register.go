@@ -3,13 +3,11 @@ package indexAPI
 import (
 	"errors"
 	"log"
-	"net/http"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"seekourney/utils"
 	"slices"
-	"time"
+	"strings"
 )
 
 // See indexing_API.md for more information.
@@ -67,80 +65,38 @@ func (cmd StartUpCMD) abs() StartUpCMD {
 	return cmd
 }
 
-func (cmd StartUpCMD) appendPort(port utils.Port) StartUpCMD {
-	cmd.args = append(cmd.args, "--port="+port.String())
-	return cmd
-}
-
-func (cmd StartUpCMD) execute() *exec.Cmd {
-	execCmd := exec.Command(string(cmd.path), cmd.args...)
-	out, err := os.Create("a.out")
-	if err != nil {
-		log.Fatalf("Failed to create output file: %v", err)
-	}
-
-	execCmd.Stdout = out
-	execCmd.Stderr = out
-
-	err = execCmd.Start()
-	if err != nil {
-		log.Fatalf("Failed to start command: %v", err)
-	}
-
-	log.Printf("Starting indexer with command: %s %s\n", cmd.path, cmd.args)
-	return execCmd
-}
-
 // RegisterIndexer adds a new indexer to the system.
 // Returns the RegisterID representing the indexer and success status.
 func RegisterIndexer(
-	startupCMD StartUpCMD,
+	startupCMD string,
 ) (IndexerID, error) {
 
-	_ = startupCMD.abs().appendPort(utils.SETUPPORT).execute()
+	split := strings.Split(startupCMD, " ")
+	command := split[0]
+	args := split[1:]
 
-	time.Sleep(1 * time.Second)
-
-	urlPING := _ENDPOINTPREFIX_ + utils.SETUPPORT.String() + "/ping"
-	urlShutown := _ENDPOINTPREFIX_ + utils.SETUPPORT.String() + "/shutdown"
-
-	resp, err := http.Get(urlPING)
-	if err != nil {
-		return 0, errors.New("indexer did not respond to ping request")
+	indexer := IndexerData{
+		ID:       499,
+		ExecPath: command,
+		Args:     args,
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return 0, errors.New("indexer did not respond to ping request, " +
-			"alternatively did not respond with ok statuscode")
-	}
-	var respStr []byte
+	active := indexer.start()
 
-	_, err = resp.Body.Read(respStr)
-	if err != nil {
-		return 0, errors.New("indexer did not respond to ping request")
-	}
+	name, err := active.GetRequest("name")
+	utils.PanicOnError(err)
 
-	log.Println("Indexer responded to ping request: " + string(respStr))
-	resp.Body.Close()
+	log.Printf("Indexer name: %s", name)
 
-	resp, err = http.Get(urlShutown)
-	if err != nil {
-		return 0, errors.New("indexer did not respond to shutdown request")
-	}
+	_, err = active.GetRequest("shutdown")
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return 0, errors.New("indexer did not respond to shutdown request, " +
-			"alternatively did not respond with ok statuscode")
-	}
+	err = active.Exec.Wait()
+	utils.PanicOnError(err)
 
-	_, err = resp.Body.Read(respStr)
-	if err != nil {
-		return 0, errors.New("indexer did not respond to shutdown request")
-	}
+	// TODO: Add indexer to database
 
-	log.Println("Indexer responded to shutdown request: " + string(respStr))
-
-	resp.Body.Close()
+	indexer.Name = string(name)
+	// indexer.ID = ID from database
 
 	return 0, nil
 }
