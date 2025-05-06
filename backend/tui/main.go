@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ const (
 	_COREENDPOINT_ utils.Endpoint = "http://localhost:8080"
 	_SEARCH_       string         = "/search?"
 	_PUSHPATHS_    string         = "/push/paths?"
+	_PUSHDOCS_     string         = "/push/docs"
 	_QUIT_         string         = "/quit"
 	_ALL_          string         = "/all"
 	_SEARCHKEY_    string         = "q"
@@ -103,12 +105,12 @@ func searchForTerms(terms []string) {
 	for _, term := range terms {
 		values.Add(_SEARCHKEY_, term)
 	}
-	response, err := http.Get(
+	resp, err := http.Get(
 		string(_COREENDPOINT_) + _SEARCH_ + values.Encode(),
 	)
 	checkHTTPError(err)
 
-	bytes, _ := io.ReadAll(response.Body)
+	bytes, _ := io.ReadAll(resp.Body)
 	result := utils.SearchResponse{}
 	err = json.Unmarshal(bytes, &result)
 	if err != nil {
@@ -128,34 +130,55 @@ func pushPaths(paths []string) {
 	for _, term := range paths {
 		values.Add(_ADDKEY_, term)
 	}
-	response, err := http.Get(
+	resp, err := http.Get(
 		string(_COREENDPOINT_) + _PUSHPATHS_ + values.Encode(),
 	)
 	checkHTTPError(err)
-	printResponse(response)
+	printResponse(resp)
 }
+
+type udoc = indexing.UnnormalizedDocument
 
 // pushDocs acts as an indexer sending unnormalized documents to core
 // to add to database.
+// 2 test documents are sent.
 func pushDocs() {
-	panic("pushDocs is not implemented for TUI client")
+	testdocs := []udoc{
+		{
+			Path:   "a/test/document/path",
+			Source: 0,
+			Words:  utils.FrequencyMap{"good": 42, "bad": 11},
+		},
+		{
+			Path:   "yet/another/path",
+			Source: 0,
+			Words:  utils.FrequencyMap{"yep": 100},
+		}}
+
+	bodyReader := bytes.NewReader(indexing.ResponseDocs(testdocs))
+	req, err := http.NewRequest(http.MethodPost, string(_COREENDPOINT_)+_PUSHDOCS_, bodyReader)
+	utils.PanicOnError(err)
+
+	resp, err := http.DefaultClient.Do(req)
+	checkHTTPError(err)
+	printResponse(resp)
 }
 
 // getAll fetches all paths stored in database through Core,
 // and prints them.
 // Handler for command /all.
 func getAll() {
-	response, err := http.Get(string(_COREENDPOINT_) + _ALL_)
+	resp, err := http.Get(string(_COREENDPOINT_) + _ALL_)
 	checkHTTPError(err)
-	printResponse(response)
+	printResponse(resp)
 }
 
 // shutdownServer remotely shuts down Core.
 // Handler for command /quit.
 func shutdownServer() {
-	response, err := http.Get(string(_COREENDPOINT_) + _QUIT_)
+	resp, err := http.Get(string(_COREENDPOINT_) + _QUIT_)
 	checkHTTPError(err)
-	printResponse(response)
+	printResponse(resp)
 }
 
 func index(paths []string) {
