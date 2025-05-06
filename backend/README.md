@@ -25,7 +25,7 @@ $ watchexec -e go -r make test
 ```
 
 
-## Server api
+# Server api
 
 `/all` - Lists all paths in database, probably won't be used in production but
 helpful for tests.
@@ -50,7 +50,16 @@ Ensure that the server application is running
 $ go run tui/main.go <command> [<args>]
 ```
 
-See server api for more information about possible commands
+Available commands:
+
+`search` 
+`pushpaths`
+`pushdocs`
+`all`
+`index`
+`quit`
+
+See server api for more information about corresponding http requests.
 
 # Package structure
 

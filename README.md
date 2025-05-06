@@ -14,4 +14,4 @@ in their respective folders.
 
 # Required programs
 
-PostgreSQL, Docker Engine, and Go version 1.24.2 need to be installed to run.
+Docker and Go version 1.24.2 need to be installed to run.
