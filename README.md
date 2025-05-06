@@ -11,3 +11,7 @@ a database that stores data about files and websites
 and indexers which retrive words from files and websites.   
 Information on these two parts can be found in READMEs 
 in their respective folders.
+
+# Required programs
+
+PostgreSQL, Docker Engine, and Go version 1.24.2 need to be installed to run.
