@@ -44,6 +44,8 @@ const (
 	_QUIT_      string = "/quit"
 	_PUSHPATHS_ string = "/push/paths"
 	_PUSHDOCS_  string = "/push/docs"
+	_INDEX_     string = "/index"
+	_LOG_       string = "/log"
 )
 
 // serverFuncParams is used by server query handler functions.
@@ -174,7 +176,7 @@ func Run(args []string) {
 
 		switch html.EscapeString(request.URL.Path) {
 		// TODO figure out where we can do goroutines
-		// we cant use response writer concurrently
+		// we cant use resp writer concurrently nor read resp body
 		case _ALL_:
 			handleAll(serverParams)
 		case _SEARCH_:
@@ -183,13 +185,13 @@ func Run(args []string) {
 			handlePushPaths(serverParams, request.URL.Query()["p"])
 		case _PUSHDOCS_:
 			handlePushDocs(serverParams, request)
+		case _INDEX_:
+			handleIndex(serverParams)
 		case _QUIT_:
 			handleQuit(serverParams)
-		case "/log":
-			go func() {
-				msg := request.URL.Query().Get("msg")
-				log.Printf("Log: %s\n", msg)
-			}()
+		case _LOG_:
+			msg := request.URL.Query().Get("msg")
+			log.Printf("Log: %s\n", msg)
 		default:
 			log.Println("Unknown path:", request.URL)
 		}
@@ -362,6 +364,12 @@ func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
 		}
 		log.Print("Handled pushdocs request successfully")
 	}()
+}
+
+// handleIndex handles an /index request by dispatching an indexing request
+// to the appropriate indexer.
+func handleIndex(serverParams serverFuncParams) {
+	panic("Not implemented")
 }
 
 // handleQuit handles a /quit request by initiating the shutdown process
