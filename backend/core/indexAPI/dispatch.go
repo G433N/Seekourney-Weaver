@@ -18,7 +18,6 @@ const (
 	_INDEX_         string        = "/indexfull"
 	_SHORTTIMEOUT_  time.Duration = 2 * time.Second
 	_MEDIUMTIMEOUT_ time.Duration = 5 * time.Second
-	_LONGTIMEOUT_   time.Duration = 600 * time.Second
 )
 
 // See indexing_API.md for corresponding JSON formatting.

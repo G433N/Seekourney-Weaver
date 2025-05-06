@@ -1,6 +1,8 @@
 package indexing
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // See indexing_API for documentation.
 
@@ -54,9 +56,9 @@ func ResponseFail(message string) []byte {
 	return jsonData
 }
 
-// ResponseSuccess creates an indexer pong response,
+// ResponseSuccess creates an indexer ping response,
 // used when starting up indexer, in JSON format.
-func ResponsePong() []byte {
+func ResponsePing() []byte {
 	jsonData, err := json.Marshal(IndexerResponse{
 		Status: STATUSSUCCESSFUL,
 		Data:   ResponseData{Message: MESSAGEPONG},
@@ -70,7 +72,7 @@ func ResponsePong() []byte {
 }
 
 // ResponseSuccess creates an indexer exiting response,
-// used when exiting indexer from core, in JSON format.
+// used when exiting indexer from Core, in JSON format.
 func ResponseExiting() []byte {
 	jsonData, err := json.Marshal(IndexerResponse{
 		Status: STATUSSUCCESSFUL,
@@ -79,6 +81,21 @@ func ResponseExiting() []byte {
 
 	if err != nil {
 		panic("indexing ResponseExiting could not marshal response")
+	}
+
+	return jsonData
+}
+
+// ResponseDocs creates an indexer pushdocs response,
+// used when sending produced documents to Core, in JSON format.
+func ResponseDocs(docs []UnnormalizedDocument) []byte {
+	jsonData, err := json.Marshal(IndexerResponse{
+		Status: STATUSSUCCESSFUL,
+		Data:   ResponseData{Documents: docs},
+	})
+
+	if err != nil {
+		panic("indexing ResponseDocs could not marshal response")
 	}
 
 	return jsonData

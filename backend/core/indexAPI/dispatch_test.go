@@ -47,7 +47,7 @@ func TestStartupPingSuccess(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(indexing.ResponsePong())
+		JSON(indexing.ResponsePing())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -86,7 +86,7 @@ func TestShutdownValidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(indexing.ResponsePong())
+		JSON(indexing.ResponsePing())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -116,7 +116,7 @@ func TestShutdownInvalidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(indexing.ResponsePong())
+		JSON(indexing.ResponsePing())
 	info := IndexerInfo{
 		name:             "TestIndexerName",
 		cmd:              exec.Command("ls"),
@@ -256,7 +256,7 @@ func TestDispatchOneSuccessNotRunning(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(indexing.ResponsePong())
+		JSON(indexing.ResponsePing())
 	gock.New(string(_TESTURI_)).
 		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
 		Reply(200).
