@@ -17,9 +17,9 @@ import (
 	"seekourney/core/config"
 	"seekourney/core/database"
 	"seekourney/core/document"
-	"seekourney/core/folder"
 	"seekourney/core/indexAPI"
 	"seekourney/core/search"
+	"seekourney/indexing"
 	"seekourney/utils"
 	"strings"
 )
@@ -39,10 +39,11 @@ const (
 
 // HTTP requests.
 const (
-	_ALL_    string = "/all"
-	_SEARCH_ string = "/search"
-	_ADD_    string = "/add"
-	_QUIT_   string = "/quit"
+	_ALL_       string = "/all"
+	_SEARCH_    string = "/search"
+	_QUIT_      string = "/quit"
+	_PUSHPATHS_ string = "/push/paths"
+	_PUSHDOCS_  string = "/push/docs"
 )
 
 // serverFuncParams is used by server query handler functions.
@@ -113,19 +114,6 @@ var conf *config.Config
 // 	return folder
 // }
 
-// insertFolder inserts all documents in the given folder into the database.
-func insertFolder(db *sql.DB, folder *folder.Folder) {
-
-	for _, doc := range folder.GetDocs() {
-
-		_, err := database.InsertInto(db, doc)
-
-		if err != nil {
-			log.Printf("Error inserting row: %s\n", err)
-		}
-	}
-}
-
 func test() {
 	// Test index registration
 	cmd := "go run indexer/localtext/main.go indexer/localtext/localtext.go"
@@ -186,16 +174,20 @@ func Run(args []string) {
 
 		switch html.EscapeString(request.URL.Path) {
 		case _ALL_:
-			handleAll(serverParams)
+			go handleAll(serverParams)
 		case _SEARCH_:
-			handleSearchSQL(serverParams, request.URL.Query()["q"])
-		case _ADD_:
-			handleAdd(serverParams, request.URL.Query()["p"])
+			go handleSearchSQL(serverParams, request.URL.Query()["q"])
+		case _PUSHPATHS_:
+			go handlePushPaths(serverParams, request.URL.Query()["p"])
+		case _PUSHDOCS_:
+			go handlePushDocs(serverParams, request)
 		case _QUIT_:
-			handleQuit(serverParams)
+			go handleQuit(serverParams)
 		case "/log":
-			msg := request.URL.Query().Get("msg")
-			log.Printf("Log: %s\n", msg)
+			go func() {
+				msg := request.URL.Query().Get("msg")
+				log.Printf("Log: %s\n", msg)
+			}()
 		default:
 			log.Println("Unknown path:", request.URL)
 		}
@@ -263,6 +255,16 @@ func sendJSON(writer io.Writer, data any) {
 	}
 }
 
+// respondWithSuccess sends an indexing success response through writer.
+func respondWithSuccess(writer io.Writer) {
+	_, err := fmt.Fprintf(
+		writer,
+		"%s",
+		string(indexing.ResponseSuccess("")),
+	)
+	utils.PanicOnError(err)
+}
+
 // handleAll handles an /all request,
 // by querying all rows in database and writing output to response writer.
 func handleAll(serverParams serverFuncParams) {
@@ -307,11 +309,48 @@ func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 	sendJSON(serverParams.writer, response)
 }
 
-// handleAdd handles an /add request,
+// handlePushPaths handles an /push/path request,
 // by inserting a row to the database for each given path.
-func handleAdd(serverParams serverFuncParams, paths []string) {
-	// TODO: Albins pr should impl this
+func handlePushPaths(serverParams serverFuncParams, paths []string) {
 	panic("Not implemented")
+}
+
+// handlePushDocs handles a /push/docs request,
+// by normalizing documents send in request and adding them to db.
+func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
+	respondWithSuccess(serverFuncParams.writer)
+
+	body, err := io.ReadAll(request.Body)
+	utils.PanicOnError(err)
+
+	resp := indexing.IndexerResponse{}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		log.Print("Main server failed to parse PushDocs request" +
+			" from indexer with error: " + err.Error())
+		return
+	}
+
+	if resp.Status != indexing.STATUSSUCCESSFUL {
+		log.Print("indexing request failed (messaged with PushDocs request)" +
+			" with message: " + resp.Data.Message)
+		return
+	}
+
+	if len(resp.Data.Documents) == 0 {
+		log.Print("indexer indexed path and produced zero documents")
+		return
+	}
+
+	for _, rawDoc := range resp.Data.Documents {
+		normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
+
+		_, err := database.InsertInto(serverFuncParams.db, normalizedDoc)
+		if err != nil {
+			log.Printf("Error inserting row: %s\n", err)
+		}
+	}
+	// Currently no logs are sent on success.
 }
 
 // handleQuit handles a /quit request by initiating the shutdown process
