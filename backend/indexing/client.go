@@ -26,7 +26,7 @@ type IndexerClient struct {
 
 func NewClient(name string) *IndexerClient {
 	portFlag := flag.Uint("port", 0,
-		"Port to run the indexer on, in the range of 34000-34999")
+		"Port to run the indexer on, in the range of 39000-39499")
 	parrallelFlag := flag.Bool("par", false, "Run in parallel, Optional")
 	configFlag := flag.String("conf", "", "Config file to use, Optional")
 

@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-// TODO: Move to utils??
-
 // IntoPort converts an integer to a port.
 func IntoPort(integer uint) (utils.Port, bool) {
 

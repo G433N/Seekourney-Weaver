@@ -347,7 +347,7 @@ func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
 		return
 	}
 
-	// Create subroutine for normalising and inserting into db,
+	// Create goroutine for normalising and inserting into db,
 	// as it might take significant time.
 	go func() {
 		for _, rawDoc := range resp.Data.Documents {
