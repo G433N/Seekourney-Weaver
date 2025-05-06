@@ -28,15 +28,19 @@ $ watchexec -e go -r make test
 ## Server api
 
 `/all` - Lists all paths in database, probably won't be used in production but
-helpful for tests
+helpful for tests.
 
 `/search` - Query database, will return all paths containing given keywords.
-Keywords are sent using http query under the key 'q'
+Keywords are sent using http query under the key 'q'.
 
-`/add` - adds one or several paths to the database, paths are sent using http
-query under the key 'p'
+`/push/paths` - adds one or more paths to the database,
+paths are sent using http query under the key 'p'.
 
-`/quit` - Shuts down the server
+`/push/docs` - adds zero or more documents to the database.
+Docs are sent using http from an indexer originally dispatched by main server.
+Documents are normalized by Core before storage.
+
+`/quit` - Shuts down the server.
 
 # Run client demo
 
