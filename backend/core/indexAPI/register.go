@@ -2,11 +2,14 @@ package indexAPI
 
 import (
 	"errors"
+	"log"
+	"net/http"
+	"os"
 	"os/exec"
-	"seekourney/indexing"
+	"path/filepath"
 	"seekourney/utils"
 	"slices"
-	"strconv"
+	"time"
 )
 
 // See indexing_API.md for more information.
@@ -55,55 +58,91 @@ func isUnoccupiedPort(port utils.Port) bool {
 	return true
 }
 
+func (cmd StartUpCMD) abs() StartUpCMD {
+	absPath, err := filepath.Abs(string(cmd.path))
+	if err != nil {
+		log.Fatalf("Failed to get absolute path: %v", err)
+	}
+	cmd.path = utils.Path(absPath)
+	return cmd
+}
+
+func (cmd StartUpCMD) appendPort(port utils.Port) StartUpCMD {
+	cmd.args = append(cmd.args, "--port="+port.String())
+	return cmd
+}
+
+func (cmd StartUpCMD) execute() *exec.Cmd {
+	execCmd := exec.Command(string(cmd.path), cmd.args...)
+	out, err := os.Create("a.out")
+	if err != nil {
+		log.Fatalf("Failed to create output file: %v", err)
+	}
+
+	execCmd.Stdout = out
+	execCmd.Stderr = out
+
+	err = execCmd.Start()
+	if err != nil {
+		log.Fatalf("Failed to start command: %v", err)
+	}
+
+	log.Printf("Starting indexer with command: %s %s\n", cmd.path, cmd.args)
+	return execCmd
+}
+
 // RegisterIndexer adds a new indexer to the system.
 // Returns the RegisterID representing the indexer and success status.
 func RegisterIndexer(
-	name string,
-	appPath utils.Path,
-	startupCMD string,
-	fileTypesHandled []utils.FileType,
-	port utils.Port,
-) (RegisterID, error) {
-	// TODO more validation?
+	startupCMD StartUpCMD,
+) (IndexerID, error) {
 
-	if !indexing.IsValidPort(port) {
-		return 0, errors.New(
-			"tried to register new indexer " + name +
-				" with port " + strconv.Itoa(int(port)) +
-				" which is not in allowed range for indexing API",
-		)
-	}
-	if !isUnoccupiedPort(port) {
-		return 0, errors.New(
-			"tried to register new indexer " + name +
-				" with port " + strconv.Itoa(int(port)) +
-				" which is already occupied by another indexer",
-		)
+	_ = startupCMD.abs().appendPort(utils.SETUPPORT).execute()
+
+	time.Sleep(1 * time.Second)
+
+	urlPING := _ENDPOINTPREFIX_ + utils.SETUPPORT.String() + "/ping"
+	urlShutown := _ENDPOINTPREFIX_ + utils.SETUPPORT.String() + "/shutdown"
+
+	resp, err := http.Get(urlPING)
+	if err != nil {
+		return 0, errors.New("indexer did not respond to ping request")
 	}
 
-	cmd := exec.Command(startupCMD)
-	cmd.Dir = string(appPath)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return 0, errors.New("indexer did not respond to ping request, " +
+			"alternatively did not respond with ok statuscode")
+	}
+	var respStr []byte
 
-	info := IndexerInfo{
-		name:             name,
-		cmd:              cmd,
-		fileTypesHandled: fileTypesHandled,
-		id:               newIndexerID(),
-		endpoint: utils.Endpoint(
-			_ENDPOINTPREFIX_ + strconv.Itoa(int(port)),
-		),
+	_, err = resp.Body.Read(respStr)
+	if err != nil {
+		return 0, errors.New("indexer did not respond to ping request")
 	}
 
-	registeredIndexers[info.id] = info
+	log.Println("Indexer responded to ping request: " + string(respStr))
+	resp.Body.Close()
 
-	for _, fileType := range info.fileTypesHandled {
-		indexersForFileType[fileType] = append(
-			indexersForFileType[fileType],
-			info.id,
-		)
+	resp, err = http.Get(urlShutown)
+	if err != nil {
+		return 0, errors.New("indexer did not respond to shutdown request")
 	}
 
-	return info.id, nil
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return 0, errors.New("indexer did not respond to shutdown request, " +
+			"alternatively did not respond with ok statuscode")
+	}
+
+	_, err = resp.Body.Read(respStr)
+	if err != nil {
+		return 0, errors.New("indexer did not respond to shutdown request")
+	}
+
+	log.Println("Indexer responded to shutdown request: " + string(respStr))
+
+	resp.Body.Close()
+
+	return 0, nil
 }
 
 // UnregisterIndexer removes an existing indexer from the system.

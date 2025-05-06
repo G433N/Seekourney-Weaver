@@ -10,6 +10,18 @@ import (
 // TODO: Structured log messages and struct
 // TODO: Log should be in response body not query
 
+type StartUpCMD struct {
+	path utils.Path
+	args []string
+}
+
+func CMDFromString(str string) StartUpCMD {
+	return StartUpCMD{
+		path: utils.Path(str),
+		args: []string{},
+	}
+}
+
 type IndexerID uint
 
 type IndexerData struct {

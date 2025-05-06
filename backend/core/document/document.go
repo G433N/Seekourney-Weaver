@@ -133,9 +133,11 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 	}
 
 	return Document{
-		Path:   path,
-		Source: utils.SourceLocal,
-		Words:  freqMap,
+		udoc: udoc{
+			Path:   path,
+			Source: utils.SourceLocal,
+			Words:  freqMap,
+		},
 	}, nil
 }
 

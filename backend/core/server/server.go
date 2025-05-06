@@ -18,9 +18,11 @@ import (
 	"seekourney/core/database"
 	"seekourney/core/document"
 	"seekourney/core/folder"
+	"seekourney/core/indexAPI"
 	"seekourney/core/search"
 	"seekourney/utils"
 	"strings"
+	"time"
 )
 
 const (
@@ -125,6 +127,17 @@ func insertFolder(db *sql.DB, folder *folder.Folder) {
 	}
 }
 
+func test() {
+	time.Sleep(5 * time.Second)
+	// Test index registration
+	cmd := indexAPI.CMDFromString("./indexer/localtext/localtext")
+	_, err := indexAPI.RegisterIndexer(cmd)
+
+	if err != nil {
+		log.Printf("Error registering indexer: %s\n", err)
+	}
+}
+
 /*
 Run runs an http server with a postgres instance within docker container.
 It can be accessed for example by `curl 'http://localhost:8080/search?q=key1'`
@@ -192,6 +205,7 @@ func Run(args []string) {
 
 	http.HandleFunc("/", queryHandler)
 
+	go test()
 	go func() {
 		err := server.ListenAndServe()
 		if !errors.Is(err, http.ErrServerClosed) {

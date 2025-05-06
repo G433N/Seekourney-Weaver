@@ -1,5 +1,7 @@
 package utils
 
+import "strconv"
+
 // Query is a string containing plain words separated by spaces.
 // E.g. "1.24.2 golang documentation".
 type Query string
@@ -72,6 +74,10 @@ type FileType string
 // Value for indexing API must be within range
 // [MININDEXERPORT, MAXINDEXERPORT].
 type Port uint
+
+func (p Port) String() string {
+	return strconv.Itoa(int(p))
+}
 
 // Address including port acting as endpoint for http request.
 // E.g. "http://localhost:39010".
