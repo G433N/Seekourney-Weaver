@@ -12,7 +12,7 @@
 	}
 
 	let query: string = '';
-	let submittedQuery = '';
+	let submittedQuery: string = '';
 	let results: SearchResult[] = [];
 	let searched: boolean = false;
 
@@ -47,6 +47,27 @@
 			searched = false;
 		}
 	}
+
+	// TODO: test if it works with branch search-and-download
+	async function downloadFile(path: string): Promise<void> {
+		fetch(`http://localhost:8080/download?q=${path}`, {
+		method: "GET"
+		})
+		.then(response => {
+		return response.blob();
+		})
+		.then(blob => {
+		const urlObject = window.URL.createObjectURL(blob);
+		const a = document.createElement("a");
+
+		a.href = urlObject;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+
+		window.URL.revokeObjectURL(urlObject);
+		});
+	}
 </script>
 
 <main style="max-width: 800px;">
@@ -65,6 +86,7 @@
 
 	{#if searched == true && results.length > 0}
 			{#each results as res}
+				{#if res.Source == 1}
 				<a 
 					href={res.Path} 
 					target="_blank" 
@@ -73,14 +95,39 @@
 				>
 					<div id="resultBox">
 						<div  id="resultDiv">
-							<h3 style="font-size: 1.4rem;">{res.Path}</h3>
+							<h3>{res.Path}</h3>
+						</div>
+						<div id=resultInfo>
+							<small> 
+								Website: {res.Path}
+							</small>
 							<small>
-								{res.Score}, {res.Source}
+								Relevance: {res.Score.toFixed(4)}
 							</small>
 						</div>
 						<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 					</div>
 				</a>
+				{:else}
+					<div id="resultBox">
+						<div id="resultDiv">
+							<h3>{res.Path.replace(/^.*[\\\/]/, '')}</h3>
+							<button on:click={() => downloadFile(res.Path)} id="downloadButton">
+								Download
+							</button>
+						</div>
+						<div id=resultInfo>
+							<small> 
+								Local file path: {res.Path} 
+							</small>
+							<small> 
+								Relevance: {res.Score.toFixed(4)} 
+							</small>
+						</div>
+						<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
+					</div>
+				{/if}
+				
 			{/each}
 	{:else if searched == true}
 		<p style="font-size: 1.2rem;">no results for: {submittedQuery}</p>
@@ -96,11 +143,13 @@
 
 	#searchButton {
 		padding: 0.75rem 1rem; 
-		font-size: 1rem; 
-		background-color: #AEC6DF; 
-		color: black; 
-		border: none; 
-		border-radius: 6px;
+		font-size: 1rem;
+		font-weight: 500;
+	}
+
+	#downloadButton {
+		padding: 0.2rem 0.6rem; 
+		font-size: 1rem;
 	}
 
 	#resultBox {
@@ -112,6 +161,12 @@
 	}
 
 	#resultDiv {
+		display: flex; 
+		justify-content: space-between; 
+		align-items: center;
+	}
+
+	#resultInfo {
 		display: flex; 
 		justify-content: space-between; 
 		align-items: center;

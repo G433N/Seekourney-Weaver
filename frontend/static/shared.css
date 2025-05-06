@@ -54,6 +54,14 @@ h2 {
 	font-style: normal;
 }
 
+h3 {
+	font-size: 1.4rem;
+	font-family: "Jost", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 500;
+	font-style: normal;
+}
+
 label {
 	font-family: "Jost", sans-serif;
 	font-optical-sizing: auto;
@@ -64,6 +72,12 @@ label {
 button {
 	background-color: #aec6df;
 	border-color: #aec6df;
+	font-family: "Jost", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 400;
+	font-style: normal;
+	border: none; 
+	border-radius: 6px; 
 }
 
 main {

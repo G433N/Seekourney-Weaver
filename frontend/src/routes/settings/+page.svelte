@@ -1,12 +1,38 @@
-<script>
-    let showFiles = $state(true);
-    let showWebpages = $state(true);
-    let showAllResults = $state(true);
-    let maxResults = $state(100);
+<script lang="ts">
 
-    let cpuDefault = $state(true);
-    let maxCores = $state(8);
-    let cpuCores = $state(4);
+    interface IndexerResult {
+            Name: string;
+            Id: number;
+            Port: number;
+    }
+
+    let showFiles: boolean = $state(true);
+    let showWebpages: boolean = $state(true);
+    let showAllResults: boolean = $state(true);
+    let maxResults: number = $state(100);
+
+    let cpuDefault: boolean = $state(true);
+    let maxCores: number = $state(8);
+    let cpuCores: number = $state(4);
+
+    let indexerInput: string = '';
+    let submittedIndexer: string = '';
+    let indexerList: IndexerResult[] = [];
+
+    async function addIndexer(): Promise<void> {
+        submittedIndexer = indexerInput;
+        const res = await fetch(`http://localhost:8080/addIndexer?q=${submittedIndexer}`); //TODO: what name??
+		const json = await res.json() as IndexerResult;
+        indexerList.push(json);
+        // TODO: unsure of how response should look, might not work
+    }
+
+    async function deleteIndexer(indexer: IndexerResult): Promise<void> {
+        fetch(`http://localhost:8080/addIndexer?q=${indexer}`); //TODO: what name??
+        // TODO: remove from array
+        // TODO: unsure if we get a response?
+    }
+
 </script>
 
 <main style="max-width: 600px;">
@@ -30,10 +56,12 @@
         </label>
 
         {#if !showAllResults}
-            <label class="max-label">
-                Max results shown:
-                <input type="number" bind:value={maxResults} />
-            </label>
+                <label class="max-label">
+                    <div class="inputDiv">
+                        Max results shown:
+                        <input type="number" bind:value={maxResults} />
+                    </div>
+                </label>
         {/if}
     </div>
 
@@ -49,6 +77,32 @@
                 <input id="cpuSlider" type="range" min="1" max={maxCores} bind:value={cpuCores} />
                 <span>{cpuCores}</span>
             </div>
+        {/if}
+    </div>
+
+    <h2>Indexer</h2>
+    <div class="box column">
+        <label class="max-label">
+            <div class="">
+                Indexer path:
+                <input type="text" bind:value={indexerInput} />
+                <button on:click={() => addIndexer()}>
+                    Add
+                </button>
+            </div>
+        </label>
+
+        {#if indexerList.length > 0}
+            {#each indexerList as indexer}
+                <div>
+                    <h3>
+                        {indexer.Name}, {indexer.Id}, {indexer.Port}
+                    </h3>
+                    <button on:click={() => deleteIndexer(indexer)}>
+                        Delete
+                    </button>
+                </div>
+            {/each}
         {/if}
     </div>
 
@@ -81,13 +135,6 @@
         align-items: center;
         gap: 0.5rem;
         font-size: 1rem;
-    }
-
-    h3 {
-        font-family: "Jost", sans-serif;
-	    font-optical-sizing: auto;
-	    font-weight: 500;
-	    font-style: normal;
     }
 
     .slider {
@@ -130,6 +177,16 @@
 
     .custom-scraper:hover {
         background-color: #7d98b2;
+    }
+
+    .inputDiv {
+        display: flex;
+        align-items: center;
+        gap: 4rem; /* adds some spacing between text and input */
+    }
+
+    .inputDiv input {
+        margin-left: auto; /* optional: pushes input to far right */
     }
   
 </style>
