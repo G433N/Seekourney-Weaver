@@ -32,11 +32,12 @@ func argumentError() {
 	fmt.Println("usage: client <command> [<args>]")
 	fmt.Println()
 	fmt.Println("available commands")
-	fmt.Println("  all                 request all pages in database")
-	fmt.Println("  search [key ...]    request all pages containing keys")
-	fmt.Println("  add    [path ...]   add paths to database")
-	fmt.Println("  index  [path ...]   test indexing of paths")
-	fmt.Println("  quit                request the server to shutdown")
+	fmt.Println("  all                  request all pages in database")
+	fmt.Println("  search    [key ...]  request all pages containing keys")
+	fmt.Println("  pushpaths [path ...] add paths to database")
+	fmt.Println("  pushdocs             add 2 test documents to database")
+	fmt.Println("  index     [path ...] test indexing of paths")
+	fmt.Println("  quit                 request the server to shutdown")
 	os.Exit(1)
 }
 
@@ -65,9 +66,9 @@ func main() {
 	switch args[1] {
 	case "search":
 		searchForTerms(args[2:])
-	case "paths":
+	case "pushpaths":
 		pushPaths(args[2:])
-	case "docs":
+	case "pushdocs":
 		pushDocs()
 	case "all":
 		getAll()
