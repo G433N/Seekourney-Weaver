@@ -18,11 +18,11 @@ import (
 const (
 	_COREENDPOINT_ utils.Endpoint = "http://localhost:8080"
 	_SEARCH_       string         = "/search?"
-	_SEARCHKEY_    string         = "q"
-	_ADD_          string         = "/add?"
-	_ADDKEY_       string         = "p"
+	_PUSHPATHS_    string         = "/push/paths?"
 	_QUIT_         string         = "/quit"
 	_ALL_          string         = "/all"
+	_SEARCHKEY_    string         = "q"
+	_ADDKEY_       string         = "p"
 )
 
 // argumentError prints a usage string and terminates client process.
@@ -63,8 +63,10 @@ func main() {
 	switch args[1] {
 	case "search":
 		searchForTerms(args[2:])
-	case "add":
-		addPath(args[2:])
+	case "paths":
+		pushPaths(args[2:])
+	case "docs":
+		pushDocs()
 	case "all":
 		getAll()
 	case "index":
@@ -118,17 +120,25 @@ func searchForTerms(terms []string) {
 	format.PrintSearchResponse(result)
 }
 
-// addPath adds given paths to the database through Core,
+// pushPaths adds given paths to the database through Core,
 // and prints the response.
 // Handler for command /add.
-func addPath(paths []string) {
+func pushPaths(paths []string) {
 	values := url.Values{}
 	for _, term := range paths {
 		values.Add(_ADDKEY_, term)
 	}
-	response, err := http.Get(string(_COREENDPOINT_) + _ADD_ + values.Encode())
+	response, err := http.Get(
+		string(_COREENDPOINT_) + _PUSHPATHS_ + values.Encode(),
+	)
 	checkHTTPError(err)
 	printResponse(response)
+}
+
+// pushDocs acts as an indexer sending unnormalized documents to core
+// to add to database.
+func pushDocs() {
+	panic("pushDocs is not implemented for TUI client")
 }
 
 // getAll fetches all paths stored in database through Core,
