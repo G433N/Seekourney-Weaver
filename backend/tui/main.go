@@ -81,14 +81,6 @@ func main() {
 	}
 }
 
-// checkHTTPError panics on a given error if an error
-// occured when sending a request.
-func checkHTTPError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 // printResponse prints a HTTP response to stdout.
 func printResponse(response *http.Response) {
 	bytes, _ := io.ReadAll(response.Body)
@@ -109,7 +101,7 @@ func searchForTerms(terms []string) {
 	resp, err := http.Get(
 		string(_COREENDPOINT_) + _SEARCH_ + values.Encode(),
 	)
-	checkHTTPError(err)
+	utils.PanicOnError(err)
 
 	bytes, _ := io.ReadAll(resp.Body)
 	result := utils.SearchResponse{}
@@ -134,7 +126,7 @@ func pushPaths(paths []string) {
 	resp, err := http.Get(
 		string(_COREENDPOINT_) + _PUSHPATHS_ + values.Encode(),
 	)
-	checkHTTPError(err)
+	utils.PanicOnError(err)
 	printResponse(resp)
 }
 
@@ -165,7 +157,7 @@ func pushDocs() {
 	utils.PanicOnError(err)
 
 	resp, err := http.DefaultClient.Do(req)
-	checkHTTPError(err)
+	utils.PanicOnError(err)
 	printResponse(resp)
 }
 
@@ -174,7 +166,7 @@ func pushDocs() {
 // Handler for command /all.
 func getAll() {
 	resp, err := http.Get(string(_COREENDPOINT_) + _ALL_)
-	checkHTTPError(err)
+	utils.PanicOnError(err)
 	printResponse(resp)
 }
 
@@ -182,7 +174,7 @@ func getAll() {
 // Handler for command /quit.
 func shutdownServer() {
 	resp, err := http.Get(string(_COREENDPOINT_) + _QUIT_)
-	checkHTTPError(err)
+	utils.PanicOnError(err)
 	printResponse(resp)
 }
 
