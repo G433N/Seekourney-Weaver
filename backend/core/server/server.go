@@ -344,6 +344,7 @@ func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
 
 	for _, rawDoc := range resp.Data.Documents {
 		normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
+		normalizedDoc.SourceID = 0 // TODO change or set in Normalize
 
 		_, err := database.InsertInto(serverFuncParams.db, normalizedDoc)
 		if err != nil {

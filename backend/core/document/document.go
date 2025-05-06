@@ -41,6 +41,8 @@ func Normalize(
 			Source: doc.Source,
 			Words:  freqMap,
 		},
+		// SourceID:   ??? TODO or in event loop
+		LastIndexed: time.Now(),
 	}
 }
 
