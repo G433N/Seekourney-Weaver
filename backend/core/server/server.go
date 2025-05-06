@@ -191,7 +191,7 @@ func Run(args []string) {
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
 		enableCORS(&writer)
-		serverParams := serverFuncParams{writer: writer, db: db}
+		serverParams := serverFuncParams{writer: writer, db: db, stop: stop}
 
 		switch html.EscapeString(request.URL.Path) {
 		case _ALL_:
