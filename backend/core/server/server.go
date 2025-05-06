@@ -173,16 +173,18 @@ func Run(args []string) {
 		serverParams := serverFuncParams{writer: writer, db: db}
 
 		switch html.EscapeString(request.URL.Path) {
+		// TODO figure out where we can do goroutines
+		// we cant use response writer concurrently
 		case _ALL_:
-			go handleAll(serverParams)
+			handleAll(serverParams)
 		case _SEARCH_:
-			go handleSearchSQL(serverParams, request.URL.Query()["q"])
+			handleSearchSQL(serverParams, request.URL.Query()["q"])
 		case _PUSHPATHS_:
-			go handlePushPaths(serverParams, request.URL.Query()["p"])
+			handlePushPaths(serverParams, request.URL.Query()["p"])
 		case _PUSHDOCS_:
-			go handlePushDocs(serverParams, request)
+			handlePushDocs(serverParams, request)
 		case _QUIT_:
-			go handleQuit(serverParams)
+			handleQuit(serverParams)
 		case "/log":
 			go func() {
 				msg := request.URL.Query().Get("msg")
@@ -260,7 +262,7 @@ func respondWithSuccess(writer io.Writer) {
 	_, err := fmt.Fprintf(
 		writer,
 		"%s",
-		string(indexing.ResponseSuccess("")),
+		string(indexing.ResponseSuccess("handling request to Core")),
 	)
 	utils.PanicOnError(err)
 }
@@ -338,20 +340,28 @@ func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
 	}
 
 	if len(resp.Data.Documents) == 0 {
-		log.Print("indexer indexed path and produced zero documents")
+		log.Print("indexer indexed path and produced zero documents " +
+			"(pushdocs request)")
 		return
 	}
 
-	for _, rawDoc := range resp.Data.Documents {
-		normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
-		normalizedDoc.SourceID = 0 // TODO change or set in Normalize
+	// Create subroutine for normalising and inserting into db,
+	// as it might take significant time.
+	go func() {
+		for _, rawDoc := range resp.Data.Documents {
+			normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
+			normalizedDoc.SourceID = 0 // TODO change or set in Normalize
 
-		_, err := database.InsertInto(serverFuncParams.db, normalizedDoc)
-		if err != nil {
-			log.Printf("Error inserting row: %s\n", err)
+			// TODO fix
+			// Error inserting row: pq: duplicate key value violates
+			// unique constraint "document_pkey"
+			_, err := database.InsertInto(serverFuncParams.db, normalizedDoc)
+			if err != nil {
+				log.Printf("Error inserting row: %s\n", err)
+			}
 		}
-	}
-	// Currently no logs are sent on success.
+		log.Print("Handled pushdocs request successfully")
+	}()
 }
 
 // handleQuit handles a /quit request by initiating the shutdown process
