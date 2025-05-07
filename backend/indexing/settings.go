@@ -1,10 +1,10 @@
 package indexing
 
 import (
-	"fmt"
+	"encoding/json"
+	"io"
 	"net/http"
 	"seekourney/utils"
-	"strconv"
 )
 
 type CollectionID uint
@@ -25,11 +25,11 @@ type CollectionID uint
 //  5. Config: the config file to be used for indexing, if nil, the default
 //     config file will be used
 type Settings struct {
-	Path         utils.Path
-	Type         SourceType
-	CollectionID CollectionID
-	Recursive    bool
-	Parrallel    bool
+	Path         utils.Path   `json:"path"`
+	Type         SourceType   `json:"type"`
+	CollectionID CollectionID `json:"collection_id"`
+	Recursive    bool         `json:"recursive"`
+	Parrallel    bool         `json:"parrallel"`
 }
 
 // TODO: Transfer via http body (json) instead of URL
@@ -38,51 +38,18 @@ type Settings struct {
 func (client *IndexerClient) SettingsFromRequest(
 	request *http.Request) (Settings, error) {
 
-	path := request.URL.Query().Get("path")
-	t := request.URL.Query().Get("type")
-	recursive := request.URL.Query().Get("recursive")
-	parallel := request.URL.Query().Get("parallel")
-
-	sourceType, err := StrToSourceType(t)
-
+	bytes, err := io.ReadAll(request.Body)
 	if err != nil {
-		client.Log("Error converting source type: %s", err)
+		return Settings{}, err
+	}
+	defer request.Body.Close()
+
+	set := Settings{}
+	err = json.Unmarshal(bytes, &set)
+	if err != nil {
 		return Settings{}, err
 	}
 
-	recursiveBool, err := strconv.ParseBool(recursive)
-	if err != nil {
-		client.Log("Error converting recursive: %s", err)
-		recursiveBool = false
-	}
-
-	parallelBool, err := strconv.ParseBool(parallel)
-	if err != nil {
-		client.Log("Error converting parallel: %s", err)
-		parallelBool = false
-	}
-
-	return Settings{
-		Path:      utils.Path(path),
-		Type:      sourceType,
-		Recursive: recursiveBool,
-		Parrallel: parallelBool,
-	}, nil
-
-}
-
-// IntoURL converts the settings into a URL string in the format expected
-// by the server
-func (settings *Settings) IntoURL(port utils.Port) (string, error) {
-
-	path := string(settings.Path)
-	sourceType := SourceTypeToStr(settings.Type)
-	recursive := strconv.FormatBool(settings.Recursive)
-	parallel := strconv.FormatBool(settings.Parrallel)
-
-	query := fmt.Sprintf("?path=%s&type=%s&recursive=%s&parallel=%s",
-		path, sourceType, recursive, parallel)
-
-	return fmt.Sprintf("http://localhost:%d/index%s", port, query), nil
+	return set, nil
 
 }

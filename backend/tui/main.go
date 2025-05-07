@@ -18,6 +18,8 @@ import (
 // Strings for building URLs in HTTP requests
 const (
 	_COREENDPOINT_ utils.Endpoint = "http://localhost:8080"
+	_HOST_         string         = "http://localhost"
+	_PORT_         utils.Port     = 8080
 	_SEARCH_       string         = "/search?"
 	_PUSHPATHS_    string         = "/push/paths?"
 	_PUSHDOCS_     string         = "/push/docs"
@@ -197,19 +199,13 @@ func index(paths []string) {
 			Recursive: false,
 			Parrallel: false,
 		}
-		url, err := settings.IntoURL(utils.MININDEXERPORT)
-		if err != nil {
-			log.Println("Error converting settings to URL:", err)
-			return
-		}
-		resp, err := http.Get(url)
+
+		body := utils.JsonBody(*settings)
+		port := utils.MININDEXERPORT
+		_, err = utils.PostRequest(body, _HOST_, port, "index")
+
 		if err != nil {
 			log.Println("Error sending request:", err)
-			return
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			log.Println("Error response from server:", resp.Status)
 			return
 		}
 
