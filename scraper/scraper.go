@@ -91,11 +91,40 @@ ReadAndPrint
 reads the first avaliable fully scraped site and prints the content.
 */
 func (collector *CollectorStruct) ReadAndPrint() {
-	stringSlice := collector.ReadFinished()
-	fmt.Print("\n\n\n")
-	for _, text := range stringSlice {
-		fmt.Println(text)
+	readStrings := collector.ReadFinished()
+
+	var fullString string
+
+	fullString = strings.Join(readStrings, " ")
+
+	iterator := strings.SplitSeq(fullString, "	")
+
+	fullString = ""
+	for x := range iterator {
+		if x != "" {
+			fullString += x + " "
+		}
 	}
+	iterator = strings.SplitSeq(fullString, "\n")
+	fullString = ""
+	for x := range iterator {
+		if x != "" {
+			fullString += x + " "
+
+		}
+	}
+	iterator = strings.SplitSeq(fullString, " ")
+	fullString = ""
+	for x := range iterator {
+		if x != "" {
+			fullString += x + " "
+		}
+	}
+	fmt.Println("--------------------------------------------------")
+	fmt.Print("\n\n\n")
+	fmt.Println(fullString)
+	fmt.Print("\n\n\n")
+	fmt.Println("--------------------------------------------------")
 }
 
 /*
@@ -224,7 +253,7 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 		debugPrint("Page visited: ", r.Request.URL)
 		host := r.Request.URL.Host
 		if shortendLinkRegex.MatchString(url) {
-			url = r.Request.URL.Scheme + host + url
+			url = r.Request.URL.Scheme + "://" + host + url
 		}
 		ID := context.claimNewIndex(URLString(url))
 		r.Ctx.Put(_IDKEY_, ID)
