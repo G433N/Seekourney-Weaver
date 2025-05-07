@@ -121,6 +121,8 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 			_, err := fmt.Fprintf(writer, "%s", string(ResponseExiting()))
 			client.Log("Shutdown triggered by Core, shutting down indexer")
 			utils.PanicOnError(err)
+			// TODO: Shutdown gracefully, like in #85
+			// Currently this never sends a response
 			os.Exit(0)
 		default:
 			log.Println("Unknown path:", request.URL)
