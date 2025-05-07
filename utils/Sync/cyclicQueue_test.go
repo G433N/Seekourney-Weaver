@@ -134,10 +134,38 @@ func TestCyclicQueueConcurrent(t *testing.T) {
 	wg.Wait()
 }
 
-func TestCyclicQueueAdvancedConcurrency(t *testing.T) {
-	queueA := Sync.NewCyclicQueue[int](10)
-	queueB := Sync.NewCyclicQueue[int](10)
+func TestCyclicQueueConcurrency2(t *testing.T) {
 	queueC := Sync.NewCyclicQueue[int](10)
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		for i := range 10 {
+			queueC.Push(i)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := range 10 {
+			queueC.Push(i)
+
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for range 20 {
+			queueC.Pop()
+		}
+	}()
+	wg.Wait()
+
+}
+
+func TestCyclicQueueAdvancedConcurrency(t *testing.T) {
+	queueA := Sync.NewCyclicQueue[int](7)
+	queueB := Sync.NewCyclicQueue[int](4)
+	queueC := Sync.NewCyclicQueue[int](11)
 
 	errSem := Sync.NewSemaphore(0)
 	var wg sync.WaitGroup
@@ -148,6 +176,8 @@ func TestCyclicQueueAdvancedConcurrency(t *testing.T) {
 			queueA.Push(i)
 			queueC.Push(i)
 		}
+		queueA.Push(-1)
+
 	}()
 	go func() {
 		defer wg.Done()
@@ -156,13 +186,15 @@ func TestCyclicQueueAdvancedConcurrency(t *testing.T) {
 			queueC.Push(i)
 
 		}
+		queueB.Push(-1)
+
 	}()
 	go func() {
 		defer wg.Done()
 		a := queueA.Pop()
 		b := queueB.Pop()
-		c := queueC.Pop()
-		for range 18 {
+		for range 20 {
+			c := queueC.Pop()
 			switch c {
 			case a:
 				a = queueA.Pop()
@@ -172,19 +204,16 @@ func TestCyclicQueueAdvancedConcurrency(t *testing.T) {
 				errSem.Signal()
 				return
 			}
-			c = queueC.Pop()
 		}
-		switch c {
-		case a:
-		case b:
-		default:
+		if _, ok := queueA.TryPop(); ok || a != -1 {
 			errSem.Signal()
-			return
 		}
-
+		if _, ok := queueB.TryPop(); ok || b != -1 {
+			errSem.Signal()
+		}
 	}()
 	wg.Wait()
 	if errSem.TryWait() {
-		t.Error("queueC didn't match either queueA or queueB")
+		t.Error("queueC didn't match queueA and queueB")
 	}
 }

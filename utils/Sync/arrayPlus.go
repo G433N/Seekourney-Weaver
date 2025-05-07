@@ -2,30 +2,49 @@ package Sync
 
 import "sync"
 
-const _ARRAYPLUSMAXLEN_ = 1_000_000
-
 type ArrayPlus[T any] struct {
 	lock sync.Mutex
 	gaps Stack[int]
 	arr  []T
 }
 
-func NewArrayPlus[T any]() ArrayPlus[T] {
-	return ArrayPlus[T]{
+func NewArrayPlus[T any](size int) *ArrayPlus[T] {
+	newArr := ArrayPlus[T]{
 		gaps: NewStack[int](),
-		arr:  []T{},
+		arr:  make([]T, size),
 	}
+	for i := range size {
+		newArr.gaps.Push(i)
+	}
+	return &newArr
 }
 
-func (stack *ArrayPlus[T]) Pop(index int) (T, bool) {
+func (stack *ArrayPlus[T]) Pop(index int) T {
 	stack.lock.Lock()
-	defer stack.lock.Unlock()
+
 	if index < 0 || index >= len(stack.arr) {
 		var zeroValue T
 
 		return zeroValue, false
 	}
 	elem := stack.arr[index]
+
+	stack.lock.Unlock()
+	stack.gaps.Push(index)
+
+	return elem, true
+}
+func (stack *ArrayPlus[T]) TryPop(index int) (T, bool) {
+	stack.lock.Lock()
+
+	if index < 0 || index >= len(stack.arr) {
+		var zeroValue T
+
+		return zeroValue, false
+	}
+	elem := stack.arr[index]
+
+	stack.lock.Unlock()
 	stack.gaps.Push(index)
 
 	return elem, true

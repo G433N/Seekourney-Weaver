@@ -1,17 +1,22 @@
 package Sync
 
-import "sync"
+import (
+	"sync"
+)
 
-const _STACKMAXLEN_ = 1_000_000
+// currently unused
+//const _STACKMAXLEN_ = 1_000_000
 
 type Stack[T any] struct {
-	lock  sync.Mutex
-	stack []T
+	lock   sync.Mutex
+	stack  []T
+	lenSem Semaphore
 }
 
 func NewStack[T any]() Stack[T] {
 	return Stack[T]{
-		stack: []T{},
+		stack:  []T{},
+		lenSem: *NewSemaphore(0),
 	}
 }
 
@@ -21,25 +26,41 @@ func (stack *Stack[T]) IsEmpty() bool {
 	return len(stack.stack) == 0
 }
 
-func (stack *Stack[T]) Pop() (T, bool) {
+func (stack *Stack[T]) Pop() T {
+	stack.lenSem.Wait()
 	stack.lock.Lock()
-	defer stack.lock.Unlock()
-	if len(stack.stack) == 0 {
+	URL := stack.stack[len(stack.stack)-1]
+	stack.stack = stack.stack[:len(stack.stack)-1]
+	stack.lock.Unlock()
+	return URL
+}
+
+func (stack *Stack[T]) TryPop() (T, bool) {
+	if !stack.lenSem.TryWait() {
 		var zeroValue T
 		return zeroValue, false
 	}
+	stack.lock.Lock()
 	URL := stack.stack[len(stack.stack)-1]
 	stack.stack = stack.stack[:len(stack.stack)-1]
-
+	stack.lock.Unlock()
 	return URL, true
 }
 
-func (stack *Stack[T]) Push(elem T) bool {
+func (stack *Stack[T]) Push(elem T) {
+	stack.lenSem.Signal()
 	stack.lock.Lock()
-	defer stack.lock.Unlock()
-	if len(stack.stack) >= _STACKMAXLEN_ {
+	stack.stack = append(stack.stack, elem)
+	stack.lock.Unlock()
+}
+
+func (stack *Stack[T]) TryPush(elem T) bool {
+	stack.lock.Lock()
+	if !stack.lenSem.TrySignal() {
 		return false
 	}
+
 	stack.stack = append(stack.stack, elem)
+	stack.lock.Unlock()
 	return true
 }
