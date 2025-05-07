@@ -39,3 +39,17 @@ func TestStack(t *testing.T) {
 		}
 	}
 }
+func TestStackBlocking(t *testing.T) {
+	stack := Sync.NewStack[int]()
+	errSem := Sync.NewSemaphore()
+
+	for range 20 {
+		go func() {
+			stack.Pop()
+			errSem.Signal()
+		}()
+	}
+	if errSem.TryWait() {
+		t.Error("Empty Pop blocking failed")
+	}
+}
