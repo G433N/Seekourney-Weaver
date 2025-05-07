@@ -40,16 +40,29 @@ func TestStack(t *testing.T) {
 	}
 }
 func TestStackBlocking(t *testing.T) {
-	stack := Sync.NewStack[int]()
-	errSem := Sync.NewSemaphore()
+	stack1 := Sync.NewStack[int]()
+	errSem1 := Sync.NewSemaphore()
 
 	for range 20 {
 		go func() {
-			stack.Pop()
-			errSem.Signal()
+			stack1.Pop()
+			errSem1.Signal()
 		}()
 	}
-	if errSem.TryWait() {
+
+	stack2 := Sync.NewStack[int](1)
+	stack2.Push(1)
+	errSem2 := Sync.NewSemaphore()
+	for range 20 {
+		go func() {
+			stack2.Push(1)
+			errSem2.Signal()
+		}()
+	}
+	if errSem1.TryWait() {
 		t.Error("Empty Pop blocking failed")
+	}
+	if errSem2.TryWait() {
+		t.Error("Full Push blocking failed")
 	}
 }
