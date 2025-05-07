@@ -60,6 +60,16 @@ type serverFuncParams struct {
 // the command defined in _CONTAINERSTART_.
 // Blocks until the container is closed.
 func startContainer() {
+
+	defer func() {
+		// TODO: Do something similar in IndexHandler for every indexer
+
+		if recover := recover(); recover != nil {
+			exec.Command("docker", "kill", "go-postgres").Run()
+			os.Exit(1)
+		}
+	}()
+
 	container := exec.Command("/bin/sh", _CONTAINERSTART_)
 
 	outfile, err := os.Create(_CONTAINEROUTPUTFILE_)

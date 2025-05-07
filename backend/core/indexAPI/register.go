@@ -24,7 +24,7 @@ type IndexerData struct {
 }
 
 const (
-	_ENDPOINTPREFIX_ string = "http://localhost:"
+	_ENDPOINTPREFIX_ string = "http://localhost"
 )
 
 // isUnoccupiedPort checks if another indexer already has been registered

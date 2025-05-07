@@ -23,7 +23,6 @@ const (
 )
 
 // See indexing_API.md for corresponding JSON formatting.
-
 type IndexerResponse = indexing.IndexerResponse
 type ResponseData = indexing.ResponseData
 type UnnormalizedDocument = indexing.UnnormalizedDocument
