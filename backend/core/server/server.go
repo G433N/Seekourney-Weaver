@@ -22,19 +22,22 @@ import (
 	"seekourney/indexer/localtext"
 	"seekourney/utils"
 	"strings"
+	"testing"
 )
 
 const (
-	_SERVERADDRESS_       string     = ":8080"
-	_CONTAINERSTART_      string     = "./docker-start"
-	_CONTAINEROUTPUTFILE_ string     = "./docker.log"
-	_HOST_                string     = "localhost"
-	_DBPORT_              utils.Port = 5433
-	_CONTAINERNAME_       string     = "go-postgres"
-	_USER_                string     = "go-postgres"
-	_PASSWORD_            string     = "go-postgres"
-	_DBNAME_              string     = "go-postgres"
-	_EMPTYJSON_           JSONString = "{}"
+	_SERVERADDRESS_           string     = ":8080"
+	_CONTAINERSTART_          string     = "./docker-start"
+	_CONTAINEROUTPUTFILE_     string     = "./docker.log"
+	_TESTCONTAINEROUTPUTFILE_ string     = "./test-docker.log"
+	_HOST_                    string     = "localhost"
+	_DBPORT_                  utils.Port = 5433
+	_CONTAINERNAME_           string     = "go-postgres"
+	_TESTCONTAINERNAME_       string     = "go-postgres-test"
+	_USER_                    string     = "go-postgres"
+	_PASSWORD_                string     = "go-postgres"
+	_DBNAME_                  string     = "go-postgres"
+	_EMPTYJSON_               JSONString = "{}"
 )
 
 // HTTP requests.
@@ -56,9 +59,17 @@ type serverFuncParams struct {
 // the command defined in _CONTAINERSTART_.
 // Blocks until the container is closed.
 func startContainer() {
-	container := exec.Command("/bin/sh", _CONTAINERSTART_)
+	testArg := ""
+	containerOutputFile := _CONTAINEROUTPUTFILE_
 
-	outfile, err := os.Create(_CONTAINEROUTPUTFILE_)
+	if testing.Testing() {
+		testArg = "test"
+		containerOutputFile = _TESTCONTAINEROUTPUTFILE_
+	}
+
+	container := exec.Command(_CONTAINERSTART_, testArg)
+
+	outfile, err := os.Create(containerOutputFile)
 	checkIOError(err)
 	container.Stdout = outfile
 	container.Stderr = outfile
@@ -72,8 +83,19 @@ func startContainer() {
 // stopContainer signals the database container to stop,
 // and will finish the command started by startContainer().
 func stopContainer() {
-	err := exec.Command("docker", "stop", "--signal", "SIGTERM",
-		_CONTAINERNAME_).Run()
+	containerName := _CONTAINERNAME_
+
+	if testing.Testing() {
+		containerName = _TESTCONTAINERNAME_
+	}
+
+	err := exec.Command(
+		"docker",
+		"stop",
+		"--signal",
+		"SIGTERM",
+		containerName,
+	).Run()
 
 	if err != nil {
 		panic(fmt.Sprintf("Error stopping container: %s\n", err))
