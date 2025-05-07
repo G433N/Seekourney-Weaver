@@ -3,13 +3,11 @@ package indexAPI
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"os/exec"
 	"seekourney/indexing"
 	"seekourney/utils"
-	"strings"
 	"sync"
 	"time"
 )
@@ -68,70 +66,38 @@ type RunningIndexer struct {
 func GetRequestBytes(indexer *RunningIndexer, urlPath ...string) ([]byte, error) {
 
 	port := indexer.ID.GetPort()
-
-	url := _ENDPOINTPREFIX_ + port.String() + "/" + strings.Join(urlPath, "/")
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, errors.New(
-			"indexer did not respond to request: " + err.Error(),
-		)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, errors.New("indexer did not respond to request, " +
-			"alternatively did not respond with ok statuscode")
-	}
-	defer resp.Body.Close()
-
-	respByte, err := io.ReadAll(resp.Body)
-	return respByte, err
+	return utils.GetRequestBytes(_ENDPOINTPREFIX_, port, urlPath...)
 }
 
 func GetRequestJSON[T any](indexer *RunningIndexer, urlPath ...string) (T, error) {
 
-	var respData T
-	respByte, err := GetRequestBytes(indexer, urlPath...)
-	if err != nil {
-		return respData, err
-	}
-
-	err = json.Unmarshal(respByte, &respData)
-	return respData, err
+	port := indexer.ID.GetPort()
+	return utils.GetRequestJSON[T](_ENDPOINTPREFIX_, port, urlPath...)
 }
 
 func GetRequest(indexer *RunningIndexer, urlPath ...string) (string, error) {
-	respByte, err := GetRequestBytes(indexer, urlPath...)
-	if err != nil {
-		return "", err
-	}
 
-	respString := string(respByte)
-	return respString, nil
+	port := indexer.ID.GetPort()
+	return utils.GetRequest(_ENDPOINTPREFIX_, port, urlPath...)
 }
 
 // PostRequestBytes sends a POST request to the indexer and returns the response as bytes.
 func PostRequestBytes(indexer *RunningIndexer, urlPath ...string) ([]byte, error) {
-	// TODO: Implement PostRequestBytes
-	return nil, nil
+	port := indexer.ID.GetPort()
+
+	return utils.PostRequestBytes(_ENDPOINTPREFIX_, port, urlPath...)
 }
 
 // PostRequestJSON sends a POST request to the indexer and returns the response as a JSON object.
 func PostRequestJSON[T any](indexer *RunningIndexer, urlPath ...string) (T, error) {
-	// TODO: Implement PostRequestJSON
-	var respData T
-	return respData, nil
+	port := indexer.ID.GetPort()
+	return utils.PostRequestJSON[T](_ENDPOINTPREFIX_, port, urlPath...)
 }
 
 // PostRequest sends a POST request to the indexer and returns the response as a string.
 func PostRequest(indexer *RunningIndexer, urlPath ...string) (string, error) {
-	respByte, err := PostRequestBytes(indexer, urlPath...)
-	if err != nil {
-		return "", err
-	}
-
-	respString := string(respByte)
-	return respString, nil
+	port := indexer.ID.GetPort()
+	return utils.PostRequest(_ENDPOINTPREFIX_, port, urlPath...)
 }
 
 func (indexer *RunningIndexer) Wait() error {
