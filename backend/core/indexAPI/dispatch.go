@@ -62,12 +62,6 @@ type RunningIndexer struct {
 	Exec *exec.Cmd
 }
 
-func GetRequestBytes(indexer *RunningIndexer, urlPath ...string) ([]byte, error) {
-
-	port := indexer.ID.GetPort()
-	return utils.GetRequestBytes(_ENDPOINTPREFIX_, port, urlPath...)
-}
-
 func GetRequestJSON[T any](indexer *RunningIndexer, urlPath ...string) (T, error) {
 
 	port := indexer.ID.GetPort()
@@ -80,23 +74,16 @@ func GetRequest(indexer *RunningIndexer, urlPath ...string) (string, error) {
 	return utils.GetRequest(_ENDPOINTPREFIX_, port, urlPath...)
 }
 
-// PostRequestBytes sends a POST request to the indexer and returns the response as bytes.
-func PostRequestBytes(indexer *RunningIndexer, urlPath ...string) ([]byte, error) {
-	port := indexer.ID.GetPort()
-
-	return utils.PostRequestBytes(_ENDPOINTPREFIX_, port, urlPath...)
-}
-
 // PostRequestJSON sends a POST request to the indexer and returns the response as a JSON object.
-func PostRequestJSON[T any](indexer *RunningIndexer, urlPath ...string) (T, error) {
+func PostRequestJSON[T any](body *utils.HttpBody, indexer *RunningIndexer, urlPath ...string) (T, error) {
 	port := indexer.ID.GetPort()
-	return utils.PostRequestJSON[T](_ENDPOINTPREFIX_, port, urlPath...)
+	return utils.PostRequestJSON[T](body, _ENDPOINTPREFIX_, port, urlPath...)
 }
 
 // PostRequest sends a POST request to the indexer and returns the response as a string.
-func PostRequest(indexer *RunningIndexer, urlPath ...string) (string, error) {
+func PostRequest(body *utils.HttpBody, indexer *RunningIndexer, urlPath ...string) (string, error) {
 	port := indexer.ID.GetPort()
-	return utils.PostRequest(_ENDPOINTPREFIX_, port, urlPath...)
+	return utils.PostRequest(body, _ENDPOINTPREFIX_, port, urlPath...)
 }
 
 func (indexer *RunningIndexer) Wait() error {

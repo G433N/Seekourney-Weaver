@@ -65,6 +65,7 @@ func startContainer() {
 		// TODO: Do something similar in IndexHandler for every indexer
 
 		if recover := recover(); recover != nil {
+			// TODO: Do we want to dot this, before starting the container?
 			exec.Command("docker", "kill", "go-postgres").Run()
 			os.Exit(1)
 		}
