@@ -59,6 +59,9 @@ func init() {
 // args are formatted like commandline arguments ("client", command, args)
 func main() {
 
+	var num float32 = 0.0
+	log.Println("Num:", num)
+
 	args := os.Args
 
 	if len(args) < 2 {

@@ -346,7 +346,27 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 			// TODO fix
 			// Error inserting row: pq: duplicate key value violates
 			// unique constraint "document_pkey"
-			_, err := database.InsertInto(serverParams.db, normalizedDoc)
+
+			exists, err := document.DocumentExsitsDB(
+				serverFuncParams.db,
+				normalizedDoc.Path,
+			)
+
+			if err != nil {
+				log.Printf("Error checking if document exists: %s\n", err)
+				continue
+			}
+
+			if exists {
+				err := normalizedDoc.UpdateDB(serverFuncParams.db)
+				if err != nil {
+					log.Printf("Error updating document: %s\n", err)
+				}
+				continue
+			}
+
+			_, err = database.InsertInto(serverFuncParams.db, normalizedDoc)
+
 			if err != nil {
 				log.Printf("Error inserting row: %s\n", err)
 			}

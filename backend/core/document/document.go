@@ -159,6 +159,23 @@ func (doc *Document) CalculateTf(word utils.Word) float64 {
 
 }
 
+func (doc *Document) UpdateDB(db *sql.DB) error {
+
+	pairs := database.KeyValuePairs(doc)
+	// Skip the first one, it's the path/primary key
+	q1 := database.Update("document").Set(pairs[1:]...)
+	query := q1.Where("path=$1")
+
+	log.Printf("Update query: %s", string(query))
+
+	_, err := db.Exec(
+		string(query),
+		doc.Path,
+	)
+
+	return err
+}
+
 // DocumentFromDB retrieves a document from the database
 func DocumentFromDB(db *sql.DB, path utils.Path) (Document, error) {
 
@@ -180,5 +197,28 @@ func DocumentFromDB(db *sql.DB, path utils.Path) (Document, error) {
 	)
 
 	return doc, err
+
+}
+
+// DocumentExsitsDB checks if a document exists in the database
+func DocumentExsitsDB(db *sql.DB, path utils.Path) (bool, error) {
+
+	// TODO: A better way to do this
+
+	doc, err := DocumentFromDB(db, path)
+	if err != nil {
+		return false, err
+	}
+
+	if doc.Path == "" {
+		return false, nil
+	}
+
+	if doc.Path != path {
+		// This should never happen
+		log.Panicf("Document path mismatch: %s != %s", doc.Path, path)
+	}
+
+	return true, nil
 
 }
