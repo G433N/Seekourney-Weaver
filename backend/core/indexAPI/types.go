@@ -7,6 +7,7 @@ import (
 	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
+	"testing"
 	"time"
 )
 
@@ -27,14 +28,19 @@ func (id IndexerID) GetPort() utils.Port {
 	return port
 }
 
-func (indexer *IndexerData) start() *RunningIndexer {
+func (indexer *IndexerData) start() (*RunningIndexer, error) {
 	// TODO: Ping to make sure it actually started
 	// TODO: Ping to make sure it is not already running
 	// TODO: Use timeout instead of sleep
 	// Basically what startIndexerAlready did
-	args := append(indexer.Args, "--port="+indexer.ID.GetPort().String())
+	args := indexer.Args
+	// Hack to let us run ls command when testing to mock starting up indexer.
+	if !testing.Testing() {
+		args = append(indexer.Args, "--port="+indexer.ID.GetPort().String())
+	}
 
-	execCmd := exec.Command(indexer.ExecPath, args...)
+	execCmd := exec.Command(args[0], args[1:]...)
+	execCmd.Dir = indexer.ExecPath
 
 	// TODO: Handle output
 	execCmd.Stdout = nil
@@ -52,15 +58,15 @@ func (indexer *IndexerData) start() *RunningIndexer {
 	return &RunningIndexer{
 		ID:   indexer.ID,
 		Exec: execCmd,
-	}
+	}, nil
 }
 
-type Collecton struct {
-	UnrequestedCollection
+type Collection struct {
+	UnregisteredCollection
 	ID indexing.CollectionID
 }
 
-type UnrequestedCollection struct {
+type UnregisteredCollection struct {
 	// Root path / start of reqursive indexing
 	Path utils.Path
 
@@ -80,10 +86,19 @@ type UnrequestedCollection struct {
 	Normalfunc normalize.Normalizer
 }
 
-func RegisterCollection(db *sql.DB, ureqCol UnrequestedCollection) (indexing.CollectionID, error) {
-	return 0, nil
-}
+// TODO move to better place
+// RegisterCollection creates a Collection from an UnregisteredCollection
+// and adds it to the database, making it available to index.
+func RegisterCollection(
+	db *sql.DB,
+	ureqCol UnregisteredCollection,
+) (Collection, error) {
+	collection := Collection{
+		UnregisteredCollection: UnregisteredCollection{},
+		ID:                     0, // TODO ID with DB and add to db
+	}
 
-func IndexCollection(db *sql.DB, collectionID indexing.CollectionID) (*RunningIndexer, error) {
-	return nil, nil
+	// TODO fix path formatting with slash ?
+
+	return collection, nil
 }

@@ -182,6 +182,9 @@ func Run(args []string) {
 
 	log.Println("Server started at", _SERVERADDRESS_)
 
+	// Indexhandler is used to manage running indexers.
+	indexHandler := indexAPI.NewIndexHandler()
+
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
 		enableCORS(&writer)
 		serverParams := serverFuncParams{writer: writer, db: db}
@@ -200,7 +203,7 @@ func Run(args []string) {
 		case _INDEX_:
 			handleIndex(serverParams)
 		case _PUSHCOLLECTION_:
-			handlePushCollection(serverParams, request)
+			handlePushCollection(serverParams, request, &indexHandler)
 		case _QUIT_:
 			handleQuit(serverParams)
 		case _LOG_:
@@ -335,8 +338,8 @@ func handlePushPaths(serverParams serverFuncParams, paths []string) {
 
 // handlePushDocs handles a /push/docs request,
 // by normalizing documents send in request and adding them to db.
-func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
-	respondWithSuccess(serverFuncParams.writer)
+func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
+	respondWithSuccess(serverParams.writer)
 
 	body, err := io.ReadAll(request.Body)
 	utils.PanicOnError(err)
@@ -371,7 +374,7 @@ func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
 			// TODO fix
 			// Error inserting row: pq: duplicate key value violates
 			// unique constraint "document_pkey"
-			_, err := database.InsertInto(serverFuncParams.db, normalizedDoc)
+			_, err := database.InsertInto(serverParams.db, normalizedDoc)
 			if err != nil {
 				log.Printf("Error inserting row: %s\n", err)
 			}
@@ -388,10 +391,60 @@ func handleIndex(serverParams serverFuncParams) {
 	panic("Not implemented")
 }
 
-func handlePushCollection(serverParams serverFuncParams, request *http.Request) {
-	// indexAPI.RegisterCollection()
-	// indexAPI.IndexCollection()
-	panic("Not implemented")
+// handlePushCollection handles a /push/collection request from frontend client
+// by generating a new Collection, storing it, and indexing its associated path.
+func handlePushCollection(
+	serverParams serverFuncParams,
+	request *http.Request,
+	indexers *indexAPI.IndexHandler,
+) {
+	body, err := io.ReadAll(request.Body)
+	utils.PanicOnError(err)
+
+	// TODO change to correct reponse json format
+	unreg := indexAPI.UnregisteredCollection{}
+	err = json.Unmarshal(body, &unreg)
+	if err != nil {
+		log.Print("Main server failed to parse PushDocs request" +
+			" from indexer with error: " + err.Error())
+		// fail response to frontend
+		return
+	} else {
+		// success response to frontend
+	}
+
+	go func() {
+		collection, err := indexAPI.RegisterCollection(serverParams.db, unreg)
+		if err != nil {
+			panic("TODO")
+		}
+
+		// Dispatch may startup indexer and add to handler
+		// if it is not already running.
+		indexers.Mutex.Lock()
+		errs := indexers.DispatchFromCollection(serverParams.db, collection)
+		indexers.Mutex.Unlock()
+
+		if errs.IndexerWasRunning {
+			log.Print("Indexer was running when Core made dispatch attempt")
+		} else {
+			log.Print(
+				"Indexer needed to be started when Core made dispatch attempt")
+		}
+		if errs.StartupAttempt != nil {
+			log.Print("Dispatch attempt failed to start up indexer " +
+				"dispatch attempt aborted, failed with error: " +
+				errs.StartupAttempt.Error())
+		}
+		if errs.DispatchAttempt != nil {
+			log.Print(
+				"Indexer was not able to handle indexing dispatch request" +
+					", failed with error: " + errs.DispatchAttempt.Error())
+		} else {
+			log.Print("Pushed new collection to system and " +
+				"successfully dispatched it to indexer it")
+		}
+	}()
 }
 
 // handleQuit handles a /quit request by initiating the shutdown process
