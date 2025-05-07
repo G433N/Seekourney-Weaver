@@ -50,7 +50,8 @@ func RegisterIndexer(
 		Args:     args,
 	}
 
-	active := indexer.start()
+	active, err := indexer.start()
+	utils.PanicOnError(err) // TODO actual error handling if test start fails
 
 	name, err := GetRequest(active, "name")
 	utils.PanicOnError(err)
@@ -58,6 +59,7 @@ func RegisterIndexer(
 	log.Printf("Indexer name: %s", name)
 
 	_, err = GetRequest(active, "shutdown")
+	utils.PanicOnError(err) // TODO actual error handling if shutdown fails
 
 	err = active.Exec.Wait()
 	utils.PanicOnError(err)

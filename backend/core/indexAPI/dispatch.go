@@ -148,6 +148,8 @@ func (handler *IndexHandler) Dispatch(
 			_INDEX_,
 			string(collection.Path),
 		)
+		// Should never fail since startup successful.
+		utils.PanicOnError(err)
 	}
 
 	if resp.Status != indexing.STATUSSUCCESSFUL {
@@ -182,88 +184,90 @@ func (handler *IndexHandler) DispatchFromID(
 	return handler.DispatchFromCollection(db, collection)
 }
 
-// // startupIndexer attempts to start the indexer using the given info state.
-// // On fail, error containing stdout text is returned.
-// func startupIndexer(info IndexerInfo) error {
-// 	stderr, err := info.cmd.StderrPipe()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// 	// Start indexer
-// 	if err := info.cmd.Start(); err != nil {
-// 		readBytes, ioErr := io.ReadAll(stderr)
-// 		if ioErr != nil {
-// 			panic(ioErr)
-// 		}
-// 		return errors.New(string(readBytes))
-// 	}
-//
-// 	// If ping to indexer fails, consider startup failed.
-// 	client := http.Client{
-// 		Timeout: _SHORTTIMEOUT_,
-// 	}
-// 	resp, err := client.Get(string(info.endpoint) + _PING_)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer closeResponse(resp)
-//
-// 	parsedResp, err := parseResponse(resp)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if parsedResp.Status == indexing.STATUSSUCCESSFUL &&
-// 		parsedResp.Data.Message == indexing.MESSAGEPONG {
-// 		return nil
-// 	} else {
-// 		return errors.New("Ping response from indexer " + info.name +
-// 			" did not match expected data")
-// 	}
-// }
+/*
+// startupIndexer attempts to start the indexer using the given info state.
+// On fail, error containing stdout text is returned.
+func startupIndexer(info IndexerInfo) error {
+	stderr, err := info.cmd.StderrPipe()
+	if err != nil {
+		panic(err)
+	}
 
-// // shutdownIndexerForceful kills the process
-// // associated with the indexer info.
-// // Only the original indexer process gets killed.
-// // This means any child processes that the indexer creates will be orphaned.
-// func shutdownIndexerForceful(info IndexerInfo) error {
-// 	return info.cmd.Process.Kill()
-// }
+	// Start indexer
+	if err := info.cmd.Start(); err != nil {
+		readBytes, ioErr := io.ReadAll(stderr)
+		if ioErr != nil {
+			panic(ioErr)
+		}
+		return errors.New(string(readBytes))
+	}
 
-// // Helper for shutdownIndexerGraceful.
-// func carelessShutdown(info IndexerInfo) {
-// 	err := shutdownIndexerForceful(info)
-// 	if err != nil {
-// 		println(err)
-// 	}
-// }
+	// If ping to indexer fails, consider startup failed.
+	client := http.Client{
+		Timeout: _SHORTTIMEOUT_,
+	}
+	resp, err := client.Get(string(info.endpoint) + _PING_)
+	if err != nil {
+		return err
+	}
+	defer closeResponse(resp)
 
-// // shutdownIndexerGraceful requests shutdown of the process
-// // associated with the indexer info, through the indexing API.
-// // If graceful shutdown fails, the original (single) indexer
-// // process will be killed, and non-nil error returned.
-// func shutdownIndexerGraceful(info IndexerInfo) error {
-// 	client := http.Client{
-// 		Timeout: _SHORTTIMEOUT_,
-// 	}
-// 	resp, err := client.Get(string(info.endpoint) + _SHUTDOWN_)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer closeResponse(resp)
-//
-// 	parsedResp, err := parseResponse(resp)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if parsedResp.Status != indexing.STATUSSUCCESSFUL ||
-// 		parsedResp.Data.Message != indexing.MESSAGEEXITING {
-// 		defer carelessShutdown(info)
-// 		return errors.New("JSON response to indexer shutdown request failed" +
-// 			" to match expected format")
-// 	}
-//
-// 	info.cmd.WaitDelay = _MEDIUMTIMEOUT_
-// 	// Kills process if wait timed out and returns error.
-// 	return info.cmd.Wait()
-// }
+	parsedResp, err := parseResponse(resp)
+	if err != nil {
+		return err
+	}
+	if parsedResp.Status == indexing.STATUSSUCCESSFUL &&
+		parsedResp.Data.Message == indexing.MESSAGEPONG {
+		return nil
+	} else {
+		return errors.New("Ping response from indexer " + info.name +
+			" did not match expected data")
+	}
+}
+
+// shutdownIndexerForceful kills the process
+// associated with the indexer info.
+// Only the original indexer process gets killed.
+// This means any child processes that the indexer creates will be orphaned.
+func shutdownIndexerForceful(info IndexerInfo) error {
+	return info.cmd.Process.Kill()
+}
+
+// Helper for shutdownIndexerGraceful.
+func carelessShutdown(info IndexerInfo) {
+	err := shutdownIndexerForceful(info)
+	if err != nil {
+		println(err)
+	}
+}
+
+// shutdownIndexerGraceful requests shutdown of the process
+// associated with the indexer info, through the indexing API.
+// If graceful shutdown fails, the original (single) indexer
+// process will be killed, and non-nil error returned.
+func shutdownIndexerGraceful(info IndexerInfo) error {
+	client := http.Client{
+		Timeout: _SHORTTIMEOUT_,
+	}
+	resp, err := client.Get(string(info.endpoint) + _SHUTDOWN_)
+	if err != nil {
+		return err
+	}
+	defer closeResponse(resp)
+
+	parsedResp, err := parseResponse(resp)
+	if err != nil {
+		return err
+	}
+	if parsedResp.Status != indexing.STATUSSUCCESSFUL ||
+		parsedResp.Data.Message != indexing.MESSAGEEXITING {
+		defer carelessShutdown(info)
+		return errors.New("JSON response to indexer shutdown request failed" +
+			" to match expected format")
+	}
+
+	info.cmd.WaitDelay = _MEDIUMTIMEOUT_
+	// Kills process if wait timed out and returns error.
+	return info.cmd.Wait()
+}
+*/

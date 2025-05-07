@@ -66,7 +66,8 @@ func startContainer() {
 
 		if recover := recover(); recover != nil {
 			// TODO: Do we want to dot this, before starting the container?
-			exec.Command("docker", "kill", "go-postgres").Run()
+			err := exec.Command("docker", "kill", "go-postgres").Run()
+			utils.PanicOnError(err)
 			os.Exit(1)
 		}
 	}()
@@ -98,35 +99,6 @@ func stopContainer() {
 // conf holds the config object for the server.
 // Gets initialized in the Run function.
 var conf *config.Config
-
-// index loads the local file config and creates a folder object.
-// TODO: This function is temporay
-// func index() folder.Folder {
-// 	// Load local file config
-// 	localConfig := localtext.Load(conf)
-//
-// 	// TODO: Later when documents comes over the network, we can still use the
-// 	// same code. since it is an iterator
-// 	folder := folder.FromIter(
-// 		conf.Normalizer,
-// 		localConfig.IndexDir("test_data"),
-// 	)
-//
-// 	rm := folder.ReverseMappingLocal()
-//
-// 	files := folder.GetDocAmount()
-// 	words := len(rm)
-//
-// 	log.Printf("Files: %d, Words: %d\n", files, words)
-//
-// 	if files == 0 {
-// 		log.Fatal(
-// 			"No files found, run make downloadTestFiles to download test files",
-// 		)
-// 	}
-//
-// 	return folder
-// }
 
 func test() {
 	// Test index registration
@@ -398,6 +370,9 @@ func handlePushCollection(
 	request *http.Request,
 	indexers *indexAPI.IndexHandler,
 ) {
+	// TODO fail or success response after unmarshall?
+	respondWithSuccess(serverParams.writer)
+
 	body, err := io.ReadAll(request.Body)
 	utils.PanicOnError(err)
 
@@ -407,10 +382,7 @@ func handlePushCollection(
 	if err != nil {
 		log.Print("Main server failed to parse PushDocs request" +
 			" from indexer with error: " + err.Error())
-		// fail response to frontend
 		return
-	} else {
-		// success response to frontend
 	}
 
 	go func() {

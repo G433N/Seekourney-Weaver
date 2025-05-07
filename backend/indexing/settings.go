@@ -42,7 +42,10 @@ func (client *IndexerClient) SettingsFromRequest(
 	if err != nil {
 		return Settings{}, err
 	}
-	defer request.Body.Close()
+	defer func() {
+		err := request.Body.Close()
+		utils.PanicOnError(err)
+	}()
 
 	set := Settings{}
 	err = json.Unmarshal(bytes, &set)

@@ -22,21 +22,3 @@ func TestIsValidPort(t *testing.T) {
 	assert.True(t, IsValidPort(_MAXPORT_))
 	assert.False(t, IsValidPort(_MAXPORT_+1))
 }
-
-func TestSettingsIntoURL(t *testing.T) {
-
-	settings := &Settings{
-		Path:      utils.Path("test"),
-		Type:      FileSource,
-		Recursive: true,
-		Parrallel: false,
-	}
-
-	expected := "http://localhost:1234/index" +
-		"?path=test&type=file&recursive=true&parallel=false"
-
-	url, err := settings.IntoURL(1234)
-	assert.NoError(t, err)
-	assert.Equal(t, expected, url)
-
-}

@@ -53,7 +53,10 @@ func respIntoBytes(resp *http.Response) ([]byte, error) {
 		return nil, errors.New("indexer did not respond to request, " +
 			"alternatively did not respond with ok statuscode")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		PanicOnError(err)
+	}()
 
 	respByte, err := io.ReadAll(resp.Body)
 	return respByte, err
