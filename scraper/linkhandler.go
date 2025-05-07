@@ -5,30 +5,6 @@ import (
 	"sync"
 )
 
-func (PQ *PriorityQueue) push(URL *URLCompact) bool {
-	PQ.lock.Lock()
-	defer PQ.lock.Unlock()
-	if PQ.len == _PRIOQUEUEMAXLEN_ {
-		return false
-	}
-	PQ.Queue[PQ.write] = URL
-	PQ.write = (PQ.write + 1) % _PRIOQUEUEMAXLEN_
-	PQ.len++
-	return true
-}
-
-func (PQ *PriorityQueue) pop() (*URLCompact, bool) {
-	PQ.lock.Lock()
-	defer PQ.lock.Unlock()
-	if PQ.len == 0 {
-		return nil, false
-	}
-	URL := PQ.Queue[PQ.read]
-	PQ.read = (PQ.read + 1) % _PRIOQUEUEMAXLEN_
-	PQ.len--
-	return URL, true
-}
-
 func (filter *filter) toURLString(compactURL *URLCompact) URLString {
 	var fullURL URLString
 
@@ -53,7 +29,7 @@ func (lH *linkHandler) outputHandler() {
 		var URL *URLCompact
 		var sucess bool
 		lH.storedSem.Wait()
-		URL, sucess = lH.priorityQueue.pop()
+		URL, sucess = lH.priorityQueue.TryPop()
 		if !sucess {
 			URL = lH.storageStack.Pop()
 		}
@@ -74,7 +50,7 @@ func (lH *linkHandler) inputHandler() {
 		URL := inputWrap.URL
 		notFull := true
 		if prio {
-			notFull = lH.priorityQueue.push(URL)
+			notFull = lH.priorityQueue.TryPush(URL)
 			if notFull {
 				lH.storedSem.Signal()
 				continue
@@ -94,13 +70,8 @@ func (lH *linkHandler) inputHandler() {
 func linkHandlerCreate() *linkHandler {
 
 	lH := linkHandler{
-		storageStack: Sync.NewStack[*URLCompact](),
-		priorityQueue: PriorityQueue{
-			Queue: [_PRIOQUEUEMAXLEN_]*URLCompact{},
-			read:  0,
-			write: 0,
-			len:   0,
-		},
+		storageStack:    Sync.NewStack[*URLCompact](),
+		priorityQueue:   Sync.NewCyclicQueue[*URLCompact](_PRIOQUEUEMAXLEN_),
 		inputChan:       make(chan linkInputWrap),
 		outputChan:      make(chan URLString),
 		outputSem:       *Sync.NewSemaphore(0),

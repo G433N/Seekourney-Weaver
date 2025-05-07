@@ -86,7 +86,7 @@ type (
 		filter       filter
 		storageStack Sync.Stack[*URLCompact]
 
-		priorityQueue PriorityQueue
+		priorityQueue Sync.CyclicQueue[*URLCompact]
 
 		inputChan chan linkInputWrap
 
@@ -118,18 +118,6 @@ type (
 	linkInputWrap struct {
 		prio bool
 		URL  *URLCompact
-	}
-
-	PriorityQueue struct {
-		lock sync.Mutex
-
-		Queue [_PRIOQUEUEMAXLEN_]*URLCompact
-
-		read int
-
-		write int
-
-		len int
 	}
 )
 
