@@ -1,6 +1,7 @@
 package Sync
 
 import (
+	"log"
 	"sync"
 )
 
@@ -13,7 +14,16 @@ type Stack[T any] struct {
 	lenSem Semaphore
 }
 
-func NewStack[T any]() Stack[T] {
+func NewStack[T any](optionalSize ...int) Stack[T] {
+	if len(optionalSize) == 1 {
+		return Stack[T]{
+			stack:  make([]T, 0, optionalSize[0]),
+			lenSem: *NewSemaphore(0),
+		}
+	}
+	if len(optionalSize) > 1 {
+		log.Fatalln("NewStack", "only one size argument is allowed")
+	}
 	return Stack[T]{
 		stack:  []T{},
 		lenSem: *NewSemaphore(0),
