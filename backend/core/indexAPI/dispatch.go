@@ -39,7 +39,10 @@ type RunningIndexer struct {
 	Exec *exec.Cmd
 }
 
-func GetRequestJSON[T any](indexer *RunningIndexer, urlPath ...string) (T, error) {
+func GetRequestJSON[T any](
+	indexer *RunningIndexer,
+	urlPath ...string,
+) (T, error) {
 
 	port := indexer.ID.GetPort()
 	return utils.GetRequestJSON[T](_ENDPOINTPREFIX_, port, urlPath...)
@@ -51,14 +54,24 @@ func GetRequest(indexer *RunningIndexer, urlPath ...string) (string, error) {
 	return utils.GetRequest(_ENDPOINTPREFIX_, port, urlPath...)
 }
 
-// PostRequestJSON sends a POST request to the indexer and returns the response as a JSON object.
-func PostRequestJSON[T any](body *utils.HttpBody, indexer *RunningIndexer, urlPath ...string) (T, error) {
+// PostRequestJSON sends a POST request to the indexer and returns the response
+// as a JSON object.
+func PostRequestJSON[T any](
+	body *utils.HttpBody,
+	indexer *RunningIndexer,
+	urlPath ...string,
+) (T, error) {
 	port := indexer.ID.GetPort()
 	return utils.PostRequestJSON[T](body, _ENDPOINTPREFIX_, port, urlPath...)
 }
 
-// PostRequest sends a POST request to the indexer and returns the response as a string.
-func PostRequest(body *utils.HttpBody, indexer *RunningIndexer, urlPath ...string) (string, error) {
+// PostRequest sends a POST request to the indexer and returns the response as a
+// string.
+func PostRequest(
+	body *utils.HttpBody,
+	indexer *RunningIndexer,
+	urlPath ...string,
+) (string, error) {
 	port := indexer.ID.GetPort()
 	return utils.PostRequest(body, _ENDPOINTPREFIX_, port, urlPath...)
 }

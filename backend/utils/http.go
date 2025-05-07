@@ -59,7 +59,11 @@ func respIntoBytes(resp *http.Response) ([]byte, error) {
 	return respByte, err
 }
 
-func GetRequestBytes(host string, port Port, urlPath ...string) ([]byte, error) {
+func GetRequestBytes(
+	host string,
+	port Port,
+	urlPath ...string,
+) ([]byte, error) {
 
 	url := host + ":" + port.String() + "/" + strings.Join(urlPath, "/")
 
@@ -72,7 +76,11 @@ func GetRequestBytes(host string, port Port, urlPath ...string) ([]byte, error) 
 	return respIntoBytes(resp)
 }
 
-func GetRequestJSON[T any](host string, port Port, urlPath ...string) (T, error) {
+func GetRequestJSON[T any](
+	host string,
+	port Port,
+	urlPath ...string,
+) (T, error) {
 
 	var respData T
 	respByte, err := GetRequestBytes(host, port, urlPath...)
@@ -94,8 +102,14 @@ func GetRequest(host string, port Port, urlPath ...string) (string, error) {
 	return respString, nil
 }
 
-// PostRequestBytes sends a POST request to the indexer and returns the response as bytes.
-func PostRequestBytes(body *HttpBody, host string, port Port, urlPath ...string) ([]byte, error) {
+// PostRequestBytes sends a POST request to the indexer and returns the response
+// as bytes.
+func PostRequestBytes(
+	body *HttpBody,
+	host string,
+	port Port,
+	urlPath ...string,
+) ([]byte, error) {
 	// TODO: Implement PostRequestBytes
 
 	url := host + ":" + port.String() + "/" + strings.Join(urlPath, "/")
@@ -117,8 +131,14 @@ func PostRequestBytes(body *HttpBody, host string, port Port, urlPath ...string)
 	return respIntoBytes(resp)
 }
 
-// PostRequestJSON sends a POST request to the indexer and returns the response as a JSON object.
-func PostRequestJSON[T any](body *HttpBody, host string, port Port, urlPath ...string) (T, error) {
+// PostRequestJSON sends a POST request to the indexer and returns the response
+// as a JSON object.
+func PostRequestJSON[T any](
+	body *HttpBody,
+	host string,
+	port Port,
+	urlPath ...string,
+) (T, error) {
 	// TODO: Implement PostRequestJSON
 	var respData T
 
@@ -132,8 +152,14 @@ func PostRequestJSON[T any](body *HttpBody, host string, port Port, urlPath ...s
 	return respData, err
 }
 
-// PostRequest sends a POST request to the indexer and returns the response as a string.
-func PostRequest(body *HttpBody, host string, port Port, urlPath ...string) (string, error) {
+// PostRequest sends a POST request to the indexer and returns the response as a
+// string.
+func PostRequest(
+	body *HttpBody,
+	host string,
+	port Port,
+	urlPath ...string,
+) (string, error) {
 	respByte, err := PostRequestBytes(body, host, port, urlPath...)
 	if err != nil {
 		return "", err

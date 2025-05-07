@@ -19,7 +19,8 @@ type IndexerData struct {
 	// The path to the indexer executable, does not need to be unique.
 	ExecPath string
 
-	// The arguments to pass to the indexer executable, does not need to be unique.
+	// The arguments to pass to the indexer executable,
+	// does not need to be unique.
 	Args []string
 }
 
@@ -39,7 +40,8 @@ func RegisterIndexer(
 	command := split[0]
 	args := split[1:]
 
-	// If this ID is used we are out of ports, so we can use this as a temporary ID
+	// If this ID is used we are out of ports, so we can use this as a temporary
+	// ID
 	// to register the indexer.
 	lastID := IndexerID(utils.MAXINDEXERPORT - utils.MININDEXERPORT)
 	indexer := IndexerData{

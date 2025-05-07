@@ -69,7 +69,13 @@ func NewClient(name string) *IndexerClient {
 				bytes := ResponseDocs([]UnnormalizedDocument{*doc})
 				body := utils.BytesBody(bytes)
 				port := utils.Port(8080)
-				resp, err := utils.PostRequest(body, "http://localhost", port, "push", "docs")
+				resp, err := utils.PostRequest(
+					body,
+					"http://localhost",
+					port,
+					"push",
+					"docs",
+				)
 				if err != nil {
 					client.Log("Error sending document: %s", err)
 					return
