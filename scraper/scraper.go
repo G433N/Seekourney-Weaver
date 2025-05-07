@@ -11,7 +11,7 @@ import (
 
 func debugPrint(a ...any) {
 	if _DEBUG_ {
-		fmt.Println(a...)
+		log.Println(a...)
 	}
 }
 
@@ -168,30 +168,34 @@ boolean for turning on and off asyncronous work
 A new collector ready to be used.
 */
 func NewCollector(async bool, localFiles bool) *CollectorStruct {
-	collector := &CollectorStruct{}
-	collector.context = context{}
-	settings := settings{}
-	collector.settings = settings
-	settings.async = async
+	lH := linkHandlerCreate()
+	collector := &CollectorStruct{
+		context: context{
+			linkHandler:     lH,
+			workspaceBuffer: [_WORKSPACES_][]string{},
+			emptyIndexes:    make(chan WorkspaceID, _WORKSPACES_),
+			finishedIndexes: make(chan WorkspaceID, _WORKSPACES_),
+		},
+		counter: counter{
+			workingCounter:  0,
+			finishedCounter: 0,
+		},
+		collectorColly: colly.NewCollector(),
+		settings: settings{
+			async: async,
+		},
+	}
 	if localFiles {
-		settings.HtmlFileType = HtmlFileType("file://")
+		collector.settings.HtmlFileType = HtmlFileType("file://")
 	} else {
-		settings.HtmlFileType = HtmlFileType("https://")
+		collector.settings.HtmlFileType = HtmlFileType("https://")
 	}
 	context := &collector.context
-	collector.counter.finishedCounter = 0
-	collector.counter.workingCounter = 0
-	context.emptyIndexes = make(chan WorkspaceID, _WORKSPACES_)
 	for x := range _WORKSPACES_ {
 		context.emptyIndexes <- WorkspaceID(x)
 	}
-	context.finishedIndexes = make(chan WorkspaceID, _WORKSPACES_)
-	context.linkQueue = make(chan URLString, _LINKQUEUELEN_)
-	context.priorityLinkQueue = make(chan URLString, _LINKQUEUELEN_)
-	context.workspaceBuffer = [_WORKSPACES_][]string{}
 
-	c := colly.NewCollector()
-	collector.collectorColly = c
+	c := collector.collectorColly
 
 	c.Async = async
 	if localFiles {
@@ -220,15 +224,14 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 		debugPrint("Page visited: ", r.Request.URL)
 		host := r.Request.URL.Host
 		if shortendLinkRegex.MatchString(url) {
-			url = string(settings.HtmlFileType) + host + url
+			url = r.Request.URL.Scheme + host + url
 		}
 		ID := context.claimNewIndex(URLString(url))
 		r.Ctx.Put(_IDKEY_, ID)
 	})
 
 	// triggered when a CSS selector matches an element
-	c.OnHTML("p, div.mw-heading, title, h1, h2, h3", func(e *colly.HTMLElement) {
-		// printing all URLs associated with the <p> tag on the page
+	c.OnHTML("p, title, h1, h2, h3", func(e *colly.HTMLElement) {
 		mapValue := e.Response.Ctx.GetAny(_IDKEY_)
 		ID, ok := mapValue.(WorkspaceID)
 		if !ok {
@@ -240,22 +243,8 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 
 	// Find and visit all links
 	c.OnHTML(`[href]`, func(e *colly.HTMLElement) {
-		link, valid := linkFilter(e)
-		arr := strings.SplitAfter(e.Request.URL.EscapedPath(), `/`)
-		arr[len(arr)-1] = link
-		link = strings.Join(arr, "")
-		debugPrint(link)
-		if !valid {
-			return
-		}
+		lH.linkFixer(e, localFiles)
 
-		link = e.Request.URL.Scheme + "://" + link
-
-		select {
-		case context.linkQueue <- URLString(link):
-		default:
-			debugPrint("linkQueue full skipped link: ", link)
-		}
 	})
 
 	// triggered once scraping is done
@@ -296,40 +285,59 @@ the matched HTMLElemnt.
 
 bool whether the the link is valid
 */
-func linkFilter(e *colly.HTMLElement) (string, bool) {
-
-	// TODO: filter away already visited
-
+func (lH *linkHandler) linkFixer(e *colly.HTMLElement, localFile bool) {
 	link := e.Attr("href")
-	host := e.Request.URL.Host
+	shortenedLink := shortendLinkRegex.MatchString(link)
+	fullLocalLink := fullLocalLinkRegex.MatchString(link)
+	fullWebLink := fullWebLinkRegex.MatchString(link)
 
-	switch host {
-	case `en.wikipedia.org`:
-		if WikipediaBadRegex.MatchString(link) {
-			debugPrint("Not worth indexing: ", link)
-			return "", false
-		}
+	var host hostPath
+	switch {
+	case localFile && shortenedLink:
+		arr := strings.SplitAfter(e.Request.URL.EscapedPath(), `/`)
+		arr[len(arr)-1] = link
+		link = strings.Join(arr, "")
+		lH.inputLocalFile(URLString(link), false)
+	case localFile && fullLocalLink:
+		link = strings.Replace(link, `file://`, ``, 1)
+		lH.inputLocalFile(URLString(link), false)
+	case !localFile && shortenedLink:
+		host = hostPath(e.Request.URL.Host)
+		lH.inputWeb(host, innerPath(link), false)
+	case !localFile && fullWebLink:
+		link = strings.Replace(link, `https://`, ``, 1)
+		arr := strings.Split(link, `/`)
+		host = hostPath(arr[0])
+		link = strings.Join(arr[1:], `/`)
+		lH.inputWeb(host, innerPath(link), false)
 	default:
 	}
-	if !shortendLinkRegex.MatchString(link) {
-		debugPrint("Not allowed for crawler to leave host\nhost:",
-			host, "\nlink:", link)
-		return "", false
-	}
-	return host + link, true
 }
 
 /*
 RequestVisitToSite
 adds the requested site to the queue of links to visit.
 */
-func (collector *CollectorStruct) RequestVisitToSite(webbpageLink string) {
-	if len(collector.context.linkQueue) == 0 {
-		collector.context.linkQueue <- URLString(webbpageLink)
-		return
-	}
+func (collector *CollectorStruct) RequestVisitToSite(link string) {
+	fullLocalLink := fullLocalLinkRegex.MatchString(link)
+	fullWebLink := fullWebLinkRegex.MatchString(link)
+	var host hostPath
+	lH := collector.context.linkHandler
+	switch {
 
-	collector.context.priorityLinkQueue <- URLString(webbpageLink)
+	case fullLocalLink:
+		link = strings.Replace(link, `file://`, ``, 1)
+		lH.inputLocalFile(URLString(link), true)
+
+	case fullWebLink:
+		link = strings.Replace(link, `https://`, ``, 1)
+		arr := strings.Split(link, `/`)
+		host = hostPath(arr[0])
+		link = `/` + strings.Join(arr[1:], `/`)
+		lH.inputWeb(host, innerPath(link), true)
+		debugPrint("host:", host, "link:", link, "")
+	default:
+	}
 }
 
 /*
@@ -340,12 +348,7 @@ Should only be called in the scope of [counterSync].
 */
 func (collector *CollectorStruct) visitNextLink(counter *counter) {
 	for {
-		var link URLString
-		select {
-		case link = <-collector.context.priorityLinkQueue:
-		default:
-			link = <-collector.context.linkQueue
-		}
+		link := collector.context.linkHandler.getLink()
 		err := collector.collectorColly.Visit(string(link))
 
 		if err == nil {
@@ -361,4 +364,8 @@ func (collector *CollectorStruct) visitNextLink(counter *counter) {
 			debugPrint(err)
 		}
 	}
+}
+
+func (collector *CollectorStruct) Whitelist(host string) {
+	collector.context.linkHandler.filter.Whitelist(hostPath(host), true)
 }
