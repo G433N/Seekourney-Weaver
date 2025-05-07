@@ -89,6 +89,7 @@ func index(
 }
 
 func (cxt *Context) send(doc *UnnormalizedDocument) {
+
 	cxt.Log("Sending document: %s", doc.Path)
 }
 

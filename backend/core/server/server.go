@@ -375,6 +375,8 @@ func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
 			if err != nil {
 				log.Printf("Error inserting row: %s\n", err)
 			}
+
+			log.Print("Inserted document with path: ", normalizedDoc.Path)
 		}
 		log.Print("Handled pushdocs request successfully")
 	}()

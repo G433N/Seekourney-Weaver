@@ -66,7 +66,15 @@ func NewClient(name string) *IndexerClient {
 	go func() {
 		for doc := range client.channel {
 			if doc != nil {
-				client.Log("Document received: %s", doc.Path)
+				bytes := ResponseDocs([]UnnormalizedDocument{*doc})
+				body := utils.BytesBody(bytes)
+				port := utils.Port(8080)
+				resp, err := utils.PostRequest(body, "http://localhost", port, "push", "docs")
+				if err != nil {
+					client.Log("Error sending document: %s", err)
+					return
+				}
+				log.Println("Response:", resp)
 			}
 		}
 	}()
