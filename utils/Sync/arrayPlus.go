@@ -2,6 +2,13 @@ package Sync
 
 import "sync"
 
+/*
+NewType used to represent the index of an element in the array.
+
+# Invariants:
+  - Should only be gained as a handle after a Push operation.
+  - Should itself and all of its copies be discarded after a Pop operation.
+*/
 type ArrayPlusIndex int
 
 type ArrayPlus[T any] struct {
@@ -13,10 +20,14 @@ type ArrayPlus[T any] struct {
 
 const _CHUNKSIZE_ = 100
 
+/*
+NewArrayPlus
+creates a new ArrayPlus with the given size.
+*/
 func NewArrayPlus[T any](maxSize int) *ArrayPlus[T] {
-	lenght := min(maxSize, _CHUNKSIZE_)
+	lenght := min(maxSize/3, _CHUNKSIZE_)
 	newArr := ArrayPlus[T]{
-		gaps:   NewStack[ArrayPlusIndex](lenght),
+		gaps:   NewStack[ArrayPlusIndex](maxSize),
 		arr:    make([]T, lenght),
 		maxLen: maxSize,
 	}
@@ -26,6 +37,10 @@ func NewArrayPlus[T any](maxSize int) *ArrayPlus[T] {
 	return &newArr
 }
 
+/*
+Pop
+retrieves the element at the given index.
+*/
 func (stack *ArrayPlus[T]) Pop(indexTyped ArrayPlusIndex) T {
 	index := int(indexTyped)
 
@@ -36,18 +51,24 @@ func (stack *ArrayPlus[T]) Pop(indexTyped ArrayPlusIndex) T {
 	return elem
 }
 
+/*
 // with current invariants, this function is not needed
-//func (stack *ArrayPlus[T]) TryPop(indexTyped ArrayPlusIndex) (T, bool) {
-//
-//	index := int(indexTyped)
-//
-//	elem := stack.arr[index]
-//
-//	stack.gaps.Push(indexTyped)
-//
-//	return elem, true
-//}
+func (stack *ArrayPlus[T]) TryPop(indexTyped ArrayPlusIndex) (T, bool) {
 
+	index := int(indexTyped)
+
+	elem := stack.arr[index]
+
+	stack.gaps.Push(indexTyped)
+
+	return elem, true
+}
+*/
+
+/*
+Peek
+returns the element at the given index without removing it.
+*/
 func (stack *ArrayPlus[T]) Peek(indexTyped ArrayPlusIndex) T {
 	index := int(indexTyped)
 
@@ -56,6 +77,12 @@ func (stack *ArrayPlus[T]) Peek(indexTyped ArrayPlusIndex) T {
 	return elem
 }
 
+/*
+Push
+adds an element to the array and returns the index of the element.
+If the array is full, it will either grow the array if maxLen is not reached,
+or it will block until space is available.
+*/
 func (stack *ArrayPlus[T]) Push(elem T) ArrayPlusIndex {
 	index, ok := stack.gaps.TryPop()
 	if ok {
@@ -81,6 +108,12 @@ func (stack *ArrayPlus[T]) Push(elem T) ArrayPlusIndex {
 	return ArrayPlusIndex(oldLen)
 }
 
+/*
+TryPush
+attempts to add an element to the array and returns the index of the element.
+If the array is full, it will either grow the array if maxLen is not reached,
+or it will return false without blocking.
+*/
 func (stack *ArrayPlus[T]) TryPush(elem T) (ArrayPlusIndex, bool) {
 	index, ok := stack.gaps.TryPop()
 	if ok {

@@ -59,171 +59,6 @@ type Semaphore struct {
 }
 
 /*
-Wait
-Decrement the semaphore’s value; block if the value is currently 0.
-*/
-func (semaphore *Semaphore) defaultWait() {
-
-	// so that multiple threads don't use the waitgroup at the same time
-	semaphore.waitLock.Lock()
-	defer semaphore.waitLock.Unlock()
-
-	semaphore.waitGroup.Wait()
-
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-
-	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
-	}
-
-	semaphore.value--
-
-}
-
-/*
-Wait
-Decrement the semaphore’s value; block if the value is currently 0.
-*/
-func (semaphore *Semaphore) boundedWait() {
-
-	// so that multiple threads don't use the waitgroup at the same time
-	semaphore.waitLock.Lock()
-	defer semaphore.waitLock.Unlock()
-
-	//
-	semaphore.waitGroup.Wait()
-
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-
-	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
-	}
-
-	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Done()
-	}
-
-	semaphore.value--
-
-}
-
-/*
-TryWait
-Tries to decrement the semaphore’s value and return sucess/true.
-If the value is 0 it will return false.
-*/
-func (semaphore *Semaphore) boundedTryWait() bool {
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-	if semaphore.value == 0 {
-		return false
-	}
-	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
-	}
-
-	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Done()
-	}
-
-	semaphore.value--
-	return true
-}
-
-/*
-TryWait
-Tries to decrement the semaphore’s value and return sucess/true.
-If the value is 0 it will return false.
-*/
-func (semaphore *Semaphore) defaultTryWait() bool {
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-	if semaphore.value == 0 {
-		return false
-	}
-	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
-	}
-	semaphore.value--
-	return true
-}
-
-/*
-Signal
-Increments the semaphores value.
-If it was 0 it will unblock any waiting threads.
-*/
-func (semaphore *Semaphore) defaultSignal() {
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
-	}
-	semaphore.value++
-}
-
-/*
-Signal
-Increments the semaphores value.
-If it was 0 it will unblock any waiting threads.
-*/
-func (semaphore *Semaphore) boundedSignal() {
-
-	// so that multiple threads don't use the waitgroup at the same time
-	semaphore.signalLock.Lock()
-	defer semaphore.signalLock.Unlock()
-
-	semaphore.signalGroup.Wait()
-
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
-	}
-
-	semaphore.value++
-
-	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Add(1)
-	}
-
-}
-
-func (semaphore *Semaphore) defaultTrySignal() bool {
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
-	}
-
-	semaphore.value++
-
-	return true
-}
-
-func (semaphore *Semaphore) boundedTrySignal() bool {
-	semaphore.syncLock.Lock()
-	defer semaphore.syncLock.Unlock()
-	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
-	}
-
-	if semaphore.value == semaphore.maxValue {
-		return false
-	}
-
-	semaphore.value++
-
-	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Add(1)
-	}
-
-	return true
-}
-
-/*
 NewSemaphore
 creates a new semaphore
 with the option to set the initial value and the maximum value.
@@ -280,4 +115,184 @@ func NewSemaphore(arg ...int) *Semaphore {
 		semaphore.signalGroup.Add(1)
 	}
 	return &semaphore
+}
+
+/*
+defaultWait
+Decrement the semaphore’s value
+and will block if the value is currently 0.
+*/
+func (semaphore *Semaphore) defaultWait() {
+
+	// so that multiple threads don't use the waitgroup at the same time
+	semaphore.waitLock.Lock()
+	defer semaphore.waitLock.Unlock()
+
+	semaphore.waitGroup.Wait()
+
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+
+	if semaphore.value == 1 {
+		semaphore.waitGroup.Add(1)
+	}
+
+	semaphore.value--
+
+}
+
+/*
+defaultTryWait
+Tries to decrement the semaphore’s value and return true.
+If the value is 0 it will return false.
+*/
+func (semaphore *Semaphore) defaultTryWait() bool {
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+	if semaphore.value == 0 {
+		return false
+	}
+	if semaphore.value == 1 {
+		semaphore.waitGroup.Add(1)
+	}
+	semaphore.value--
+	return true
+}
+
+/*
+defaultSignal
+Increments the semaphores value.
+If it was 0 it will unblock any waiting threads.
+*/
+func (semaphore *Semaphore) defaultSignal() {
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+	if semaphore.value == 0 {
+		semaphore.waitGroup.Done()
+	}
+	semaphore.value++
+}
+
+/*
+defaultTrySignal
+Tries to increment the semaphore’s value and return true.
+Currently always returns true.
+*/
+func (semaphore *Semaphore) defaultTrySignal() bool {
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+	if semaphore.value == 0 {
+		semaphore.waitGroup.Done()
+	}
+
+	semaphore.value++
+
+	return true
+}
+
+/*
+boundedWait
+Decrement the semaphore’s value
+and will block if the value is currently 0.
+adjusted for a bounded semaphore
+*/
+func (semaphore *Semaphore) boundedWait() {
+
+	// so that multiple threads don't use the waitgroup at the same time
+	semaphore.waitLock.Lock()
+	defer semaphore.waitLock.Unlock()
+
+	//
+	semaphore.waitGroup.Wait()
+
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+
+	if semaphore.value == 1 {
+		semaphore.waitGroup.Add(1)
+	}
+
+	if semaphore.value == semaphore.maxValue {
+		semaphore.signalGroup.Done()
+	}
+
+	semaphore.value--
+
+}
+
+/*
+boundedTryWait
+Tries to decrement the semaphore’s value and return true.
+If the value is 0 it will return false.
+adjusted for a bounded semaphore
+*/
+func (semaphore *Semaphore) boundedTryWait() bool {
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+	if semaphore.value == 0 {
+		return false
+	}
+	if semaphore.value == 1 {
+		semaphore.waitGroup.Add(1)
+	}
+
+	if semaphore.value == semaphore.maxValue {
+		semaphore.signalGroup.Done()
+	}
+
+	semaphore.value--
+	return true
+}
+
+/*
+boundedSignal
+Increments the semaphores value.
+If it was 0 it will unblock any waiting threads.
+If the value is currently the maximum value it will block.
+*/
+func (semaphore *Semaphore) boundedSignal() {
+
+	// so that multiple threads don't use the waitgroup at the same time
+	semaphore.signalLock.Lock()
+	defer semaphore.signalLock.Unlock()
+
+	semaphore.signalGroup.Wait()
+
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+	if semaphore.value == 0 {
+		semaphore.waitGroup.Done()
+	}
+
+	semaphore.value++
+
+	if semaphore.value == semaphore.maxValue {
+		semaphore.signalGroup.Add(1)
+	}
+
+}
+
+/*
+boundedTrySignal
+Tries to increment the semaphore’s value and return true.
+If the value is currently the maximum value it will return false.
+*/
+func (semaphore *Semaphore) boundedTrySignal() bool {
+	semaphore.syncLock.Lock()
+	defer semaphore.syncLock.Unlock()
+	if semaphore.value == 0 {
+		semaphore.waitGroup.Done()
+	}
+
+	if semaphore.value == semaphore.maxValue {
+		return false
+	}
+
+	semaphore.value++
+
+	if semaphore.value == semaphore.maxValue {
+		semaphore.signalGroup.Add(1)
+	}
+
+	return true
 }
