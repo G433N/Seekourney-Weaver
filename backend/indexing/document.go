@@ -12,6 +12,8 @@ type UnnormalizedDocument struct {
 
 	/// Map of normalized words to their frequency
 	Words utils.FrequencyMap
+
+	SourceID CollectionID
 }
 
 // DocNew creates a new document.

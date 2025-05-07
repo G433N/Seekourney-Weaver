@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"seekourney/core/database"
-	"seekourney/core/indexAPI"
 	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
@@ -18,7 +17,6 @@ type udoc = indexing.UnnormalizedDocument
 
 type Document struct {
 	udoc
-	SourceID    indexAPI.SourceCollectionID
 	LastIndexed time.Time
 }
 

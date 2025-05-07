@@ -6,7 +6,8 @@ import (
 )
 
 type Context struct {
-	client   *IndexerClient
+	client *IndexerClient
+	// TODO: Remove this field
 	metadata *docMetadata
 }
 
@@ -29,6 +30,7 @@ func (cxt *Context) hasMetadata() bool {
 	return cxt.metadata != nil
 }
 
+// TODO: Should return DOcumment builder
 func (cxt *Context) StartDoc(path utils.Path, source utils.Source) {
 	if cxt.hasMetadata() {
 		panic("Document already started")
@@ -41,6 +43,7 @@ func (cxt *Context) StartDoc(path utils.Path, source utils.Source) {
 	}
 }
 
+// TODO: Should be a methond on documment builder
 func (cxt *Context) AddText(text string) {
 	if !cxt.hasMetadata() {
 		panic("Use StartDoc before AddText")
@@ -52,6 +55,7 @@ func (cxt *Context) AddText(text string) {
 // It can take a function to modify the document before sending it.
 // This function needs to be thread safe.
 // When indexed the document is sent to the server.
+// TODO: Should be a methond on documment builder
 func (cxt *Context) Done(f *func(*UnnormalizedDocument)) {
 	if !cxt.hasMetadata() {
 		panic("Use StartDoc before Done")
@@ -88,7 +92,7 @@ func (cxt *Context) send(doc *UnnormalizedDocument) {
 	cxt.Log("Sending document: %s", doc.Path)
 }
 
-// TODO: Better name
+// TODO: Better name -> Document builder
 type docMetadata struct {
 	path   utils.Path
 	source utils.Source

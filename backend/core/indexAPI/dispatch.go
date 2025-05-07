@@ -1,13 +1,16 @@
 package indexAPI
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"os/exec"
 	"seekourney/indexing"
+	"seekourney/utils"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -135,8 +138,19 @@ func (indexer *RunningIndexer) Wait() error {
 	return indexer.Exec.Wait()
 }
 
-func (indexer *RunningIndexer) Dispatch() {
-	// TODO: Define
+type IndexHandler struct {
+	mutex    sync.Mutex
+	indexers map[IndexerID]*RunningIndexer
+
+	// TODO: Keep track of re indexing timers
+}
+
+func (handler *IndexHandler) DispatchReindex(db *sql.DB, path utils.Path) error {
+	return nil
+}
+
+func (handler *IndexHandler) Dispatch(db *sql.DB, id indexing.CollectionID) error {
+	return nil
 }
 
 // // startupIndexer attempts to start the indexer using the given info state.

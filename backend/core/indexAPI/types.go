@@ -1,6 +1,7 @@
 package indexAPI
 
 import (
+	"database/sql"
 	"log"
 	"os/exec"
 	"seekourney/core/normalize"
@@ -54,14 +55,35 @@ func (indexer *IndexerData) start() *RunningIndexer {
 	}
 }
 
-type SourceCollectionID uint
+type Collecton struct {
+	UnrequestedCollection
+	ID indexing.CollectionID
+}
 
-// TODO: Rename
-type SourceCollecton struct {
-	ID                  SourceCollectionID
-	Path                utils.Path
-	IndexerID           IndexerID
-	Recursive           bool
+type UnrequestedCollection struct {
+	// Root path / start of reqursive indexing
+	Path utils.Path
+
+	// Indexer used to index this collection
+	IndexerID IndexerID
+
+	// Type of source
+	SourceType indexing.SourceType
+
+	// If true, the indexer will index Recursivevly
+	Recursive bool
+
+	// If false will always index when reindexing is requested
 	RespectLastModified bool
-	Normalfunc          normalize.Normalizer
+
+	// What function to normalize all documents with
+	Normalfunc normalize.Normalizer
+}
+
+func RegisterCollection(db *sql.DB, ureqCol UnrequestedCollection) (indexing.CollectionID, error) {
+	return 0, nil
+}
+
+func IndexCollection(db *sql.DB, collectionID indexing.CollectionID) (*RunningIndexer, error) {
+	return nil, nil
 }

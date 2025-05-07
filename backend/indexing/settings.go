@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+type CollectionID uint
+
 // TODO: Find a better name for this
 
 // Settings is a struct that contains the settings for the indexer client.
@@ -23,10 +25,11 @@ import (
 //  5. Config: the config file to be used for indexing, if nil, the default
 //     config file will be used
 type Settings struct {
-	Path      utils.Path
-	Type      SourceType
-	Recursive bool
-	Parrallel bool
+	Path         utils.Path
+	Type         SourceType
+	CollectionID CollectionID
+	Recursive    bool
+	Parrallel    bool
 }
 
 // TODO: Transfer via http body (json) instead of URL

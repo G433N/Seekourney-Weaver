@@ -39,13 +39,14 @@ const (
 
 // HTTP requests.
 const (
-	_ALL_       string = "/all"
-	_SEARCH_    string = "/search"
-	_QUIT_      string = "/quit"
-	_PUSHPATHS_ string = "/push/paths"
-	_PUSHDOCS_  string = "/push/docs"
-	_INDEX_     string = "/index"
-	_LOG_       string = "/log"
+	_ALL_            string = "/all"
+	_SEARCH_         string = "/search"
+	_QUIT_           string = "/quit"
+	_PUSHPATHS_      string = "/push/paths"
+	_PUSHDOCS_       string = "/push/docs"
+	_INDEX_          string = "/index"
+	_PUSHCOLLECTION_ string = "/push/collection"
+	_LOG_            string = "/log"
 )
 
 // serverFuncParams is used by server query handler functions.
@@ -187,6 +188,8 @@ func Run(args []string) {
 			handlePushDocs(serverParams, request)
 		case _INDEX_:
 			handleIndex(serverParams)
+		case _PUSHCOLLECTION_:
+			handlePushCollection(serverParams, request)
 		case _QUIT_:
 			handleQuit(serverParams)
 		case _LOG_:
@@ -369,6 +372,12 @@ func handlePushDocs(serverFuncParams serverFuncParams, request *http.Request) {
 // handleIndex handles an /index request by dispatching an indexing request
 // to the appropriate indexer.
 func handleIndex(serverParams serverFuncParams) {
+	panic("Not implemented")
+}
+
+func handlePushCollection(serverParams serverFuncParams, request *http.Request) {
+	// indexAPI.RegisterCollection()
+	// indexAPI.IndexCollection()
 	panic("Not implemented")
 }
 
