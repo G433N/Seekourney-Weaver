@@ -1,7 +1,6 @@
 package scraper
 
 import (
-	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -65,16 +64,6 @@ func TestLongLocalWikipediaHtml(t *testing.T) {
 			" with a crab meat sauce." +
 			" They can also be stir fried or used in soups.",
 	}
-	fmt.Println(
-		"wawaw\n\n",
-		regexp.MustCompile(
-			"Shoots[^.]*[^.]*[^.]*",
-		).FindString(
-			fullString,
-		),
-		"\n",
-		"wawaw",
-	)
 
 	for _, x := range testStrings {
 		if !strings.Contains(fullString, x) {
@@ -123,4 +112,59 @@ func TestLocalLinkHopping(t *testing.T) {
 		)
 	}
 
+}
+
+func TestLongLocalXml(t *testing.T) {
+	dir, err := filepath.Abs(".")
+	if err != nil {
+		panic(err)
+	}
+
+	wa := regexp.MustCompile(`.*/`)
+	path := "file://" + wa.FindString(dir) + "testingFiles/"
+	newScraper := NewCollector(true, true)
+	newScraper.RequestVisitToSite(
+		path + "xmltest1.xml",
+	)
+
+	newScraper.CollectorRepopulateFixedNumber(1)
+
+	readStrings := newScraper.ReadFinished()
+	var fullString string
+
+	fullString = strings.Join(readStrings, " ")
+
+	iterator := strings.SplitSeq(fullString, "	")
+
+	fullString = ""
+	for x := range iterator {
+		if x != "" {
+			fullString += x + " "
+		}
+	}
+	iterator = strings.SplitSeq(fullString, "\n")
+	fullString = ""
+	for x := range iterator {
+		if x != "" {
+			fullString += x + " "
+
+		}
+	}
+	iterator = strings.SplitSeq(fullString, " ")
+	fullString = ""
+	for x := range iterator {
+		if x != "" {
+			fullString += x + " "
+		}
+	}
+	testStrings := []string{
+		"5 John Smith IT Engineer Engineering",
+		"7 Jonahan Software Engineer Engineering",
+	}
+
+	for _, x := range testStrings {
+		if !strings.Contains(fullString, x) {
+			t.Error("did not contain: ", x)
+		}
+	}
 }
