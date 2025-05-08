@@ -148,7 +148,7 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	database.InsertInto(serverParams.db, testDocument2())
 
 	jsonData, err := json.Marshal(
-		[]document.Document{testDocument1(), testDocument1()},
+		[]document.Document{testDocument1(), testDocument2()},
 	)
 	checkIOError(err)
 	expected.Write(jsonData)
