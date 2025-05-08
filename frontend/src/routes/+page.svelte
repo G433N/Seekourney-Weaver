@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 
 	interface SearchResult {
 		Path: string;
@@ -16,10 +17,11 @@
 	let results: SearchResult[] = [];
 	let searched: boolean = false;
 
+	let searchInput: HTMLInputElement;
+
 	async function search(): Promise<void> {
 		if (query.length > 0)
 		{
-			searched = true;
 			submittedQuery = query;
 			const res = await fetch(`http://localhost:8080/search?q=${query}`);
 			const json = await res.json() as SearchResponse;
@@ -41,6 +43,7 @@
 			// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
 			// 	}
 			// ];
+			searched = true;
 		} 
 		else 
 		{
@@ -68,6 +71,10 @@
 		window.URL.revokeObjectURL(urlObject);
 		});
 	}
+
+	onMount(() => {
+		searchInput.focus();
+	});
 </script>
 
 <main style="max-width: 800px;">
@@ -75,6 +82,7 @@
 	<div id="searchDiv">
 		<input 
 			bind:value={query}
+			bind:this={searchInput}
 			type="text" 
 			placeholder="Write your search here!"
 		/>
@@ -98,12 +106,12 @@
 							<h3>{res.Path}</h3>
 						</div>
 						<div id=resultInfo>
-							<small> 
+							<p class="searchInfo"> 
 								Website: {res.Path}
-							</small>
-							<small>
+							</p>
+							<p class="searchInfo"> 
 								Relevance: {res.Score.toFixed(4)}
-							</small>
+							</p>
 						</div>
 						<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 					</div>
@@ -111,18 +119,18 @@
 				{:else}
 					<div id="resultBox">
 						<div id="resultDiv">
-							<h3>{res.Path.replace(/^.*[\\\/]/, '')}</h3>
+							<h3 style="margin:0">{res.Path.replace(/^.*[\\\/]/, '')}</h3>
 							<button on:click={() => downloadFile(res.Path)} id="downloadButton">
 								Download
 							</button>
 						</div>
 						<div id=resultInfo>
-							<small> 
+							<p class="searchInfo"> 
 								Local file path: {res.Path} 
-							</small>
-							<small> 
+							</p>
+							<p class="searchInfo"> 
 								Relevance: {res.Score.toFixed(4)} 
-							</small>
+							</p>
 						</div>
 						<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 					</div>
@@ -164,11 +172,19 @@
 		display: flex; 
 		justify-content: space-between; 
 		align-items: center;
+		margin-top: 0.8rem;
 	}
 
 	#resultInfo {
 		display: flex; 
 		justify-content: space-between; 
 		align-items: center;
+		margin-top: 1.5rem;
+		margin-bottom: 1rem;
+	}
+
+	.searchInfo {
+		font-size: rem;
+		margin: 0;
 	}
 </style>

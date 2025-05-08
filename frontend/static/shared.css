@@ -80,6 +80,10 @@ button {
 	border-radius: 6px; 
 }
 
+button:hover {
+	background-color: #7d98b2;
+}
+
 main {
 	margin: 2rem auto;
 	padding: 1rem;
@@ -92,4 +96,10 @@ input {
 	background-color: #F0EEEE; 
 	border-radius: 6px; 
 	border: none;
+}
+
+input[type="text"]:focus {
+	outline: none;
+	border: 2px solid #517188;
+	border-radius: 4px;
 }

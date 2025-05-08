@@ -28,7 +28,7 @@
 
             let mockResult: IndexerResult = {
                 Name: "indexer",
-                Id: 2,
+                Id: Math.round(Math.random() * 100),
                 Port: 1
             };
 
@@ -84,7 +84,7 @@
     <div class="box column">
         <label class="toggle">
             <input type="checkbox" bind:checked={cpuDefault} />
-            default
+            default CPU usage
         </label>
         {#if !cpuDefault}
             <div class="slider">
@@ -156,6 +156,7 @@
         align-items: center;
         gap: 0.5rem;
         margin-top: 0.5rem;
+        accent-color: #517188;
     }
 
     .max-label {
@@ -176,20 +177,13 @@
         flex-grow: 1;
     }
 
-    .custom-scraper {
-        display: block;
-        margin: 0 auto;
-        background-color: #92acc2;
-        border: none;
-        border-radius: 6px;
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
-        color: white;
-        cursor: pointer;
+    input[type="checkbox"] {
+        accent-color: #517188;
+        transform: scale(1.5);
     }
 
     .custom-scraper:hover {
-        background-color: #7d98b2;
+        background-color: #517188;
     }
 
     .inputDiv {
