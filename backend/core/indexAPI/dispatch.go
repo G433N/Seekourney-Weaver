@@ -25,9 +25,9 @@ type IndexerResponse = indexing.IndexerResponse
 type ResponseData = indexing.ResponseData
 type UnnormalizedDocument = indexing.UnnormalizedDocument
 
-// DispatchErrors fields indicate status of made dispatch attempts.
+// DispatchErrors fields indicate status of made dispatch attempt.
+// DispatchAttempt is also non-nil if startup failed.
 // StartupAttempt is nil if startup succeeded or was not needed.
-// DispatchAttemp is also non-nil if startup failed.
 type DispatchErrors struct {
 	IndexerWasRunning bool
 	StartupAttempt    error
@@ -139,8 +139,8 @@ func (handler *IndexHandler) Dispatch(
 				"failed startup prevents dispatch attempt")
 			return errs
 		}
-		handler.Indexers[indexer.ID] = running
 
+		handler.Indexers[indexer.ID] = running
 		// Try indexing request again.
 		resp, err = utils.GetRequestJSON[IndexerResponse](
 			_ENDPOINTPREFIX_,

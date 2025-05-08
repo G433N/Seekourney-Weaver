@@ -94,7 +94,7 @@ func RegisterCollection(
 	ureqCol UnregisteredCollection,
 ) (Collection, error) {
 	collection := Collection{
-		UnregisteredCollection: UnregisteredCollection{},
+		UnregisteredCollection: ureqCol,
 		ID:                     0, // TODO ID with DB and add to db
 	}
 
