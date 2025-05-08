@@ -348,7 +348,7 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 			// unique constraint "document_pkey"
 
 			exists, err := document.DocumentExsitsDB(
-				serverFuncParams.db,
+				serverParams.db,
 				normalizedDoc.Path,
 			)
 
@@ -358,14 +358,14 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 			}
 
 			if exists {
-				err := normalizedDoc.UpdateDB(serverFuncParams.db)
+				err := normalizedDoc.UpdateDB(serverParams.db)
 				if err != nil {
 					log.Printf("Error updating document: %s\n", err)
 				}
 				continue
 			}
 
-			_, err = database.InsertInto(serverFuncParams.db, normalizedDoc)
+			_, err = database.InsertInto(serverParams.db, normalizedDoc)
 
 			if err != nil {
 				log.Printf("Error inserting row: %s\n", err)
