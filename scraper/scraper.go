@@ -225,7 +225,6 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 	}
 
 	c := collector.collectorColly
-
 	c.Async = async
 	if localFiles {
 		t := &http.Transport{}
@@ -259,7 +258,6 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 		r.Ctx.Put(_IDKEY_, ID)
 	})
 
-	// triggered when a CSS selector matches an element
 	c.OnHTML("p, title, h1, h2, h3", func(e *colly.HTMLElement) {
 		mapValue := e.Response.Ctx.GetAny(_IDKEY_)
 		ID, ok := mapValue.(WorkspaceID)
@@ -269,8 +267,16 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 		context.writeToWorkspace(ID, e.Text)
 
 	})
+	c.OnXML("//text()", func(e *colly.XMLElement) {
+		mapValue := e.Response.Ctx.GetAny(_IDKEY_)
+		ID, ok := mapValue.(WorkspaceID)
+		if !ok {
+			log.Fatal("couldn't find ID")
+		}
+		context.writeToWorkspace(ID, e.Text)
+	})
 
-	// Find and visit all links
+	// Find and queue all links
 	c.OnHTML(`[href]`, func(e *colly.HTMLElement) {
 		lH.linkFixer(e, localFiles)
 
