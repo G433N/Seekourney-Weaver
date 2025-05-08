@@ -15,21 +15,36 @@
     let maxCores: number = $state(8);
     let cpuCores: number = $state(4);
 
-    let indexerInput: string = '';
+    let indexerInput: string = $state('');
     let submittedIndexer: string = '';
-    let indexerList: IndexerResult[] = [];
+    let indexerList: IndexerResult[] = $state([]);
 
     async function addIndexer(): Promise<void> {
-        submittedIndexer = indexerInput;
-        const res = await fetch(`http://localhost:8080/addIndexer?q=${submittedIndexer}`); //TODO: what name??
-		const json = await res.json() as IndexerResult;
-        indexerList.push(json);
-        // TODO: unsure of how response should look, might not work
+        if (indexerInput.length > 0) {
+            submittedIndexer = indexerInput;
+            //const res = await fetch(`http://localhost:8080/addIndexer?q=${submittedIndexer}`); //TODO: what name??
+            //const json = await res.json() as IndexerResult;
+            //indexerList = [...indexerList, json];
+
+            let mockResult: IndexerResult = {
+                Name: "indexer",
+                Id: 2,
+                Port: 1
+            };
+
+            indexerList = [...indexerList, mockResult];
+            indexerInput = '';
+            // TODO: unsure of how response should look, might not work
+            // TODO: add some fix for duplicates?
+        }
+       
     }
 
     async function deleteIndexer(indexer: IndexerResult): Promise<void> {
         fetch(`http://localhost:8080/addIndexer?q=${indexer}`); //TODO: what name??
-        // TODO: remove from array
+
+        indexerList = indexerList.filter(elem => elem.Id !== indexer.Id);
+
         // TODO: unsure if we get a response?
     }
 
@@ -86,7 +101,7 @@
             <div class="">
                 Indexer path:
                 <input type="text" bind:value={indexerInput} />
-                <button on:click={() => addIndexer()}>
+                <button id="indexerButton" on:click={() => addIndexer()}>
                     Add
                 </button>
             </div>
@@ -94,19 +109,17 @@
 
         {#if indexerList.length > 0}
             {#each indexerList as indexer}
-                <div>
+                <div class="inputDiv">
                     <h3>
-                        {indexer.Name}, {indexer.Id}, {indexer.Port}
+                        {indexer.Name}, ID: {indexer.Id}, Port: {indexer.Port}
                     </h3>
-                    <button on:click={() => deleteIndexer(indexer)}>
+                    <button id="deleteButton" on:click={() => deleteIndexer(indexer)}>
                         Delete
                     </button>
                 </div>
             {/each}
         {/if}
     </div>
-
-    <button class="custom-scraper">Add a custom indexer</button>
 </main>
 
 
@@ -188,5 +201,16 @@
     .inputDiv input {
         margin-left: auto; /* optional: pushes input to far right */
     }
+
+    #indexerButton {
+		padding: 0.65rem 1rem; 
+		font-size: 1rem;
+		font-weight: 500;
+	}
+
+    #deleteButton {
+		padding: 0.2rem 0.6rem; 
+		font-size: 1rem;
+	}
   
 </style>
