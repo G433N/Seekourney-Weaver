@@ -47,6 +47,25 @@ func resetSQL(db *sql.DB) {
 	panicOnError(err)
 }
 
+// assertBufferEquals checks that the content of two bytes.Buffers are equal,
+// failing the test and logging an message if not
+func assertBufferEquals(
+	test *testing.T,
+	label string,
+	expected bytes.Buffer,
+	actual bytes.Buffer,
+) {
+	if !bytes.Equal(expected.Bytes(), actual.Bytes()) {
+		test.Log(
+			"Buffers do not match, expected:\n",
+			expected.String(),
+			"\nGot:\n",
+			actual.String(),
+		)
+		test.Error(label)
+	}
+}
+
 // serverTest defers a func before running the test function to ensure that the
 // database container is stopped if the test panics.
 // Also resets the state of objects that may have been written to if the test
@@ -108,21 +127,6 @@ func TestServer(test *testing.T) {
 	}
 }
 
-func assertBufferEquals(
-	test *testing.T,
-	label string,
-	expected bytes.Buffer,
-	actual bytes.Buffer,
-) {
-	if !bytes.Equal(expected.Bytes(), actual.Bytes()) {
-		test.Log("Buffers do not match, expected:")
-		test.Log(expected.String())
-		test.Log("Got: ")
-		test.Log(actual.String())
-		test.Error(label)
-	}
-}
-
 func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
@@ -144,7 +148,7 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	database.InsertInto(serverParams.db, testDocument2())
 
 	jsonData, err := json.Marshal(
-		[]document.Document{testDocument1(), testDocument2()},
+		[]document.Document{testDocument1(), testDocument1()},
 	)
 	checkIOError(err)
 	expected.Write(jsonData)
