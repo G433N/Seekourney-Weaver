@@ -18,6 +18,7 @@ import (
 	"seekourney/core/database"
 	"seekourney/core/document"
 	"seekourney/core/indexAPI"
+	"seekourney/core/normalize"
 	"seekourney/core/search"
 	"seekourney/indexing"
 	"seekourney/utils"
@@ -136,6 +137,54 @@ func Run(args []string) {
 	go startContainer()
 
 	db := connectToDB()
+
+	// TEST
+
+	indexer := indexAPI.IndexerData{
+		Name:     "localtext",
+		ExecPath: "go",
+		Args: []string{
+			"indexer/localtext/localtext.go",
+			"indexer/localtext/test_data",
+		},
+	}
+
+	_, err := database.InsertInto(db, indexer)
+	if err != nil {
+		log.Fatalf("Error inserting indexer: %s\n", err)
+	}
+
+	indexer2, err := indexAPI.IndexerFromDB(db, 1)
+	if err != nil {
+		log.Printf("Error getting indexer from db: %s\n", err)
+	}
+
+	log.Printf("Indexer: %s\n", indexer2.ExecPath)
+
+	collection := indexAPI.Collecton{
+		UnrequestedCollection: indexAPI.UnrequestedCollection{
+			Path:                utils.Path("path/to/bhamas"),
+			IndexerID:           1,
+			SourceType:          0,
+			Recursive:           false,
+			RespectLastModified: true,
+			Normalfunc:          normalize.Stemming,
+		},
+	}
+
+	_, err = database.InsertInto(db, collection)
+	if err != nil {
+		log.Fatalf("Error inserting collection into db: %s", err)
+	}
+
+	collection2, err := indexAPI.CollectionFromDB(db, 1)
+	if err != nil {
+		log.Printf("Error getting collection from db: %s\n", err)
+	}
+
+	log.Printf("Collection root: %s", collection2.Path)
+
+	// TEST STOP
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 

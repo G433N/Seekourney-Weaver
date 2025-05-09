@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os/exec"
+	"seekourney/core/database"
 	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
@@ -66,7 +67,89 @@ type Collection struct {
 	ID indexing.CollectionID
 }
 
-type UnregisteredCollection struct {
+// SQL
+
+// SQLGetName returns the name of the table in the database
+func (col Collecton) SQLGetName() string {
+	return "collection"
+}
+
+// SQLGetFields returns the fields to be inserted into the database
+func (col Collecton) SQLGetFields() []string {
+	return []string{"path", "indexer_id", "recursive", "source_type", "respect_last_modified", "normalizer"}
+}
+
+// SQLGetValues returns the values to be inserted into the database
+func (col Collecton) SQLGetValues() []any {
+
+	return []database.SQLValue{
+		col.Path,
+		col.IndexerID,
+		col.Recursive,
+		indexing.SourceTypeToStr(col.SourceType),
+		col.RespectLastModified,
+		col.Normalfunc,
+	}
+}
+
+// SQLScan scans a row from the database into a Document
+func (col Collecton) SQLScan(rows *sql.Rows) (Collecton, error) {
+	var id indexing.CollectionID
+	var path utils.Path
+	var indexerID IndexerID
+	var recursive bool
+	var sourceType string
+	var respectLastModified bool
+	var normalizer normalize.Normalizer
+
+	err := rows.Scan(&id, &path, &indexerID, &recursive, &sourceType, &respectLastModified, &normalizer)
+	if err != nil {
+		return Collecton{}, err
+	}
+
+	sourceTypeEnum, err := indexing.StrToSourceType(sourceType)
+	if err != nil {
+		log.Printf("Error parsing source type: %s", err)
+		return Collecton{}, err
+	}
+
+	return Collecton{
+		UnrequestedCollection{
+			path,
+			indexerID,
+			sourceTypeEnum,
+			recursive,
+			respectLastModified,
+			normalizer,
+		},
+		id,
+	}, nil
+
+}
+
+func CollectionFromDB(db *sql.DB, id indexing.CollectionID) (Collecton, error) {
+	var colloction Collecton
+
+	q1 := database.Select().QueryAll()
+	query := q1.From(colloction.SQLGetName()).Where("id = $1")
+
+	insert := func(res *Collecton, col Collecton) {
+		*res = col
+	}
+
+	err := database.ExecScan(
+		db,
+		string(query),
+		&colloction,
+		insert,
+		id,
+	)
+
+	return colloction, err
+
+}
+
+type UnrequestedCollection struct {
 	// Root path / start of reqursive indexing
 	Path utils.Path
 
