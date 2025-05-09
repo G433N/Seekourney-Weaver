@@ -69,7 +69,7 @@ func startContainer() {
 			// TODO: Do we want to dot this, before starting the container?
 			err := exec.Command("docker", "kill", "go-postgres").Run()
 			utils.PanicOnError(err)
-			os.Exit(1)
+			log.Fatalf("Error starting container: %s\nPlease, start the server again", recover)
 		}
 	}()
 
@@ -161,8 +161,8 @@ func Run(args []string) {
 
 	log.Printf("Indexer: %s\n", indexer2.ExecPath)
 
-	collection := indexAPI.Collecton{
-		UnrequestedCollection: indexAPI.UnrequestedCollection{
+	collection := indexAPI.Collection{
+		UnregisteredCollection: indexAPI.UnregisteredCollection{
 			Path:                utils.Path("path/to/bhamas"),
 			IndexerID:           1,
 			SourceType:          0,

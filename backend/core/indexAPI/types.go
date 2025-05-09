@@ -40,8 +40,7 @@ func (indexer *IndexerData) start() (*RunningIndexer, error) {
 		args = append(indexer.Args, "--port="+indexer.ID.GetPort().String())
 	}
 
-	execCmd := exec.Command(args[0], args[1:]...)
-	execCmd.Dir = indexer.ExecPath
+	execCmd := exec.Command(indexer.ExecPath, args...)
 
 	// TODO: Handle output
 	execCmd.Stdout = nil
@@ -70,17 +69,17 @@ type Collection struct {
 // SQL
 
 // SQLGetName returns the name of the table in the database
-func (col Collecton) SQLGetName() string {
+func (col Collection) SQLGetName() string {
 	return "collection"
 }
 
 // SQLGetFields returns the fields to be inserted into the database
-func (col Collecton) SQLGetFields() []string {
+func (col Collection) SQLGetFields() []string {
 	return []string{"path", "indexer_id", "recursive", "source_type", "respect_last_modified", "normalizer"}
 }
 
 // SQLGetValues returns the values to be inserted into the database
-func (col Collecton) SQLGetValues() []any {
+func (col Collection) SQLGetValues() []any {
 
 	return []database.SQLValue{
 		col.Path,
@@ -93,7 +92,7 @@ func (col Collecton) SQLGetValues() []any {
 }
 
 // SQLScan scans a row from the database into a Document
-func (col Collecton) SQLScan(rows *sql.Rows) (Collecton, error) {
+func (col Collection) SQLScan(rows *sql.Rows) (Collection, error) {
 	var id indexing.CollectionID
 	var path utils.Path
 	var indexerID IndexerID
@@ -104,17 +103,17 @@ func (col Collecton) SQLScan(rows *sql.Rows) (Collecton, error) {
 
 	err := rows.Scan(&id, &path, &indexerID, &recursive, &sourceType, &respectLastModified, &normalizer)
 	if err != nil {
-		return Collecton{}, err
+		return Collection{}, err
 	}
 
 	sourceTypeEnum, err := indexing.StrToSourceType(sourceType)
 	if err != nil {
 		log.Printf("Error parsing source type: %s", err)
-		return Collecton{}, err
+		return Collection{}, err
 	}
 
-	return Collecton{
-		UnrequestedCollection{
+	return Collection{
+		UnregisteredCollection{
 			path,
 			indexerID,
 			sourceTypeEnum,
@@ -127,13 +126,13 @@ func (col Collecton) SQLScan(rows *sql.Rows) (Collecton, error) {
 
 }
 
-func CollectionFromDB(db *sql.DB, id indexing.CollectionID) (Collecton, error) {
-	var colloction Collecton
+func CollectionFromDB(db *sql.DB, id indexing.CollectionID) (Collection, error) {
+	var colloction Collection
 
 	q1 := database.Select().QueryAll()
 	query := q1.From(colloction.SQLGetName()).Where("id = $1")
 
-	insert := func(res *Collecton, col Collecton) {
+	insert := func(res *Collection, col Collection) {
 		*res = col
 	}
 
@@ -149,7 +148,7 @@ func CollectionFromDB(db *sql.DB, id indexing.CollectionID) (Collecton, error) {
 
 }
 
-type UnrequestedCollection struct {
+type UnregisteredCollection struct {
 	// Root path / start of reqursive indexing
 	Path utils.Path
 

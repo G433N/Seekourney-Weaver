@@ -161,7 +161,7 @@ func (doc *Document) CalculateTf(word utils.Word) float64 {
 
 func (doc *Document) UpdateDB(db *sql.DB) error {
 
-	pairs := database.KeyValuePairs(doc)
+	pairs := []string{}
 	// Skip the first one, it's the path/primary key
 	q1 := database.Update("document").Set(pairs[1:]...)
 	query := q1.Where("path=$1")
