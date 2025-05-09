@@ -8,8 +8,10 @@ import (
 	"os/exec"
 	"testing"
 
+	"seekourney/core/config"
 	"seekourney/core/database"
 	"seekourney/core/document"
+	"seekourney/utils"
 )
 
 // Globally accessible buffer used as mock interface for server handlers
@@ -56,13 +58,11 @@ func assertBufferEquals(
 	actual bytes.Buffer,
 ) {
 	if !bytes.Equal(expected.Bytes(), actual.Bytes()) {
-		test.Log(
-			"Buffers do not match, expected:\n",
+		test.Error(label, "- buffers do not match, expected:\n",
 			expected.String(),
 			"\nGot:\n",
 			actual.String(),
 		)
-		test.Error(label)
 	}
 }
 
@@ -110,6 +110,8 @@ func TestServer(test *testing.T) {
 		db:     testDB,
 	}
 
+	conf = config.New()
+
 	test.Run(
 		"TestHandleAllSingle",
 		serverTest(testHandleAllSingle, serverParams),
@@ -118,7 +120,18 @@ func TestServer(test *testing.T) {
 		"TestHandleAllMultiple",
 		serverTest(testHandleAllMultiple, serverParams),
 	)
-	test.Run("TestHandleSearch", serverTest(testHandleSearch, serverParams))
+	test.Run(
+		"TestHandleSearchSQLSingle",
+		serverTest(testHandleSearchSQLSingle, serverParams),
+	)
+	test.Run(
+		"TestHandleSearchSQLInvalid",
+		serverTest(testHandleSearchSQLInvalid, serverParams),
+	)
+	test.Run(
+		"TestHandleSearchSQLMultiple",
+		serverTest(testHandleSearchSQLMultiple, serverParams),
+	)
 	test.Run("TestHandleQuit", serverTest(testHandleQuit, serverParams))
 
 	err := testDB.Close()
@@ -158,25 +171,74 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	assertBufferEquals(test, "HandleAllMultiple", expected, buffer)
 }
 
-func testHandleSearch(test *testing.T, serverParams serverFuncParams) {
-	// var expected bytes.Buffer
+func testHandleSearchSQLSingle(test *testing.T, serverParams serverFuncParams) {
 
-	// expected.WriteString(pageString(page1) + "\n")
-	// handleSearch(serverParams, []string{"key1"})
-	// assertBufferEquals(test, "Search key1", expected, buffer)
+	database.InsertInto(serverParams.db, testDocument1())
 
-	// expected.Reset()
-	// buffer.Reset()
-	// expected.WriteString(pageString(page2) + "\n")
-	// handleSearch(serverParams, []string{"key3"})
-	// assertBufferEquals(test, "Search key3", expected, buffer)
+	handleSearchSQL(serverParams, []string{"key1"})
 
-	// expected.Reset()
-	// buffer.Reset()
-	// expected.WriteString(pageString(page1) + "\n")
-	// expected.WriteString(pageString(page2) + "\n")
-	// handleSearch(serverParams, []string{"key2"})
-	// assertBufferEquals(test, "Search key2", expected, buffer)
+	var response utils.SearchResponse
+	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	if len(response.Results) != 1 ||
+		response.Results[0].Path != testDocument1().Path ||
+		response.Results[0].Source != testDocument1().Source {
+		test.Error("Recieved incorrect result")
+		test.Log(response.Results)
+	}
+}
+
+func testHandleSearchSQLInvalid(test *testing.T, serverParams serverFuncParams) {
+
+	database.InsertInto(serverParams.db, testDocument1())
+
+	handleSearchSQL(serverParams, []string{"badkey"})
+
+	var response utils.SearchResponse
+	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	if len(response.Results) != 0 {
+		test.Error("Expected no result")
+		test.Log(response.Results)
+	}
+}
+
+func testHandleSearchSQLMultiple(test *testing.T, serverParams serverFuncParams) {
+	var response utils.SearchResponse
+
+	database.InsertInto(serverParams.db, testDocument1())
+	database.InsertInto(serverParams.db, testDocument2())
+
+	// key1 is unique to testDocument2
+	handleSearchSQL(serverParams, []string{"key1"})
+
+	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	if len(response.Results) != 1 ||
+		response.Results[0].Path != testDocument1().Path ||
+		response.Results[0].Source != testDocument1().Source {
+		test.Error("Recieved incorrect result")
+		test.Log(response.Results)
+	}
+	buffer.Reset()
+
+	// key3 is unique to testDocument2
+	handleSearchSQL(serverParams, []string{"key3"})
+
+	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	if len(response.Results) != 1 ||
+		response.Results[0].Path != testDocument2().Path ||
+		response.Results[0].Source != testDocument2().Source {
+		test.Error("Recieved incorrect result")
+		test.Log(response.Results)
+	}
+	buffer.Reset()
+
+	// key2 is common among both documents
+	handleSearchSQL(serverParams, []string{"key2"})
+	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	if len(response.Results) != 2 {
+		test.Error("Expected two results")
+		test.Log(response.Results)
+	}
+	buffer.Reset()
 }
 
 // Expects context to be done after calling handleQuit
