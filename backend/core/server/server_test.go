@@ -143,7 +143,8 @@ func TestServer(test *testing.T) {
 func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
-	database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
 
 	jsonData, err := json.Marshal([]document.Document{testDocument1()})
 	checkIOError(err)
@@ -157,8 +158,10 @@ func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
-	database.InsertInto(serverParams.db, testDocument1())
-	database.InsertInto(serverParams.db, testDocument2())
+	_, err := database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
+	_, err = database.InsertInto(serverParams.db, testDocument2())
+	panicOnError(err)
 
 	jsonData, err := json.Marshal(
 		[]document.Document{testDocument1(), testDocument1()},
@@ -172,13 +175,15 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 }
 
 func testHandleSearchSQLSingle(test *testing.T, serverParams serverFuncParams) {
+	var response utils.SearchResponse
 
-	database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
 
 	handleSearchSQL(serverParams, []string{"key1"})
 
-	var response utils.SearchResponse
-	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	err = json.Unmarshal([]byte(buffer.Bytes()), &response)
+	panicOnError(err)
 	if len(response.Results) != 1 ||
 		response.Results[0].Path != testDocument1().Path ||
 		response.Results[0].Source != testDocument1().Source {
@@ -191,13 +196,15 @@ func testHandleSearchSQLInvalid(
 	test *testing.T,
 	serverParams serverFuncParams,
 ) {
+	var response utils.SearchResponse
 
-	database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
 
 	handleSearchSQL(serverParams, []string{"badkey"})
 
-	var response utils.SearchResponse
-	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	err = json.Unmarshal([]byte(buffer.Bytes()), &response)
+	panicOnError(err)
 	if len(response.Results) != 0 {
 		test.Error("Expected no result")
 		test.Log(response.Results)
@@ -210,13 +217,16 @@ func testHandleSearchSQLMultiple(
 ) {
 	var response utils.SearchResponse
 
-	database.InsertInto(serverParams.db, testDocument1())
-	database.InsertInto(serverParams.db, testDocument2())
+	_, err := database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
+	_, err = database.InsertInto(serverParams.db, testDocument2())
+	panicOnError(err)
 
 	// key1 is unique to testDocument2
 	handleSearchSQL(serverParams, []string{"key1"})
 
-	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	err = json.Unmarshal([]byte(buffer.Bytes()), &response)
+	panicOnError(err)
 	if len(response.Results) != 1 ||
 		response.Results[0].Path != testDocument1().Path ||
 		response.Results[0].Source != testDocument1().Source {
@@ -228,7 +238,8 @@ func testHandleSearchSQLMultiple(
 	// key3 is unique to testDocument2
 	handleSearchSQL(serverParams, []string{"key3"})
 
-	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	err = json.Unmarshal([]byte(buffer.Bytes()), &response)
+	panicOnError(err)
 	if len(response.Results) != 1 ||
 		response.Results[0].Path != testDocument2().Path ||
 		response.Results[0].Source != testDocument2().Source {
@@ -239,7 +250,8 @@ func testHandleSearchSQLMultiple(
 
 	// key2 is common among both documents
 	handleSearchSQL(serverParams, []string{"key2"})
-	json.Unmarshal([]byte(buffer.Bytes()), &response)
+	err = json.Unmarshal([]byte(buffer.Bytes()), &response)
+	panicOnError(err)
 	if len(response.Results) != 2 {
 		test.Error("Expected two results")
 		test.Log(response.Results)
