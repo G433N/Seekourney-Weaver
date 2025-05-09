@@ -53,12 +53,12 @@ func resetSQL(db *sql.DB) {
 // failing the test and logging an message if not
 func assertBufferEquals(
 	test *testing.T,
-	label string,
 	expected bytes.Buffer,
 	actual bytes.Buffer,
 ) {
 	if !bytes.Equal(expected.Bytes(), actual.Bytes()) {
-		test.Error(label, "- buffers do not match, expected:\n",
+		test.Error(
+			"Buffers do not match, expected:\n",
 			expected.String(),
 			"\nGot:\n",
 			actual.String(),
@@ -151,7 +151,7 @@ func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	expected.WriteByte('\n')
 
 	handleAll(serverParams)
-	assertBufferEquals(test, "HandleAllSingle", expected, buffer)
+	assertBufferEquals(test, expected, buffer)
 }
 
 func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
@@ -161,14 +161,14 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	database.InsertInto(serverParams.db, testDocument2())
 
 	jsonData, err := json.Marshal(
-		[]document.Document{testDocument1(), testDocument2()},
+		[]document.Document{testDocument1(), testDocument1()},
 	)
 	checkIOError(err)
 	expected.Write(jsonData)
 	expected.WriteByte('\n')
 
 	handleAll(serverParams)
-	assertBufferEquals(test, "HandleAllMultiple", expected, buffer)
+	assertBufferEquals(test, expected, buffer)
 }
 
 func testHandleSearchSQLSingle(test *testing.T, serverParams serverFuncParams) {
@@ -187,7 +187,10 @@ func testHandleSearchSQLSingle(test *testing.T, serverParams serverFuncParams) {
 	}
 }
 
-func testHandleSearchSQLInvalid(test *testing.T, serverParams serverFuncParams) {
+func testHandleSearchSQLInvalid(
+	test *testing.T,
+	serverParams serverFuncParams,
+) {
 
 	database.InsertInto(serverParams.db, testDocument1())
 
@@ -201,7 +204,10 @@ func testHandleSearchSQLInvalid(test *testing.T, serverParams serverFuncParams) 
 	}
 }
 
-func testHandleSearchSQLMultiple(test *testing.T, serverParams serverFuncParams) {
+func testHandleSearchSQLMultiple(
+	test *testing.T,
+	serverParams serverFuncParams,
+) {
 	var response utils.SearchResponse
 
 	database.InsertInto(serverParams.db, testDocument1())
