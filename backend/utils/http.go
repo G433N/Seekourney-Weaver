@@ -9,6 +9,48 @@ import (
 	"strings"
 )
 
+// RequestBodyBytes reads the request body and returns it as a byte slice.
+func RequestBodyBytes(body *http.Request) ([]byte, error) {
+	if body == nil {
+		return nil, errors.New("body is nil")
+	}
+	bytes, err := io.ReadAll(body.Body)
+	if err != nil {
+		return nil, errors.New("could not read body: " + err.Error())
+	}
+
+	return bytes, nil
+}
+
+// RequestBodyString reads the request body and returns it as a string.
+func RequestBodyString(body *http.Request) (string, error) {
+	if body == nil {
+		return "", errors.New("body is nil")
+	}
+	bytes, err := RequestBodyBytes(body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
+}
+
+// RequestBodyJson unmarshals the request body into a struct.
+func RequestBodyJson[T any](
+	body *http.Request,
+) (T, error) {
+
+	var data T
+
+	bytes, err := RequestBodyBytes(body)
+	if err != nil {
+		return data, err
+	}
+
+	err = json.Unmarshal(bytes, &data)
+	return data, err
+}
+
 type HttpBody struct {
 	body []byte
 }
