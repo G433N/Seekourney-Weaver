@@ -126,6 +126,7 @@ const (
 // RegisterIndexer adds a new indexer to the system.
 // Returns the RegisterID representing the indexer and success status.
 func RegisterIndexer(
+	db *sql.DB,
 	startupCMD string,
 ) (IndexerID, error) {
 
@@ -158,7 +159,12 @@ func RegisterIndexer(
 	err = active.Exec.Wait()
 	utils.PanicOnError(err)
 
-	// TODO: Add indexer to database
+	_, err = database.InsertInto(db, indexer)
+	if err != nil {
+		log.Fatalf("Error inserting indexer: %s\n", err)
+	}
+
+	// TODO: Get ID from database
 
 	indexer.Name = string(name)
 	// indexer.ID = ID from database

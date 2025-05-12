@@ -79,6 +79,8 @@ func main() {
 		getAll()
 	case "index":
 		index(args[2:])
+	case "test":
+		test()
 	case "quit":
 		shutdownServer()
 	default:
@@ -214,4 +216,22 @@ func index(paths []string) {
 
 		log.Printf("Sent %s successfully\n", path)
 	}
+}
+
+func test() {
+
+	body := utils.StrBody("go run indexer/localtext/main.go indexer/localtext/localtext.go")
+	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "indexer")
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return
+	}
+
+	res, err := utils.GetRequest(_HOST_, _PORT_, "all", "indexers")
+
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return
+	}
+	log.Println("Response:", string(res))
 }

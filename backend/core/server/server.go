@@ -18,7 +18,6 @@ import (
 	"seekourney/core/database"
 	"seekourney/core/document"
 	"seekourney/core/indexAPI"
-	"seekourney/core/normalize"
 	"seekourney/core/search"
 	"seekourney/indexing"
 	"seekourney/utils"
@@ -41,12 +40,14 @@ const (
 // HTTP requests.
 const (
 	_ALL_            string = "/all"
+	_ALL_INDEXERS_   string = "/all/indexers"
 	_SEARCH_         string = "/search"
 	_QUIT_           string = "/quit"
 	_PUSHPATHS_      string = "/push/paths"
 	_PUSHDOCS_       string = "/push/docs"
 	_INDEX_          string = "/index"
 	_PUSHCOLLECTION_ string = "/push/collection"
+	_PUSHINDEXER_    string = "/push/indexer"
 	_LOG_            string = "/log"
 )
 
@@ -101,16 +102,6 @@ func stopContainer() {
 // Gets initialized in the Run function.
 var conf *config.Config
 
-func test() {
-	// Test index registration
-	cmd := "go run indexer/localtext/main.go indexer/localtext/localtext.go"
-	_, err := indexAPI.RegisterIndexer(cmd)
-
-	if err != nil {
-		log.Printf("Error registering indexer: %s\n", err)
-	}
-}
-
 /*
 Run runs an http server with a postgres instance within docker container.
 It can be accessed for example by `curl 'http://localhost:8080/search?q=key1'`
@@ -137,54 +128,6 @@ func Run(args []string) {
 	go startContainer()
 
 	db := connectToDB()
-
-	// TEST
-
-	indexer := indexAPI.IndexerData{
-		Name:     "localtext",
-		ExecPath: "go",
-		Args: []string{
-			"indexer/localtext/localtext.go",
-			"indexer/localtext/test_data",
-		},
-	}
-
-	_, err := database.InsertInto(db, indexer)
-	if err != nil {
-		log.Fatalf("Error inserting indexer: %s\n", err)
-	}
-
-	indexer2, err := indexAPI.IndexerFromDB(db, 1)
-	if err != nil {
-		log.Printf("Error getting indexer from db: %s\n", err)
-	}
-
-	log.Printf("Indexer: %s\n", indexer2.ExecPath)
-
-	collection := indexAPI.Collection{
-		UnregisteredCollection: indexAPI.UnregisteredCollection{
-			Path:                utils.Path("path/to/bhamas"),
-			IndexerID:           1,
-			SourceType:          0,
-			Recursive:           false,
-			RespectLastModified: true,
-			Normalfunc:          normalize.Stemming,
-		},
-	}
-
-	_, err = database.InsertInto(db, collection)
-	if err != nil {
-		log.Fatalf("Error inserting collection into db: %s", err)
-	}
-
-	collection2, err := indexAPI.CollectionFromDB(db, 1)
-	if err != nil {
-		log.Printf("Error getting collection from db: %s\n", err)
-	}
-
-	log.Printf("Collection root: %s", collection2.Path)
-
-	// TEST STOP
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 
@@ -215,6 +158,8 @@ func Run(args []string) {
 		// we cant use resp writer concurrently nor read resp body
 		case _ALL_:
 			handleAll(serverParams)
+		case _ALL_INDEXERS_:
+			handleAllIndexers(serverParams)
 		case _SEARCH_:
 			handleSearchSQL(serverParams, request.URL.Query()["q"])
 		case _PUSHPATHS_:
@@ -225,6 +170,8 @@ func Run(args []string) {
 			handleIndex(serverParams)
 		case _PUSHCOLLECTION_:
 			handlePushCollection(serverParams, request, &indexHandler)
+		case _PUSHINDEXER_:
+			handlePushIndexer(serverParams, request)
 		case _QUIT_:
 			handleQuit(serverParams)
 		case _LOG_:
@@ -237,7 +184,6 @@ func Run(args []string) {
 
 	http.HandleFunc("/", queryHandler)
 
-	go test()
 	go func() {
 		err := server.ListenAndServe()
 		if !errors.Is(err, http.ErrServerClosed) {
@@ -291,6 +237,8 @@ func sendJSON(writer io.Writer, data any) {
 		return
 	}
 
+	log.Printf("JSON: %s\n", string(jsonData))
+
 	_, err = fmt.Fprintf(writer, "%s\n", jsonData)
 	if err != nil {
 		sendError(writer, "IO failed", err)
@@ -330,6 +278,30 @@ func handleAll(serverParams serverFuncParams) {
 	}
 
 	sendJSON(serverParams.writer, docs)
+}
+
+// handleAllIndexers handles an /all/indexers request,
+// by querying all indexers in database and writing output to response writer.
+func handleAllIndexers(serverParams serverFuncParams) {
+
+	var ind indexAPI.IndexerData
+	query := database.Select().
+		Queries(ind.SQLGetFields()...).
+		From("indexer")
+
+	insert := func(docs *[]indexAPI.IndexerData, ind indexAPI.IndexerData) {
+		*docs = append(*docs, ind)
+	}
+
+	indexers := make([]indexAPI.IndexerData, 0)
+
+	err := database.ExecScan(serverParams.db, string(query), &indexers, insert)
+	if err != nil {
+		sendError(serverParams.writer, "SQL failed", err)
+		return
+	}
+
+	sendJSON(serverParams.writer, indexers)
 }
 
 // handleSearchSQL handles a /search request.
@@ -430,6 +402,32 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 // to the appropriate indexer.
 func handleIndex(serverParams serverFuncParams) {
 	panic("Not implemented")
+}
+
+// handlePushIndexer handles a /push/indexer request from frontend client
+// by generating a new Indexer, storing it, and starting the indexer.
+func handlePushIndexer(
+	serverParams serverFuncParams,
+	request *http.Request,
+) {
+	// TODO fail or success response after unmarshall?
+	respondWithSuccess(serverParams.writer)
+
+	startupCMD, err := utils.RequestBodyString(request)
+
+	if err != nil {
+		log.Print("Main server failed to parse PushIndexer request" +
+			" from indexer with error: " + err.Error())
+		return
+	}
+
+	_, err = indexAPI.RegisterIndexer(serverParams.db, startupCMD)
+
+	if err != nil {
+		log.Print("Main server failed to register indexer with error: " + err.Error())
+		return
+	}
+
 }
 
 // handlePushCollection handles a /push/collection request from frontend client
