@@ -49,7 +49,6 @@ const (
 type serverFuncParams struct {
 	writer io.Writer
 	db     *sql.DB
-	stop   context.CancelFunc
 }
 
 // startContainer start the database container using
@@ -201,7 +200,7 @@ func Run(args []string) {
 		case _ADD_:
 			handleAdd(serverParams, request.URL.Query()["p"])
 		case _QUIT_:
-			handleQuit(serverParams)
+			handleQuit(serverParams, stop)
 		}
 	}
 
@@ -326,9 +325,9 @@ func handleAdd(serverParams serverFuncParams, paths []string) {
 
 // handleQuit handles a /quit request by initiating the shutdown process
 // by cancelling the server context.
-func handleQuit(serverParams serverFuncParams) {
+func handleQuit(serverParams serverFuncParams, stop context.CancelFunc) {
 	_, err := fmt.Fprintf(serverParams.writer, "Shutting down\n")
 	checkIOError(err)
 
-	serverParams.stop()
+	stop()
 }
