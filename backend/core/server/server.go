@@ -125,7 +125,7 @@ func Run(args []string) {
 	// Load config
 	conf = config.Load()
 
-	go startContainer()
+	// go startContainer()
 
 	db := connectToDB()
 
@@ -284,9 +284,8 @@ func handleAll(serverParams serverFuncParams) {
 // by querying all indexers in database and writing output to response writer.
 func handleAllIndexers(serverParams serverFuncParams) {
 
-	var ind indexAPI.IndexerData
 	query := database.Select().
-		Queries(ind.SQLGetFields()...).
+		QueryAll().
 		From("indexer")
 
 	insert := func(docs *[]indexAPI.IndexerData, ind indexAPI.IndexerData) {

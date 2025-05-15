@@ -150,6 +150,8 @@ func RegisterIndexer(
 	name, err := GetRequest(active, "name")
 	utils.PanicOnError(err)
 
+	indexer.Name = string(name)
+
 	log.Printf("Indexer name: %s", name)
 
 	_, err = GetRequest(active, "shutdown")
@@ -166,7 +168,6 @@ func RegisterIndexer(
 
 	// TODO: Get ID from database
 
-	indexer.Name = string(name)
 	// indexer.ID = ID from database
 
 	return 0, nil
