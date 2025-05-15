@@ -1,11 +1,11 @@
 <script lang="ts">
 	let { children } = $props();
 	import { page } from '$app/stores';
-	import { derived } from 'svelte/store';
+	// import { derived } from 'svelte/store';
 </script>
 
 <header>
-	<h1>Seekourny <br/>Weaver</h1>
+	<h1>Seekourny <br />Weaver</h1>
 </header>
 
 <nav>

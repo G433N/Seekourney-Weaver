@@ -31,13 +31,13 @@ describe('/+page.svelte', () => {
 		const mockResults = {
 			Query: 'test',
 			Results: [
-				{ Path: 'document', Score: 0.90, Source: 1 },
-				{ Path: 'website', Score: 0.79, Source: 2 },
-			],
+				{ Path: 'document', Score: 0.9, Source: 1 },
+				{ Path: 'website', Score: 0.79, Source: 2 }
+			]
 		};
 
 		// mock fetch response
-		(globalThis.fetch as any).mockResolvedValueOnce({
+		globalThis.fetch = vi.fn().mockResolvedValueOnce({
 			json: async () => mockResults
 		});
 
@@ -62,7 +62,7 @@ describe('/+page.svelte', () => {
 			Results: []
 		};
 
-		(globalThis.fetch as any).mockResolvedValueOnce({
+		globalThis.fetch = vi.fn().mockResolvedValueOnce({
 			json: async () => emptyResults
 		});
 

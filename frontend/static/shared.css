@@ -6,25 +6,25 @@ body {
 
 header {
 	background-color: #6085a0;
-	font-family: "Krona One", sans-serif;
+	font-family: 'Krona One', sans-serif;
 	font-weight: 400;
 	font-style: normal;
 	text-align: center;
 	padding: 0.5rem;
-	font-size: 1.2rem; 
+	font-size: 1.2rem;
 	/*font-weight: bold;*/
 	line-height: 1.2;
 }
 
 nav {
-	background-color: #AEC6DF; 
-	font-family: "Jost", sans-serif;
-  	font-optical-sizing: auto;
-  	font-weight: 500;
-  	font-style: normal;
-	display: flex; 
-	justify-content: center; 
-	gap: 6rem; 
+	background-color: #aec6df;
+	font-family: 'Jost', sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 500;
+	font-style: normal;
+	display: flex;
+	justify-content: center;
+	gap: 6rem;
 	padding: 1rem;
 	position: relative; /* allows us to align children to the nav */
 }
@@ -48,7 +48,7 @@ nav a.active::after {
 h2 {
 	text-align: center;
 	font-size: 2rem;
-	font-family: "Jost", sans-serif;
+	font-family: 'Jost', sans-serif;
 	font-optical-sizing: auto;
 	font-weight: 500;
 	font-style: normal;
@@ -56,14 +56,14 @@ h2 {
 
 h3 {
 	font-size: 1.4rem;
-	font-family: "Jost", sans-serif;
+	font-family: 'Jost', sans-serif;
 	font-optical-sizing: auto;
 	font-weight: 500;
 	font-style: normal;
 }
 
 label {
-	font-family: "Jost", sans-serif;
+	font-family: 'Jost', sans-serif;
 	font-optical-sizing: auto;
 	font-weight: 500;
 	font-style: normal;
@@ -72,12 +72,12 @@ label {
 button {
 	background-color: #aec6df;
 	border-color: #aec6df;
-	font-family: "Jost", sans-serif;
+	font-family: 'Jost', sans-serif;
 	font-optical-sizing: auto;
 	font-weight: 400;
 	font-style: normal;
-	border: none; 
-	border-radius: 6px; 
+	border: none;
+	border-radius: 6px;
 }
 
 button:hover {
@@ -90,15 +90,15 @@ main {
 }
 
 input {
-	flex: 1; 
-	padding: 0.75rem; 
-	font-size: 1rem; 
-	background-color: #F0EEEE; 
-	border-radius: 6px; 
+	flex: 1;
+	padding: 0.75rem;
+	font-size: 1rem;
+	background-color: #f0eeee;
+	border-radius: 6px;
 	border: none;
 }
 
-input[type="text"]:focus {
+input[type='text']:focus {
 	outline: none;
 	border: 2px solid #517188;
 	border-radius: 4px;
