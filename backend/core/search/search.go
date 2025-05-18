@@ -12,6 +12,59 @@ import (
 	"sort"
 )
 
+// Parses a query for filters and removes any parts that is part of the "-" filter.
+// The return data is the query plus slices with words associated with filters.
+// TODO: This implementation assumes correct syntax. E.g, 'terminal +dog -cat'
+func parseQuery(query utils.Query) utils.ParsedQuery {
+	parsedQuery := utils.ParsedQuery{ModifiedQuery: query, PlusWords: make([]string, 0), MinusWords: make([]string, 0)}
+	currentFilterWord := ""
+	inPlus := false
+	inMinus := false
+
+	for byteIndex := range query {
+		currentByte := string(query[byteIndex])
+
+		if currentByte == " " && inPlus {
+			parsedQuery.PlusWords = append(parsedQuery.PlusWords, currentFilterWord)
+			inPlus = false
+			currentFilterWord = ""
+		}
+
+		if currentByte == " " && inMinus {
+			parsedQuery.MinusWords = append(parsedQuery.MinusWords, currentFilterWord)
+			inMinus = false
+			currentFilterWord = ""
+		}
+
+		if inPlus {
+			currentFilterWord += currentByte
+			query += utils.Query(currentByte)
+		} else if inMinus {
+			currentFilterWord += currentByte
+		} else {
+			query += utils.Query(currentByte)
+		}
+
+		if currentByte == "+" && !inPlus && !inMinus {
+			inPlus = true
+		}
+
+		if currentByte == "-" && !inPlus && !inMinus {
+			inMinus = true
+		}
+	}
+
+	if inPlus && len(currentFilterWord) > 0 {
+		parsedQuery.PlusWords = append(parsedQuery.PlusWords, currentFilterWord)
+	}
+
+	if inMinus && len(currentFilterWord) > 0 {
+		parsedQuery.MinusWords = append(parsedQuery.MinusWords, currentFilterWord)
+	}
+
+	return parsedQuery
+}
+
 type SearchResult = utils.SearchResult
 
 // SqlSearch performs a search in the database using SQL.
@@ -28,10 +81,17 @@ func SqlSearch(
 		panic(err)
 	}
 
-	for word := range words.WordsIter(string(query)) {
-		word = config.Normalizer.NormalizeWord(word)
+	parsedQuery := parseQuery(query)
 
-		freqMap, err := database.FreqMap(db, word)
+	for word := range words.WordsIter(string(parsedQuery.ModifiedQuery)) {
+		word = config.Normalizer.Word(word)
+
+		freqMap, err := database.FreqMap(
+			db,
+			word,
+			parsedQuery.PlusWords,
+			parsedQuery.MinusWords)
+
 		idf := calculateIdf(freqMap, docAmount)
 
 		if err != nil {

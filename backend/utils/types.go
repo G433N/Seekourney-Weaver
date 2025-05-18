@@ -56,6 +56,14 @@ type ReverseMap map[Word][]Path
 // Used when searching.
 type WordFrequencyMap map[Path]Frequency
 
+// ParsedQuery is a collection of a search query
+// and slices of words for filtering.
+type ParsedQuery struct {
+	ModifiedQuery Query
+	PlusWords     []string
+	MinusWords    []string
+}
+
 // SearchResult is information about a single document
 // with respect to a current search query.
 type SearchResult struct {
