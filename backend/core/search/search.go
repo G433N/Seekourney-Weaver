@@ -12,14 +12,22 @@ import (
 	"sort"
 )
 
-// Parses a query for filters and removes any parts that is part of the "-" filter.
-// The return data is the query plus slices with words associated with filters.
-// TODO: This implementation assumes correct syntax. E.g, 'terminal +dog -cat'
+// Parses a query for filters and removes anything
+// that is part of the "-" and quote filters.
+// The return data is the query plus slices with words associated with the filters.
+// TODO: This implementation assumes correct syntax. E.g, 'terminal +dog -cat "bad"'
 func parseQuery(query utils.Query) utils.ParsedQuery {
-	parsedQuery := utils.ParsedQuery{ModifiedQuery: query, PlusWords: make([]string, 0), MinusWords: make([]string, 0)}
+	parsedQuery := utils.ParsedQuery{
+		ModifiedQuery: query,
+		PlusWords:     make([]string, 0),
+		MinusWords:    make([]string, 0),
+		Quotes:        make([]string, 0)}
+
 	currentFilterWord := ""
+	currentQuote := ""
 	inPlus := false
 	inMinus := false
+	inQuote := false
 
 	for byteIndex := range query {
 		currentByte := string(query[byteIndex])
@@ -36,21 +44,33 @@ func parseQuery(query utils.Query) utils.ParsedQuery {
 			currentFilterWord = ""
 		}
 
+		if currentByte == "\"" && inQuote {
+			parsedQuery.Quotes = append(parsedQuery.Quotes, currentQuote)
+			inQuote = false
+			currentQuote = ""
+		}
+
 		if inPlus {
 			currentFilterWord += currentByte
 			query += utils.Query(currentByte)
 		} else if inMinus {
 			currentFilterWord += currentByte
+		} else if inQuote {
+			currentQuote += currentByte
 		} else {
 			query += utils.Query(currentByte)
 		}
 
-		if currentByte == "+" && !inPlus && !inMinus {
+		if currentByte == "+" && !inPlus && !inMinus && !inQuote {
 			inPlus = true
 		}
 
-		if currentByte == "-" && !inPlus && !inMinus {
+		if currentByte == "-" && !inPlus && !inMinus && !inQuote {
 			inMinus = true
+		}
+
+		if currentByte == "\"" {
+			inQuote = true
 		}
 	}
 
@@ -90,7 +110,8 @@ func SqlSearch(
 			db,
 			word,
 			parsedQuery.PlusWords,
-			parsedQuery.MinusWords)
+			parsedQuery.MinusWords,
+			parsedQuery.Quotes)
 
 		idf := calculateIdf(freqMap, docAmount)
 

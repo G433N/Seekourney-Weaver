@@ -28,3 +28,7 @@ CREATE TABLE document (
   last_indexed text NOT NULL,
   collection_id text REFERENCES collection(id)
 );
+CREATE TABLE texts (
+    text_path text FOREIGN KEY REFERENCES document(path),
+    plain_text text NOT NULL
+);

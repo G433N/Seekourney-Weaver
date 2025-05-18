@@ -33,13 +33,26 @@ func FreqMap(
 	db *sql.DB,
 	word utils.Word,
 	plusWords []string,
-	minusWords []string) (utils.WordFrequencyMap, error) {
+	minusWords []string,
+	quotes []string) (utils.WordFrequencyMap, error) {
 
 	wordStr := string(word)
-
 	json := JsonValue("words", wordStr, "score")
-	q1 := Select().Queries("path", json).From("document")
-	q2 := q1.Where("words ?& $1 AND NOT words ?& $2")
+
+	pattern := make([]string, 0)
+	pattern = append(pattern, "%")
+
+	for quoteIndex := range quotes {
+		currentQuote := quotes[quoteIndex]
+
+		pattern = append(pattern, currentQuote+"%")
+	}
+
+	q := "SELECT path, " +
+		json +
+		"docuemnt AS D, texts AS T WHERE" +
+		"D.words ?& $1 AND NOT D.words ?& $2" +
+		"AND D.path == T.path AND T.plain_text LIKE $3"
 
 	requiredWords := []string(append(plusWords, wordStr))
 
@@ -50,10 +63,11 @@ func FreqMap(
 	result := make(utils.WordFrequencyMap)
 	err := ExecScan(
 		db,
-		string(q2),
+		string(q),
 		&result,
 		insert,
 		pq.StringArray(requiredWords),
-		pq.StringArray(minusWords))
+		pq.StringArray(minusWords),
+		pq.StringArray(pattern))
 	return result, err
 }
