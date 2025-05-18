@@ -49,6 +49,7 @@ type ParsedQuery struct {
 	ModifiedQuery Query
 	PlusWords     []string
 	MinusWords    []string
+	Quotes        []string
 }
 
 // SearchResult is information about a single document

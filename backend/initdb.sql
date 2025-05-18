@@ -6,3 +6,8 @@ CREATE TABLE document (
   type path_type NOT NULL,
   words jsonb DEFAULT '{}' NOT NULL
 );
+
+CREATE TABLE texts (
+    text_path text FOREIGN KEY REFERENCES document(path),
+    plain_text text NOT NULL
+);
