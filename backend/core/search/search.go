@@ -18,7 +18,7 @@ import (
 // TODO: This implementation assumes correct syntax. E.g, 'terminal +dog -cat "bad"'
 func parseQuery(query utils.Query) utils.ParsedQuery {
 	parsedQuery := utils.ParsedQuery{
-		ModifiedQuery: query,
+		ModifiedQuery: "",
 		PlusWords:     make([]string, 0),
 		MinusWords:    make([]string, 0),
 		Quotes:        make([]string, 0)}
@@ -52,13 +52,13 @@ func parseQuery(query utils.Query) utils.ParsedQuery {
 
 		if inPlus {
 			currentFilterWord += currentByte
-			query += utils.Query(currentByte)
+			parsedQuery.ModifiedQuery += utils.Query(currentByte)
 		} else if inMinus {
 			currentFilterWord += currentByte
 		} else if inQuote {
 			currentQuote += currentByte
 		} else {
-			query += utils.Query(currentByte)
+			parsedQuery.ModifiedQuery += utils.Query(currentByte)
 		}
 
 		if currentByte == "+" && !inPlus && !inMinus && !inQuote {

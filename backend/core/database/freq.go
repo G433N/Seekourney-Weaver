@@ -53,15 +53,27 @@ func FreqMap(
 
 	// execute <unnamed>: SELECT path, JSON_VALUE( words , '$.linear' ) AS score FROM document WHERE words ?& $1
 
-	// TODO: Use fuctions to generate the query
-	q := strings.Join([]string{"SELECT D.path AS path,",
-		j,
-		"FROM document AS D",
-		"WHERE D.words ?& $1",
-		// "AND NOT D.words ?& $2",
-		// "AND D.path = T.path",
-		// "AND T.plain_text LIKE $3",
-	}, " ")
+	var q string
+
+	if len(minusWords) > 0 {
+		q = strings.Join([]string{"SELECT D.path AS path,",
+			j,
+			"FROM document AS D",
+			"WHERE D.words ?& $1",
+			"AND NOT D.words ?& $2",
+			// "AND D.path = T.path",
+			// "AND T.plain_text LIKE $3",
+		}, " ")
+	} else {
+		// TODO: Use fuctions to generate the query
+		q = strings.Join([]string{"SELECT D.path AS path,",
+			j,
+			"FROM document AS D",
+			"WHERE D.words ?& $1",
+			// "AND D.path = T.path",
+			// "AND T.plain_text LIKE $3",
+		}, " ")
+	}
 
 	log.Println("Query: ", q)
 
@@ -73,15 +85,28 @@ func FreqMap(
 
 	result := make(utils.WordFrequencyMap)
 
-	err := ExecScan(
-		db,
-		string(q),
-		&result,
-		insert,
-		pq.StringArray(requiredWords),
-		// pq.StringArray(minusWords),
-	// pq.StringArray(pattern)
-	)
+	var err error
+	if len(minusWords) > 0 {
+
+		err = ExecScan(
+			db,
+			string(q),
+			&result,
+			insert,
+			pq.StringArray(requiredWords),
+			pq.StringArray(minusWords),
+		// pq.StringArray(pattern)
+		)
+	} else {
+		err = ExecScan(
+			db,
+			string(q),
+			&result,
+			insert,
+			pq.StringArray(requiredWords),
+		// pq.StringArray(pattern)
+		)
+	}
 	return result, err
 }
 
