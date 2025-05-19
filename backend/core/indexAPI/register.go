@@ -48,6 +48,7 @@ func (ind IndexerData) SQLGetName() string {
 // SQLGetFields returns the fields to be inserted into the database
 func (ind IndexerData) SQLGetFields() []string {
 	return []string{
+		"id",
 		"name",
 		"exec",
 		"args",
@@ -82,7 +83,7 @@ func (ind IndexerData) SQLScan(rows *sql.Rows) (IndexerData, error) {
 	var argsBytes []byte
 	var port utils.Port
 
-	err := rows.Scan(&id, &name, &exec, &argsBytes)
+	err := rows.Scan(&id, &name, &exec, &argsBytes, &port)
 	if err != nil {
 		return IndexerData{}, err
 	}
@@ -193,7 +194,7 @@ func RegisterIndexer(
 	log.Printf("Indexer name: %s", name)
 
 	_, err = GetRequest(active, "shutdown")
-	utils.PanicOnError(err) // TODO actual error handling if shutdown fails
+	// utils.PanicOnError(err) // TODO actual error handling if shutdown fails
 	// TODO: Fix this, the indexer shutsdown before ansering
 
 	err = active.Exec.Wait()
