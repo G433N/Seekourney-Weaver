@@ -1,7 +1,6 @@
 package config
 
 import (
-	"seekourney/core/normalize"
 	"seekourney/utils"
 )
 
@@ -24,7 +23,7 @@ type Config struct {
 	// struct
 
 	// Normalizer is a function that normalizes words
-	Normalizer normalize.Normalizer
+	Normalizer utils.Normalizer
 }
 
 // New creates a new config
@@ -33,7 +32,7 @@ func New() *Config {
 	return &Config{
 		ParrallelIndexing:  true,
 		ParrallelSearching: true,
-		Normalizer:         normalize.ToLower,
+		Normalizer:         utils.ToLower,
 	}
 }
 

@@ -39,16 +39,17 @@ const (
 
 // HTTP requests.
 const (
-	_ALL_            string = "/all"
-	_ALL_INDEXERS_   string = "/all/indexers"
-	_SEARCH_         string = "/search"
-	_QUIT_           string = "/quit"
-	_PUSHPATHS_      string = "/push/paths"
-	_PUSHDOCS_       string = "/push/docs"
-	_INDEX_          string = "/index"
-	_PUSHCOLLECTION_ string = "/push/collection"
-	_PUSHINDEXER_    string = "/push/indexer"
-	_LOG_            string = "/log"
+	_ALL_             string = "/all"
+	_ALL_INDEXERS_    string = "/all/indexers"
+	_ALL_COLLECTIONS_ string = "/all/collections"
+	_SEARCH_          string = "/search"
+	_QUIT_            string = "/quit"
+	_PUSHPATHS_       string = "/push/paths"
+	_PUSHDOCS_        string = "/push/docs"
+	_INDEX_           string = "/index"
+	_PUSHCOLLECTION_  string = "/push/collection"
+	_PUSHINDEXER_     string = "/push/indexer"
+	_LOG_             string = "/log"
 )
 
 // serverFuncParams is used by server query handler functions.
@@ -163,6 +164,8 @@ func Run(args []string) {
 			handleAll(serverParams)
 		case _ALL_INDEXERS_:
 			handleAllIndexers(serverParams)
+		case _ALL_COLLECTIONS_:
+			handleAllCollections(serverParams)
 		case _SEARCH_:
 			handleSearchSQL(serverParams, request.URL.Query()["q"])
 		case _PUSHPATHS_:
@@ -192,6 +195,7 @@ func Run(args []string) {
 		if !errors.Is(err, http.ErrServerClosed) {
 			fmt.Println("Server encountered an error:", err)
 		}
+		indexHandler.ForceShutdownAll()
 		stop()
 	}()
 
@@ -239,8 +243,6 @@ func sendJSON(writer io.Writer, data any) {
 		sendError(writer, "JSON failed", err)
 		return
 	}
-
-	log.Printf("JSON: %s\n", string(jsonData))
 
 	_, err = fmt.Fprintf(writer, "%s\n", jsonData)
 	if err != nil {
@@ -306,6 +308,29 @@ func handleAllIndexers(serverParams serverFuncParams) {
 	sendJSON(serverParams.writer, indexers)
 }
 
+// handleAllCollections handles an /all/collections request,
+// by querying all collections in database and writing output to response writer.
+func handleAllCollections(serverParams serverFuncParams) {
+
+	query := database.Select().
+		QueryAll().
+		From("collection")
+
+	insert := func(docs *[]indexAPI.Collection, col indexAPI.Collection) {
+		*docs = append(*docs, col)
+	}
+
+	collections := make([]indexAPI.Collection, 0)
+
+	err := database.ExecScan(serverParams.db, string(query), &collections, insert)
+	if err != nil {
+		sendError(serverParams.writer, "SQL failed", err)
+		return
+	}
+
+	sendJSON(serverParams.writer, collections)
+}
+
 // handleSearchSQL handles a /search request.
 func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
@@ -364,7 +389,7 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 	go func() {
 		for _, rawDoc := range resp.Data.Documents {
 			normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
-			normalizedDoc.SourceID = 0 // TODO change or set in Normalize
+			normalizedDoc.SourceID = "" // TODO change or set in Normalize
 
 			// TODO fix
 			// Error inserting row: pq: duplicate key value violates

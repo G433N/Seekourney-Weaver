@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"seekourney/core/database"
-	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
 	"seekourney/utils/timing"
@@ -23,7 +22,7 @@ type Document struct {
 // Normalize normalizes the document using the provided normalizer
 func Normalize(
 	doc indexing.UnnormalizedDocument,
-	normalizer normalize.Normalizer,
+	normalizer utils.Normalizer,
 ) Document {
 
 	freqMap := make(utils.FrequencyMap)

@@ -7,9 +7,10 @@ import (
 	"seekourney/core/database"
 	"seekourney/utils"
 	"strings"
+	"time"
 )
 
-// See indexing_API.md for more information.
+type IndexerID = utils.IndexerID
 
 // IndexerData represents a registerd indexer
 type IndexerData struct {
@@ -185,7 +186,7 @@ func RegisterIndexer(
 
 	active, err := indexer.start()
 	utils.PanicOnError(err) // TODO actual error handling if test start fails
-
+	time.Sleep(1 * time.Second)
 	name, err := GetRequest(active, "name")
 	utils.PanicOnError(err)
 

@@ -6,26 +6,17 @@ import (
 	"seekourney/utils"
 )
 
-// TODO: Should probably use utils.Source instead of SourceType or rename it
-
-// SourceType is an enumeration of the different source types.
-type SourceType int
-
-const (
-	FileSource SourceType = iota
-	DirSource
-	UrlSource
-)
+type SourceType = utils.SourceType
 
 // StrToSourceType converts a string to a SourceType.
 func StrToSourceType(str string) (SourceType, error) {
 	switch str {
 	case "file":
-		return FileSource, nil
+		return utils.FileSource, nil
 	case "dir":
-		return DirSource, nil
+		return utils.DirSource, nil
 	case "url":
-		return UrlSource, nil
+		return utils.UrlSource, nil
 	default:
 		return 0, errors.New("invalid source type")
 	}
@@ -34,11 +25,11 @@ func StrToSourceType(str string) (SourceType, error) {
 // SourceTypeToStr converts a SourceType to a string.
 func SourceTypeToStr(t SourceType) string {
 	switch t {
-	case FileSource:
+	case utils.FileSource:
 		return "file"
-	case DirSource:
+	case utils.DirSource:
 		return "dir"
-	case UrlSource:
+	case utils.UrlSource:
 		return "url"
 	default:
 		return "unknown"
@@ -56,12 +47,12 @@ func SourceTypeFromPath(path utils.Path) (SourceType, error) {
 	}
 
 	if stat.IsDir() {
-		return DirSource, nil
+		return utils.DirSource, nil
 	}
 
 	// TODO: What to do about symlinks and simlar things?
 	if stat.Mode().IsRegular() {
-		return FileSource, nil
+		return utils.FileSource, nil
 	}
 
 	return 0, errors.New("unknown source type")

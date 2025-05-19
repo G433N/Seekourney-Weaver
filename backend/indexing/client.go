@@ -108,15 +108,16 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 		case "/index":
 			settings, err := client.SettingsFromRequest(request)
 			if err != nil {
+				client.Log("Error getting settings from request: %s", err)
 				log.Println("Error getting settings from request:", err)
 			}
 
 			switch settings.Type {
-			case FileSource:
+			case utils.FileSource:
 				client.Log("Indexing file: %s", settings.Path)
-			case DirSource:
+			case utils.DirSource:
 				client.Log("Indexing directory: %s", settings.Path)
-			case UrlSource:
+			case utils.UrlSource:
 				client.Log("Indexing URL: %s", settings.Path)
 			}
 

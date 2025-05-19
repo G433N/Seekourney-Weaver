@@ -1,15 +1,18 @@
 package main
 
-import "seekourney/indexing"
+import (
+	"seekourney/indexing"
+	"seekourney/utils"
+)
 
 func index(config *Config, cxt indexing.Context, settings indexing.Settings) {
 
 	switch settings.Type {
-	case indexing.FileSource:
+	case utils.FileSource:
 		HandleFile(cxt, settings)
-	case indexing.DirSource:
+	case utils.DirSource:
 		HandleDir(config, cxt, settings)
-	case indexing.UrlSource:
+	case utils.UrlSource:
 		HandleUrl(cxt, settings)
 	default:
 		cxt.Log("Unknown source type: %s", settings.Type)

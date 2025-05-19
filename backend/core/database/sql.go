@@ -23,7 +23,7 @@ const (
 	_JSON_VALUE_ = "JSON_VALUE"
 )
 
-type ObjectId string
+type ObjectId = utils.ObjectId
 
 func GenerateId() ObjectId {
 	t := strconv.FormatInt(time.Now().Unix(), 10)

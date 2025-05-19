@@ -88,11 +88,6 @@ func index(
 	client.channel <- doc
 }
 
-func (cxt *Context) send(doc *UnnormalizedDocument) {
-
-	cxt.Log("Sending document: %s", doc.Path)
-}
-
 // TODO: Better name -> Document builder
 type docMetadata struct {
 	path   utils.Path

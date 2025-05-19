@@ -3,7 +3,9 @@ package indexAPI
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"os/exec"
+	"seekourney/core/database"
 	"seekourney/indexing"
 	"seekourney/utils"
 	"sync"
@@ -117,11 +119,27 @@ func (handler *IndexHandler) Dispatch(
 ) DispatchErrors {
 	errs := newDispatchErrors()
 
-	resp, err := utils.GetRequestJSON[IndexerResponse](
+	log.Printf("Dispatching indexing request to indexer %s", indexer.Name)
+	log.Printf("Collection path: %s", collection.Path)
+	settings := indexing.Settings{
+		Path:         collection.Path,
+		Type:         0,
+		CollectionID: collection.ID,
+		Recursive:    collection.Recursive,
+		Parrallel:    false,
+	}
+
+	body := utils.JsonBody(settings)
+
+	log.Println("Request body: ", *body)
+
+	log.Printf("Collection path: %s", collection.Path)
+
+	resp, err := utils.PostRequest(
+		body,
 		_ENDPOINTPREFIX_,
 		indexer.Port,
 		_INDEX_,
-		string(collection.Path),
 	)
 
 	if err != nil {
@@ -136,22 +154,25 @@ func (handler *IndexHandler) Dispatch(
 		}
 
 		handler.Indexers[indexer.ID] = running
+
+		secondBody := utils.JsonBody(settings)
 		// Try indexing request again.
-		resp, err = utils.GetRequestJSON[IndexerResponse](
+		resp, err = utils.PostRequest(
+			secondBody,
 			_ENDPOINTPREFIX_,
 			indexer.Port,
 			_INDEX_,
-			string(collection.Path),
 		)
 		// Should never fail since startup successful.
 		utils.PanicOnError(err)
 	}
 
-	if resp.Status != indexing.STATUSSUCCESSFUL {
-		errs.DispatchAttempt = errors.New(
-			"indexer " + indexer.Name +
-				" failed indexing request with message: " + resp.Data.Message)
-	}
+	// if resp.Status != indexing.STATUSSUCCESSFUL {
+	// 	errs.DispatchAttempt = errors.New(
+	// 		"indexer " + indexer.Name +
+	// 			" failed indexing request with message: " + resp.Data.Message)
+	// }
+	log.Printf("Indexer %s response: %s", indexer.Name, resp)
 	return errs
 }
 
@@ -161,8 +182,16 @@ func (handler *IndexHandler) DispatchFromCollection(
 	db *sql.DB,
 	collection Collection,
 ) DispatchErrors {
-	// TODO get indexer from db
-	indexer := IndexerData{}
+
+	insert := func(res *IndexerData, indexer IndexerData) {
+		*res = indexer
+	}
+
+	indexerID := collection.IndexerID
+
+	q := database.Select().QueryAll().From("indexer").Where("id = $1")
+	var indexer IndexerData
+	database.ExecScan(db, string(q), &indexer, insert, indexerID)
 
 	return handler.Dispatch(indexer, collection)
 }
@@ -177,6 +206,19 @@ func (handler *IndexHandler) DispatchFromID(
 	collection := Collection{}
 
 	return handler.DispatchFromCollection(db, collection)
+}
+
+func (handler *IndexHandler) ForceShutdownAll() {
+	handler.Mutex.Lock()
+	for _, indexer := range handler.Indexers {
+		err := indexer.Exec.Process.Kill()
+		if err != nil {
+			log.Println(err)
+		} else {
+			log.Printf("Killed indexer %s", indexer.ID)
+		}
+	}
+	handler.Mutex.Unlock()
 }
 
 /*

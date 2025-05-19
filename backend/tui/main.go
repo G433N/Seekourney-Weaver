@@ -187,6 +187,8 @@ func shutdownServer() {
 
 func index(paths []string) {
 
+	d := "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/"
+	paths = append(paths, d)
 	log.Println("Indexing paths:", paths)
 
 	for _, path := range paths {
@@ -198,14 +200,16 @@ func index(paths []string) {
 			return
 		}
 
-		settings := &indexing.Settings{
-			Path:      utils.Path(path),
-			Type:      Type,
-			Recursive: false,
-			Parrallel: false,
+		settings := indexing.Settings{
+			Path:         utils.Path(path),
+			Type:         Type,
+			CollectionID: "",
+			Recursive:    true,
+			Parrallel:    false,
 		}
 
-		body := utils.JsonBody(*settings)
+		body := utils.JsonBody(settings)
+		log.Println("Request body:", *body)
 		port := utils.MININDEXERPORT
 		_, err = utils.PostRequest(body, _HOST_, port, "index")
 
@@ -218,6 +222,56 @@ func index(paths []string) {
 	}
 }
 
+type extractID struct {
+	ID utils.IndexerID
+}
+
+func allIndexers() utils.IndexerID {
+	res, err := utils.GetRequestBytes(_HOST_, _PORT_, "all", "indexers")
+
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return ""
+	}
+
+	var bytes bytes.Buffer
+	err = json.Indent(&bytes, res, "", "  ")
+	if err != nil {
+		log.Println("Error indenting JSON:", err)
+		return ""
+	}
+
+	log.Println("Response:", bytes.String())
+
+	var indexers []extractID
+	err = json.Unmarshal(res, &indexers)
+
+	if err != nil {
+		log.Println("Error unmarshalling JSON:", err)
+		return ""
+	}
+
+	return indexers[0].ID
+}
+
+func allCollections() {
+	res, err := utils.GetRequestBytes(_HOST_, _PORT_, "all", "collections")
+
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return
+	}
+
+	var bytes bytes.Buffer
+	err = json.Indent(&bytes, res, "", "  ")
+	if err != nil {
+		log.Println("Error indenting JSON:", err)
+		return
+	}
+
+	log.Println("Response:", bytes.String())
+}
+
 func test() {
 
 	body := utils.StrBody("go run indexer/localtext/main.go indexer/localtext/localtext.go")
@@ -227,11 +281,24 @@ func test() {
 		return
 	}
 
-	res, err := utils.GetRequest(_HOST_, _PORT_, "all", "indexers")
+	id := allIndexers()
 
+	col := utils.UnregisteredCollection{
+		Path:                "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/",
+		IndexerID:           id,
+		SourceType:          utils.DirSource,
+		Recursive:           true,
+		RespectLastModified: false,
+		Normalfunc:          utils.Stemming,
+	}
+
+	body = utils.JsonBody(col)
+	_, err = utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
 	if err != nil {
 		log.Println("Error sending request:", err)
 		return
 	}
-	log.Println("Response:", string(res))
+
+	allCollections()
+
 }

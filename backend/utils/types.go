@@ -18,6 +18,14 @@ type Frequency int
 // Score is a number representing how relevant a given Word is when searching.
 type Score float64
 
+// Normalizer is a type that represents a normalizer.
+type Normalizer int
+
+const (
+	ToLower Normalizer = iota
+	Stemming
+)
+
 // Source denotes the type of source indexed.
 // E.g. a local file or a web page.
 type Source int
@@ -28,6 +36,17 @@ const (
 	SourceLocal Source = iota
 	// SourceWeb is a web page
 	SourceWeb
+)
+
+// TODO: Should probably use utils.Source instead of SourceType or rename it
+
+// SourceType is an enumeration of the different source types.
+type SourceType int
+
+const (
+	FileSource SourceType = iota
+	DirSource
+	UrlSource
 )
 
 // FrequencyMap gives the frequency of a given word.
@@ -82,3 +101,28 @@ func (p Port) String() string {
 // Address including port acting as endpoint for http request.
 // E.g. "http://localhost:39010".
 type Endpoint string
+
+type ObjectId string
+
+// IndexerID is a unique identifier for an indexer.
+type IndexerID ObjectId
+
+type UnregisteredCollection struct {
+	// Root path / start of reqursive indexing
+	Path Path
+
+	// Indexer used to index this collection
+	IndexerID IndexerID
+
+	// Type of source
+	SourceType SourceType
+
+	// If true, the indexer will index Recursivevly
+	Recursive bool
+
+	// If false will always index when reindexing is requested
+	RespectLastModified bool
+
+	// What function to normalize all documents with
+	Normalfunc Normalizer
+}

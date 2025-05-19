@@ -4,7 +4,6 @@ import (
 	"log"
 	"seekourney/core/config"
 	"seekourney/core/folder"
-	"seekourney/core/normalize"
 	"seekourney/utils"
 	"seekourney/utils/timing"
 	"seekourney/utils/words"
@@ -52,7 +51,7 @@ func scoreWord(
 // It returns a map of document paths and their corresponding score of the query
 // Higher score means more relevant document
 func search(
-	normalize normalize.Normalizer,
+	normalize utils.Normalizer,
 	folder *folder.Folder,
 	rm utils.ReverseMap,
 	query string,
@@ -75,7 +74,7 @@ func search(
 // searchParrallel is a parallel version of the search function, currently
 // slower
 func searchParrallel(
-	normalize normalize.Normalizer,
+	normalize utils.Normalizer,
 	folder *folder.Folder,
 	rm utils.ReverseMap,
 	query string,

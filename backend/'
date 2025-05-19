@@ -40,6 +40,10 @@ func (client *IndexerClient) SettingsFromRequest(
 	if err != nil {
 		return Settings{}, err
 	}
+	defer func() {
+		err := request.Body.Close()
+		utils.PanicOnError(err)
+	}()
 
 	client.Log("Request body: %s", string(bytes))
 
