@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	_TESTINDEXERID_ IndexerID = 42
+	_TESTINDEXERID_ IndexerID = "testid"
 	// URI for mocking index requests.
 	// Workaround as we cant call function when definition const.
 	_TESTURI_  string     = "http://localhost:39042"
@@ -29,6 +29,7 @@ func makeTestIndexerData() IndexerData {
 		Name:     "The Test Indexer",
 		ExecPath: "",
 		Args:     []string{"ls"},
+		Port:     utils.MININDEXERPORT,
 	}
 }
 
@@ -39,7 +40,7 @@ func makeTestCollection() Collection {
 	return Collection{
 		UnregisteredCollection: UnregisteredCollection{
 			Path:                _TESTPATH_,
-			IndexerID:           42,
+			IndexerID:           "testid",
 			SourceType:          indexing.FileSource,
 			Recursive:           false,
 			RespectLastModified: false,

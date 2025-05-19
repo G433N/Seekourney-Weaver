@@ -3,9 +3,11 @@ package database
 import (
 	"database/sql"
 	"iter"
+	"math/rand"
 	"seekourney/utils"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -20,6 +22,15 @@ const (
 	_SET_        = "SET"
 	_JSON_VALUE_ = "JSON_VALUE"
 )
+
+type ObjectId string
+
+func GenerateId() ObjectId {
+	t := strconv.FormatInt(time.Now().Unix(), 10)
+	r := strconv.FormatInt(rand.Int63(), 16)[:4]
+
+	return ObjectId(t + r)
+}
 
 /// Scan
 
@@ -283,7 +294,9 @@ func Update(table string) UpdateStatment {
 
 // Queries adds a list of queries to the SQL statement.
 func (s UpdateStatment) Set(KeyValue ...string) UpdateSet {
-	return UpdateSet(string(s) + " " + _SET_ + " " + strings.Join(KeyValue, ", "))
+	return UpdateSet(
+		string(s) + " " + _SET_ + " " + strings.Join(KeyValue, ", "),
+	)
 }
 
 // Where adds a WHERE clause to the SQL statement.

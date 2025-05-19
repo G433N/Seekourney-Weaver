@@ -70,7 +70,10 @@ func startContainer() {
 			// TODO: Do we want to dot this, before starting the container?
 			err := exec.Command("docker", "kill", "go-postgres").Run()
 			utils.PanicOnError(err)
-			log.Fatalf("Error starting container: %s\nPlease, start the server again", recover)
+			log.Fatalf(
+				"Error starting container: %s\nPlease, start the server again",
+				recover,
+			)
 		}
 	}()
 
@@ -125,7 +128,7 @@ func Run(args []string) {
 	// Load config
 	conf = config.Load()
 
-	// go startContainer()
+	go startContainer()
 
 	db := connectToDB()
 
@@ -423,7 +426,9 @@ func handlePushIndexer(
 	_, err = indexAPI.RegisterIndexer(serverParams.db, startupCMD)
 
 	if err != nil {
-		log.Print("Main server failed to register indexer with error: " + err.Error())
+		log.Print(
+			"Main server failed to register indexer with error: " + err.Error(),
+		)
 		return
 	}
 

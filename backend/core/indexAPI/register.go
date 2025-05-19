@@ -25,6 +25,10 @@ type IndexerData struct {
 	// The arguments to pass to the indexer executable,
 	// does not need to be unique.
 	Args []string
+
+	// The port assigned to the indexer, must be a unique value between
+	// utils.MININDEXERPORT and utils.MAXINDEXERPORT
+	Port utils.Port
 }
 
 // Sql
@@ -47,6 +51,7 @@ func (ind IndexerData) SQLGetFields() []string {
 		"name",
 		"exec",
 		"args",
+		"port",
 	}
 }
 
@@ -60,9 +65,11 @@ func (ind IndexerData) SQLGetValues() []any {
 	}
 
 	return []database.SQLValue{
+		ind.ID,
 		ind.Name,
 		ind.ExecPath,
 		jsonArgs,
+		ind.Port,
 	}
 }
 
@@ -73,6 +80,7 @@ func (ind IndexerData) SQLScan(rows *sql.Rows) (IndexerData, error) {
 	var name string
 	var exec string
 	var argsBytes []byte
+	var port utils.Port
 
 	err := rows.Scan(&id, &name, &exec, &argsBytes)
 	if err != nil {
@@ -91,6 +99,7 @@ func (ind IndexerData) SQLScan(rows *sql.Rows) (IndexerData, error) {
 		Name:     name,
 		ExecPath: exec,
 		Args:     args,
+		Port:     port,
 	}, nil
 
 }
@@ -121,6 +130,34 @@ const (
 	_ENDPOINTPREFIX_ string = "http://localhost"
 )
 
+// GeneratePort generates a valid port value by finding the lowest int not
+// already taken
+// TODO: does not check for maximum value (nominally 500 but unsure if this is a
+// hard constraint)
+func generatePort(db *sql.DB) utils.Port {
+	query := "SELECT t1.port + 1 " +
+		"FROM indexer t1 " +
+		"WHERE NOT EXISTS(SELECT * FROM indexer t2 WHERE t2.port = t1.port + 1 " +
+		"AND t2.port > " + utils.MININDEXERPORT.String() + ") " +
+		"ORDER BY t1.port LIMIT 1"
+
+	rows, err := db.Query(query)
+	utils.PanicOnError(err)
+	defer rows.Close()
+
+	var result utils.Port
+	// if no indexers in table, will receive empty rows
+	notEmpty := rows.Next()
+	if notEmpty {
+		err = rows.Scan(&result)
+		utils.PanicOnError(err)
+	} else {
+		result = utils.MININDEXERPORT
+	}
+
+	return result
+}
+
 // isUnoccupiedPort checks if another indexer already has been registered
 
 // RegisterIndexer adds a new indexer to the system.
@@ -134,14 +171,15 @@ func RegisterIndexer(
 	command := split[0]
 	args := split[1:]
 
+	port := generatePort(db)
+
 	// If this ID is used we are out of ports, so we can use this as a temporary
-	// ID
-	// to register the indexer.
-	lastID := IndexerID(utils.MAXINDEXERPORT - utils.MININDEXERPORT)
+	// ID to register the indexer.
 	indexer := IndexerData{
-		ID:       lastID,
+		ID:       IndexerID(database.GenerateId()),
 		ExecPath: command,
 		Args:     args,
+		Port:     port,
 	}
 
 	active, err := indexer.start()
@@ -155,7 +193,7 @@ func RegisterIndexer(
 	log.Printf("Indexer name: %s", name)
 
 	_, err = GetRequest(active, "shutdown")
-	// utils.PanicOnError(err) // TODO actual error handling if shutdown fails
+	utils.PanicOnError(err) // TODO actual error handling if shutdown fails
 	// TODO: Fix this, the indexer shutsdown before ansering
 
 	err = active.Exec.Wait()
@@ -166,11 +204,7 @@ func RegisterIndexer(
 		log.Fatalf("Error inserting indexer: %s\n", err)
 	}
 
-	// TODO: Get ID from database
-
-	// indexer.ID = ID from database
-
-	return 0, nil
+	return indexer.ID, nil
 }
 
 // UnregisterIndexer removes an existing indexer from the system.

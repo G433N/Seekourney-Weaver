@@ -37,21 +37,18 @@ type DispatchErrors struct {
 type RunningIndexer struct {
 	ID   IndexerID
 	Exec *exec.Cmd
+	Port utils.Port
 }
 
 func GetRequestJSON[T any](
 	indexer *RunningIndexer,
 	urlPath ...string,
 ) (T, error) {
-
-	port := indexer.ID.GetPort()
-	return utils.GetRequestJSON[T](_ENDPOINTPREFIX_, port, urlPath...)
+	return utils.GetRequestJSON[T](_ENDPOINTPREFIX_, indexer.Port, urlPath...)
 }
 
 func GetRequest(indexer *RunningIndexer, urlPath ...string) (string, error) {
-
-	port := indexer.ID.GetPort()
-	return utils.GetRequest(_ENDPOINTPREFIX_, port, urlPath...)
+	return utils.GetRequest(_ENDPOINTPREFIX_, indexer.Port, urlPath...)
 }
 
 // PostRequestJSON sends a POST request to the indexer and returns the response
@@ -61,8 +58,7 @@ func PostRequestJSON[T any](
 	indexer *RunningIndexer,
 	urlPath ...string,
 ) (T, error) {
-	port := indexer.ID.GetPort()
-	return utils.PostRequestJSON[T](body, _ENDPOINTPREFIX_, port, urlPath...)
+	return utils.PostRequestJSON[T](body, _ENDPOINTPREFIX_, indexer.Port, urlPath...)
 }
 
 // PostRequest sends a POST request to the indexer and returns the response as a
@@ -72,8 +68,7 @@ func PostRequest(
 	indexer *RunningIndexer,
 	urlPath ...string,
 ) (string, error) {
-	port := indexer.ID.GetPort()
-	return utils.PostRequest(body, _ENDPOINTPREFIX_, port, urlPath...)
+	return utils.PostRequest(body, _ENDPOINTPREFIX_, indexer.Port, urlPath...)
 }
 
 func (indexer *RunningIndexer) Wait() error {
@@ -124,7 +119,7 @@ func (handler *IndexHandler) Dispatch(
 
 	resp, err := utils.GetRequestJSON[IndexerResponse](
 		_ENDPOINTPREFIX_,
-		indexer.ID.GetPort(),
+		indexer.Port,
 		_INDEX_,
 		string(collection.Path),
 	)
@@ -144,7 +139,7 @@ func (handler *IndexHandler) Dispatch(
 		// Try indexing request again.
 		resp, err = utils.GetRequestJSON[IndexerResponse](
 			_ENDPOINTPREFIX_,
-			indexer.ID.GetPort(),
+			indexer.Port,
 			_INDEX_,
 			string(collection.Path),
 		)
