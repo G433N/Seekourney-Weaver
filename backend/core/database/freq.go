@@ -48,11 +48,12 @@ func FreqMap(
 		pattern = append(pattern, currentQuote+"%")
 	}
 
-	q := "SELECT path, " +
-		json +
-		"docuemnt AS D, texts AS T WHERE" +
-		"D.words ?& $1 AND NOT D.words ?& $2" +
-		"AND D.path == T.path AND T.plain_text LIKE $3"
+	q := "SELECT D.path, " + json +
+		"FROM docuemnt AS D, texts AS T" +
+		"WHERE D.words ?& $1" +
+		"AND NOT D.words ?& $2" +
+		"AND D.path == T.path" +
+		"AND T.plain_text LIKE $3"
 
 	requiredWords := []string(append(plusWords, wordStr))
 
