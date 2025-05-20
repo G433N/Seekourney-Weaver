@@ -42,37 +42,57 @@ func FreqMap(
 	wordStr := string(word)
 	j := JsonValue("words", wordStr, "score")
 
-	pattern := make([]string, 0)
-	pattern = append(pattern, "%")
+	pattern_string := "%"
 
 	for quoteIndex := range quotes {
 		currentQuote := quotes[quoteIndex]
-
-		pattern = append(pattern, currentQuote+"%")
+		pattern_string += currentQuote + "%"
 	}
 
 	// execute <unnamed>: SELECT path, JSON_VALUE( words , '$.linear' ) AS score FROM document WHERE words ?& $1
-
+	pattern := []string{pattern_string}
 	var q string
 
+	// TODO: Make this not super ugly
+	// TODO: Use functions to generate the query
 	if len(minusWords) > 0 {
-		q = strings.Join([]string{"SELECT D.path AS path,",
-			j,
-			"FROM document AS D",
-			"WHERE D.words ?& $1",
-			"AND NOT D.words ?& $2",
-			// "AND D.path = T.path",
-			// "AND T.plain_text LIKE $3",
-		}, " ")
+		if len(quotes) > 0 {
+			q = strings.Join([]string{
+				"SELECT D.path AS path,",
+				j,
+				"FROM document AS D, path_text as P",
+				"WHERE D.words ?& $1",
+				"AND NOT D.words ?& $2",
+				"AND D.path = T.path",
+				"AND T.plain_text LIKE $3",
+			}, " ")
+		} else {
+			q = strings.Join([]string{
+				"SELECT D.path AS path,",
+				j,
+				"FROM document AS D",
+				"WHERE D.words ?& $1",
+				"AND NOT D.words ?& $2",
+			}, " ")
+		}
 	} else {
-		// TODO: Use fuctions to generate the query
-		q = strings.Join([]string{"SELECT D.path AS path,",
-			j,
-			"FROM document AS D",
-			"WHERE D.words ?& $1",
-			// "AND D.path = T.path",
-			// "AND T.plain_text LIKE $3",
-		}, " ")
+		if len(quotes) > 0 {
+			q = strings.Join([]string{
+				"SELECT D.path AS path,",
+				j,
+				"FROM document AS D, path_text as P",
+				"WHERE D.words ?& $1",
+				"AND D.path = T.path",
+				"AND T.plain_text LIKE $2",
+			}, " ")
+		} else {
+			q = strings.Join([]string{
+				"SELECT D.path AS path,",
+				j,
+				"FROM document AS D",
+				"WHERE D.words ?& $1",
+			}, " ")
+		}
 	}
 
 	log.Println("Query: ", q)
@@ -87,26 +107,47 @@ func FreqMap(
 
 	var err error
 	if len(minusWords) > 0 {
-
-		err = ExecScan(
-			db,
-			string(q),
-			&result,
-			insert,
-			pq.StringArray(requiredWords),
-			pq.StringArray(minusWords),
-		// pq.StringArray(pattern)
-		)
+		if len(quotes) > 0 {
+			err = ExecScan(
+				db,
+				string(q),
+				&result,
+				insert,
+				pq.StringArray(requiredWords),
+				pq.StringArray(minusWords),
+				pq.StringArray(pattern),
+			)
+		} else {
+			err = ExecScan(
+				db,
+				string(q),
+				&result,
+				insert,
+				pq.StringArray(requiredWords),
+				pq.StringArray(minusWords),
+			)
+		}
 	} else {
-		err = ExecScan(
-			db,
-			string(q),
-			&result,
-			insert,
-			pq.StringArray(requiredWords),
-		// pq.StringArray(pattern)
-		)
+		if len(quotes) > 0 {
+			err = ExecScan(
+				db,
+				string(q),
+				&result,
+				insert,
+				pq.StringArray(requiredWords),
+				pq.StringArray(pattern),
+			)
+		} else {
+			err = ExecScan(
+				db,
+				string(q),
+				&result,
+				insert,
+				pq.StringArray(requiredWords),
+			)
+		}
 	}
+
 	return result, err
 }
 

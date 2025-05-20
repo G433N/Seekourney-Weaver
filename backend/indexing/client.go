@@ -21,11 +21,12 @@ import (
 // that handles the requests and responses. It also handles the logging and
 // error handling. It should be used as a singleton
 type IndexerClient struct {
-	Port       utils.Port
-	Name       string
-	Parallel   bool
-	ConfigPath *utils.Path
-	channel    chan *UnnormalizedDocument
+	Port        utils.Port
+	Name        string
+	Parallel    bool
+	ConfigPath  *utils.Path
+	channel     chan *UnnormalizedDocument
+	textChannel chan *PathText
 }
 
 // NewClient creates a new IndexerClient. It reads the command line for
@@ -63,13 +64,15 @@ func NewClient(name string) *IndexerClient {
 	}
 
 	channel := make(chan *UnnormalizedDocument, 100)
+	textChannel := make(chan *PathText, 100)
 
 	client := &IndexerClient{
-		Port:       port,
-		Name:       name,
-		Parallel:   parrallel,
-		ConfigPath: configPath,
-		channel:    channel,
+		Port:        port,
+		Name:        name,
+		Parallel:    parrallel,
+		ConfigPath:  configPath,
+		channel:     channel,
+		textChannel: textChannel,
 	}
 
 	go func() {
@@ -87,6 +90,28 @@ func NewClient(name string) *IndexerClient {
 				)
 				if err != nil {
 					client.Log("Error sending document: %s", err)
+					return
+				}
+				log.Println("Response:", resp)
+			}
+		}
+	}()
+
+	go func() {
+		for pathText := range client.textChannel {
+			if pathText != nil {
+				bytes := ResponsePathText([]PathText{*pathText})
+				body := utils.BytesBody(bytes)
+				port := utils.Port(8080)
+				resp, err := utils.PostRequest(
+					body,
+					"http://localhost",
+					port,
+					"push",
+					"text",
+				)
+				if err != nil {
+					client.Log("Error sending text: %s", err)
 					return
 				}
 				log.Println("Response:", resp)

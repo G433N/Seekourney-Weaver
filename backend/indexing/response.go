@@ -18,6 +18,21 @@ type IndexerResponse struct {
 	Data   ResponseData `json:"data"`
 }
 
+// TextResponseData is "data" value in indexerTextResponse.
+// TODO: Integrate this better into existsing types
+type TextResponseData struct {
+	Message   string     `json:"message"`
+	PathTexts []PathText `json:"path_texts"`
+}
+
+// IndexerTextResponse is the format
+// for responses from indexer for adding texts.
+// TODO: Integrate this better into existsing types
+type IndexerTextResponse struct {
+	Status string           `json:"status"`
+	Data   TextResponseData `json:"data"`
+}
+
 const (
 	// Values used in status field in response.
 	STATUSSUCCESSFUL string = "success"
@@ -96,6 +111,21 @@ func ResponseDocs(docs []UnnormalizedDocument) []byte {
 
 	if err != nil {
 		panic("indexing ResponseDocs could not marshal response")
+	}
+
+	return jsonData
+}
+
+// ResponseTextPath creates indexer pushpath response,
+// used when sending path_text to Core, in JSON format.
+func ResponsePathText(pathTexts []PathText) []byte {
+	jsonData, err := json.Marshal(IndexerTextResponse{
+		Status: STATUSSUCCESSFUL,
+		Data:   TextResponseData{PathTexts: pathTexts},
+	})
+
+	if err != nil {
+		panic("indexing ResponseTextPath could not marshal response")
 	}
 
 	return jsonData

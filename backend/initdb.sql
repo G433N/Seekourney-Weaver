@@ -29,7 +29,7 @@ CREATE TABLE document (
   collection_id text REFERENCES collection(id)
 );
 
-CREATE TABLE texts (
+CREATE TABLE path_text (
     path text PRIMARY KEY REFERENCES document(path),
     plain_text text NOT NULL
 );

@@ -63,7 +63,16 @@ func index(
 	if f != nil {
 		(*f)(doc)
 	}
+
+	// TODO: This could maybe be moved to start of functiion
+	// TODO: because the same operation is used in metadata.index()
+	text := strings.Join(metadata.text, "\n")
+	pathText := PathText{Path: metadata.path, Text: text}
+
 	client.channel <- doc
+
+	// TODO: Very unsure if this should be here
+	client.textChannel <- &pathText
 }
 
 // DocBuilder represents a partally completed document

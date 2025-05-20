@@ -54,6 +54,7 @@ const (
 	_INDEX_           string = "/index"
 	_PUSHCOLLECTION_  string = "/push/collection"
 	_PUSHINDEXER_     string = "/push/indexer"
+	_PUSHTEXT_	  string = "/push/text"
 	_LOG_             string = "/log"
 )
 
@@ -204,6 +205,8 @@ func Run(args []string) {
 			writer.Header().Set("Content-Disposition", "attachment")
 			writer.Header().Set("Content-Type", "application/octet-stream")
 			handleDownload(serverParams, request.URL.Query()["q"])
+		case _PUSHTEXT_:
+			handlePushText(serverParams, request)
 		case _QUIT_:
 			handleQuit(serverParams, stop)
 		case _LOG_:
@@ -553,6 +556,63 @@ func handlePushCollection(
 
 		logDispatchErrors(errs)
 	}()
+}
+
+// handlePushText handles a push/text request from an indexer by
+// creating multiple PathText objects and trying to insert them,
+func handlePushText(serverParams serverFuncParams, request *http.Request) {
+
+	respondWithSuccess(serverParams.writer)
+
+	body, err := io.ReadAll(request.Body)
+	utils.PanicOnError(err)
+
+	resp := indexing.IndexerTextResponse{}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		log.Print("Main server failed to parse PushText request" +
+			" from indexer with error: " + err.Error())
+		return
+	}
+
+	if resp.Status != indexing.STATUSSUCCESSFUL {
+		log.Print("indexing request failed (messaged with PushText request)" +
+			" with message: " + resp.Data.Message)
+		return
+	}
+
+	if len(resp.Data.PathTexts) == 0 {
+		log.Print("indexer indexed path and produced no text " +
+			"(PushText request)")
+		return
+	}
+
+	for _, pathText := range resp.Data.PathTexts {
+		inDatabase, err := document.DocumentExsitsDB(serverParams.db, pathText.Path)
+
+		if err != nil {
+			log.Print("error checking for document in function handlePushText")
+		}
+
+		errorRetries := 0
+		for !inDatabase && errorRetries < 100 {
+			inDatabase, err = document.DocumentExsitsDB(serverParams.db, pathText.Path)
+
+			if err != nil {
+				log.Print("error checking for document in function handlePushText")
+				errorRetries += 1
+			}
+		}
+
+		_, err = database.InsertInto(serverParams.db, pathText)
+
+		if err != nil {
+			log.Printf("Error inserting row: %s\n", err)
+			continue
+		}
+
+		log.Print("Inserted path_text with path: ", pathText.Path)
+	}
 }
 
 // handleQuit handles a /quit request by initiating the shutdown process
