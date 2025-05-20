@@ -3,7 +3,7 @@ package Sync
 import "sync"
 
 /*
-NewType used to represent the index of an element in the array.
+ArrayPlusIndex represents the index of an element in the array.
 
 # Invariants:
   - Should only be gained as a handle after a Push operation.
@@ -11,10 +11,18 @@ NewType used to represent the index of an element in the array.
 */
 type ArrayPlusIndex int
 
+/*
+ArrayPlus is a thread-safe wraper for a slice.
+Meant to be used as kind of a variation on a map
+where instead of a key, an index is used as a hadle
+*/
 type ArrayPlus[T any] struct {
-	lock   sync.Mutex
-	gaps   Stack[ArrayPlusIndex]
-	arr    []T
+	lock sync.Mutex
+	// Stack to keep track of free indexes
+	gaps Stack[ArrayPlusIndex]
+	// The wrapped slice
+	arr []T
+	// The maximum length of the slice
 	maxLen int
 }
 
@@ -26,53 +34,40 @@ creates a new ArrayPlus with the given size.
 */
 func NewArrayPlus[T any](maxSize int) *ArrayPlus[T] {
 	lenght := min(maxSize/3, _CHUNKSIZE_)
-	newArr := ArrayPlus[T]{
-		gaps:   NewStack[ArrayPlusIndex](maxSize),
+	arrPlus := ArrayPlus[T]{
+		gaps:   *NewStack[ArrayPlusIndex](maxSize),
 		arr:    make([]T, lenght),
 		maxLen: maxSize,
 	}
 	for i := range lenght {
-		newArr.gaps.Push(ArrayPlusIndex(i))
+		arrPlus.gaps.Push(ArrayPlusIndex(i))
 	}
-	return &newArr
+	return &arrPlus
 }
 
 /*
 Pop
-retrieves the element at the given index.
+retrieves the element at the given index,
+which means also removing it from the array.
 */
-func (stack *ArrayPlus[T]) Pop(indexTyped ArrayPlusIndex) T {
+func (arrPlus *ArrayPlus[T]) Pop(indexTyped ArrayPlusIndex) T {
 	index := int(indexTyped)
 
-	elem := stack.arr[index]
+	elem := arrPlus.arr[index]
 
-	stack.gaps.Push(indexTyped)
+	arrPlus.gaps.Push(indexTyped)
 
 	return elem
 }
 
 /*
-// with current invariants, this function is not needed
-func (stack *ArrayPlus[T]) TryPop(indexTyped ArrayPlusIndex) (T, bool) {
-
-	index := int(indexTyped)
-
-	elem := stack.arr[index]
-
-	stack.gaps.Push(indexTyped)
-
-	return elem, true
-}
-*/
-
-/*
 Peek
 returns the element at the given index without removing it.
 */
-func (stack *ArrayPlus[T]) Peek(indexTyped ArrayPlusIndex) T {
+func (arrPlus *ArrayPlus[T]) Peek(indexTyped ArrayPlusIndex) T {
 	index := int(indexTyped)
 
-	elem := stack.arr[index]
+	elem := arrPlus.arr[index]
 
 	return elem
 }
@@ -83,28 +78,28 @@ adds an element to the array and returns the index of the element.
 If the array is full, it will either grow the array if maxLen is not reached,
 or it will block until space is available.
 */
-func (stack *ArrayPlus[T]) Push(elem T) ArrayPlusIndex {
-	index, ok := stack.gaps.TryPop()
+func (arrPlus *ArrayPlus[T]) Push(elem T) ArrayPlusIndex {
+	index, ok := arrPlus.gaps.TryPop()
 	if ok {
-		stack.arr[index] = elem
+		arrPlus.arr[index] = elem
 		return index
 	}
-	stack.lock.Lock()
-	if len(stack.arr) >= stack.maxLen {
-		stack.lock.Unlock()
-		index = stack.gaps.Pop()
-		stack.arr[index] = elem
+	arrPlus.lock.Lock()
+	if len(arrPlus.arr) >= arrPlus.maxLen {
+		arrPlus.lock.Unlock()
+		index = arrPlus.gaps.Pop()
+		arrPlus.arr[index] = elem
 		return index
 	}
-	oldLen := len(stack.arr)
-	addLength := min(stack.maxLen-len(stack.arr), _CHUNKSIZE_)
+	oldLen := len(arrPlus.arr)
+	addLength := min(arrPlus.maxLen-len(arrPlus.arr), _CHUNKSIZE_)
 	newChuck := make([]T, addLength)
-	stack.arr = append(stack.arr, newChuck...)
+	arrPlus.arr = append(arrPlus.arr, newChuck...)
 	for i := range addLength - 1 {
-		stack.gaps.Push(ArrayPlusIndex(i + (oldLen + 1)))
+		arrPlus.gaps.Push(ArrayPlusIndex(i + (oldLen + 1)))
 	}
-	stack.arr[oldLen] = elem
-	stack.lock.Unlock()
+	arrPlus.arr[oldLen] = elem
+	arrPlus.lock.Unlock()
 	return ArrayPlusIndex(oldLen)
 }
 
@@ -114,25 +109,25 @@ attempts to add an element to the array and returns the index of the element.
 If the array is full, it will either grow the array if maxLen is not reached,
 or it will return false without blocking.
 */
-func (stack *ArrayPlus[T]) TryPush(elem T) (ArrayPlusIndex, bool) {
-	index, ok := stack.gaps.TryPop()
+func (arrPlus *ArrayPlus[T]) TryPush(elem T) (ArrayPlusIndex, bool) {
+	index, ok := arrPlus.gaps.TryPop()
 	if ok {
-		stack.arr[index] = elem
+		arrPlus.arr[index] = elem
 		return index, true
 	}
-	stack.lock.Lock()
-	if len(stack.arr) >= stack.maxLen {
-		stack.lock.Unlock()
+	arrPlus.lock.Lock()
+	if len(arrPlus.arr) >= arrPlus.maxLen {
+		arrPlus.lock.Unlock()
 		return 0, false
 	}
-	oldLen := len(stack.arr)
-	addLength := min(stack.maxLen-len(stack.arr), _CHUNKSIZE_)
+	oldLen := len(arrPlus.arr)
+	addLength := min(arrPlus.maxLen-len(arrPlus.arr), _CHUNKSIZE_)
 	newChuck := make([]T, addLength)
-	stack.arr = append(stack.arr, newChuck...)
+	arrPlus.arr = append(arrPlus.arr, newChuck...)
 	for i := range addLength - 1 {
-		stack.gaps.Push(ArrayPlusIndex(i + (oldLen + 1)))
+		arrPlus.gaps.Push(ArrayPlusIndex(i + (oldLen + 1)))
 	}
-	stack.arr[oldLen] = elem
-	stack.lock.Unlock()
+	arrPlus.arr[oldLen] = elem
+	arrPlus.lock.Unlock()
 	return ArrayPlusIndex(oldLen), true
 }

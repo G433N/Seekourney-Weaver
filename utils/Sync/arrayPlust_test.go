@@ -11,12 +11,12 @@ func TestArrayPlusAdvanced(t *testing.T) {
 	errSem := Sync.NewSemaphore()
 
 	wg := sync.WaitGroup{}
-	wg.Add(20)
-	for i := range 20 {
+	wg.Add(200)
+	for i := range 200 {
 		go func() {
 			defer wg.Done()
 			number := i
-			for range 20 {
+			for range 200 {
 				index := arrPlus.Push(number)
 				if number != arrPlus.Peek(index) {
 					errSem.Signal()
@@ -25,7 +25,7 @@ func TestArrayPlusAdvanced(t *testing.T) {
 				if number != newNumber {
 					errSem.Signal()
 				}
-				number = newNumber + 20
+				number = newNumber + 200
 			}
 		}()
 	}
