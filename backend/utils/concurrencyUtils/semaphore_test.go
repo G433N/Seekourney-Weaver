@@ -99,6 +99,9 @@ func testRendezvousHelper(test *testing.T, ID int, waitGroup *sync.WaitGroup) {
 }
 
 func TestRendezvous(test *testing.T) {
+	if testing.Short() {
+		test.Skip("skipping long test")
+	}
 	var waitGroup sync.WaitGroup
 	children := 1000
 	waitGroup.Add(children)
