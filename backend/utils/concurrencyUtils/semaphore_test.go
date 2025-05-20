@@ -1,13 +1,13 @@
-package Sync_test
+package concurrencyUtils_test
 
 import (
-	"seekourney/utils/Sync"
+	"seekourney/utils/concurrencyUtils"
 	"sync"
 	"testing"
 )
 
 func TestTryWait(test *testing.T) {
-	semaphore := Sync.NewSemaphore()
+	semaphore := concurrencyUtils.NewSemaphore()
 	if semaphore.TryWait() {
 		test.Error("TryWait should return false on an initial empty semaphore")
 	}
@@ -40,7 +40,7 @@ const _RENDEZVOULOOPS_ = 5000
 func rendezvousHelper(
 	result *[]int, ID int, waitGroup *sync.WaitGroup,
 	mutex *sync.Mutex,
-	ownSem *Sync.Semaphore, otherSem *Sync.Semaphore,
+	ownSem *concurrencyUtils.Semaphore, otherSem *concurrencyUtils.Semaphore,
 ) {
 	for range _RENDEZVOULOOPS_ {
 		mutex.Lock()
@@ -57,8 +57,8 @@ func rendezvousHelper(
 }
 
 func testRendezvousHelper(test *testing.T, ID int, waitGroup *sync.WaitGroup) {
-	sem1 := Sync.NewSemaphore()
-	sem2 := Sync.NewSemaphore()
+	sem1 := concurrencyUtils.NewSemaphore()
+	sem2 := concurrencyUtils.NewSemaphore()
 	result := []int{}
 	var mutex sync.Mutex
 	var childWaitGroup sync.WaitGroup
@@ -111,7 +111,7 @@ func TestRendezvous(test *testing.T) {
 
 func TestWaitBlock(test *testing.T) {
 	children := 1000
-	sem := Sync.NewSemaphore()
+	sem := concurrencyUtils.NewSemaphore()
 	for x := range children {
 		go func() {
 			sem.Wait()
@@ -123,8 +123,8 @@ func TestWaitBlock(test *testing.T) {
 }
 
 func TestLargeNumberGoroutine(test *testing.T) {
-	sem1 := Sync.NewSemaphore(1)
-	sem2 := Sync.NewSemaphore()
+	sem1 := concurrencyUtils.NewSemaphore(1)
+	sem2 := concurrencyUtils.NewSemaphore()
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(200)
 	for range 100 {
@@ -155,11 +155,11 @@ func TestLargeNumberGoroutine(test *testing.T) {
 }
 
 func TestBoundedSemaphores(test *testing.T) {
-	sem1 := Sync.NewSemaphore()
-	sem2 := Sync.NewSemaphore(0)
-	sem3 := Sync.NewSemaphore(1)
-	sem4 := Sync.NewSemaphore(1, 1)
-	sem5 := Sync.NewSemaphore(0, 2)
+	sem1 := concurrencyUtils.NewSemaphore()
+	sem2 := concurrencyUtils.NewSemaphore(0)
+	sem3 := concurrencyUtils.NewSemaphore(1)
+	sem4 := concurrencyUtils.NewSemaphore(1, 1)
+	sem5 := concurrencyUtils.NewSemaphore(0, 2)
 
 	sem1.Signal()
 	if !sem1.TryWait() {
@@ -218,7 +218,7 @@ func TestBoundedSemaphores(test *testing.T) {
 
 func TestSignalBoundedBlock(test *testing.T) {
 	children := 1000
-	sem := Sync.NewSemaphore(1, 1)
+	sem := concurrencyUtils.NewSemaphore(1, 1)
 	for x := range children {
 		go func() {
 			sem.Signal()
@@ -241,8 +241,8 @@ func TestBoundedRendezvous(test *testing.T) {
 }
 
 func testBoundedRendezvousHelper(test *testing.T, ID int, waitGroup *sync.WaitGroup) {
-	sem1 := Sync.NewSemaphore(0, 1)
-	sem2 := Sync.NewSemaphore(0, 1)
+	sem1 := concurrencyUtils.NewSemaphore(0, 1)
+	sem2 := concurrencyUtils.NewSemaphore(0, 1)
 	result := []int{}
 	var mutex sync.Mutex
 	var childWaitGroup sync.WaitGroup
@@ -283,8 +283,8 @@ func testBoundedRendezvousHelper(test *testing.T, ID int, waitGroup *sync.WaitGr
 }
 
 func TestBoundedLargeNumberGoroutine1(test *testing.T) {
-	sem1 := Sync.NewSemaphore(1, 100)
-	sem2 := Sync.NewSemaphore(0, 100)
+	sem1 := concurrencyUtils.NewSemaphore(1, 100)
+	sem2 := concurrencyUtils.NewSemaphore(0, 100)
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(400)
 	for range 200 {
@@ -315,7 +315,7 @@ func TestBoundedLargeNumberGoroutine1(test *testing.T) {
 }
 
 func TestBoundedLargeNumberGoroutine2(test *testing.T) {
-	sem1 := Sync.NewSemaphore(1, 10)
+	sem1 := concurrencyUtils.NewSemaphore(1, 10)
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(400)
 	for range 200 {
