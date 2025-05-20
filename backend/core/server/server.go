@@ -154,7 +154,7 @@ func Run(args []string) {
 	indexHandler := indexAPI.NewIndexHandler()
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
-		enableCORS(&writer)
+		utils.EnableCORS(&writer)
 		serverParams := serverFuncParams{writer: writer, db: db}
 
 		switch html.EscapeString(request.URL.Path) {
@@ -213,11 +213,6 @@ func Run(args []string) {
 	}
 
 	stopContainer()
-}
-
-// enableCORS sets Cross-origin resource sharing on for a ResponseWriter.
-func enableCORS(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 // recoverSQLError calls recover and writes a message to writer

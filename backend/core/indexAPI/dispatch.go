@@ -2,6 +2,7 @@ package indexAPI
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"log"
 	"os/exec"
@@ -15,9 +16,9 @@ import (
 // See indexing_API.md for more information.
 
 const (
-	_PING_          string        = "/ping"
-	_SHUTDOWN_      string        = "/shutdown"
-	_INDEX_         string        = "/index"
+	_PING_          string        = "ping"
+	_SHUTDOWN_      string        = "shutdown"
+	_INDEX_         string        = "index"
 	_SHORTTIMEOUT_  time.Duration = 2 * time.Second
 	_MEDIUMTIMEOUT_ time.Duration = 5 * time.Second
 )
@@ -123,15 +124,19 @@ func (handler *IndexHandler) Dispatch(
 	log.Printf("Collection path: %s", collection.Path)
 	settings := indexing.Settings{
 		Path:         collection.Path,
-		Type:         0,
+		Type:         collection.SourceType,
 		CollectionID: collection.ID,
 		Recursive:    collection.Recursive,
 		Parrallel:    false,
 	}
 
+	test, err := json.MarshalIndent(settings, "", "  ")
+	utils.PanicOnError(err)
+	log.Printf("Settings: %s", string(test))
+
 	body := utils.JsonBody(settings)
 
-	log.Println("Request body: ", *body)
+	log.Printf("Request body: ", *body)
 
 	log.Printf("Collection path: %s", collection.Path)
 

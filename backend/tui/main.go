@@ -187,7 +187,7 @@ func shutdownServer() {
 
 func index(paths []string) {
 
-	d := "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/"
+	d := "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md"
 	paths = append(paths, d)
 	log.Println("Indexing paths:", paths)
 
@@ -207,6 +207,10 @@ func index(paths []string) {
 			Recursive:    true,
 			Parrallel:    false,
 		}
+
+		test, err := json.MarshalIndent(settings, "", "  ")
+		utils.PanicOnError(err)
+		log.Printf("Settings: %s", string(test))
 
 		body := utils.JsonBody(settings)
 		log.Println("Request body:", *body)

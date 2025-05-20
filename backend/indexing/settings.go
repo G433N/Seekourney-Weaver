@@ -1,8 +1,7 @@
 package indexing
 
 import (
-	"encoding/json"
-	"io"
+	"log"
 	"net/http"
 	"seekourney/utils"
 )
@@ -36,16 +35,11 @@ type Settings struct {
 func (client *IndexerClient) SettingsFromRequest(
 	request *http.Request) (Settings, error) {
 
-	bytes, err := io.ReadAll(request.Body)
-	if err != nil {
-		return Settings{}, err
-	}
+	set, err := utils.RequestBodyJson[Settings](request)
 
-	client.Log("Request body: %s", string(bytes))
-
-	set := Settings{}
-	err = json.Unmarshal(bytes, &set)
 	if err != nil {
+		log.Printf("Error parsing request body: %v", err)
+
 		return Settings{}, err
 	}
 

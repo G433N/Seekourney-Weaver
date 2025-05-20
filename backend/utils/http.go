@@ -5,9 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
+	"reflect"
 	"strings"
 )
+
+// EnableCORS sets Cross-origin resource sharing on for a ResponseWriter.
+func EnableCORS(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
 
 // RequestBodyBytes reads the request body and returns it as a byte slice.
 func RequestBodyBytes(body *http.Request) ([]byte, error) {
@@ -42,12 +49,21 @@ func RequestBodyJson[T any](
 
 	var data T
 
-	bytes, err := RequestBodyBytes(body)
+	b, err := RequestBodyBytes(body)
 	if err != nil {
 		return data, err
 	}
 
-	err = json.Unmarshal(bytes, &data)
+	var buffer bytes.Buffer
+	err = json.Indent(&buffer, b, "", "  ")
+	if err != nil {
+		log.Printf("Error indenting JSON: %v", err)
+	} else {
+		name := reflect.TypeOf(data)
+		log.Printf("%s: %s", name, buffer.String())
+	}
+
+	err = json.Unmarshal(b, &data)
 	return data, err
 }
 
@@ -158,7 +174,7 @@ func PostRequestBytes(
 	// TODO: Implement PostRequestBytes
 
 	url := host + ":" + port.String() + "/" + strings.Join(urlPath, "/")
-	req, err := http.NewRequest("GET", url, intoReader(body))
+	req, err := http.NewRequest("POST", url, intoReader(body))
 	if err != nil {
 		return nil, errors.New(
 			"indexer did not respond to request: " + err.Error(),
@@ -184,7 +200,6 @@ func PostRequestJSON[T any](
 	port Port,
 	urlPath ...string,
 ) (T, error) {
-	// TODO: Implement PostRequestJSON
 	var respData T
 
 	respByte, err := PostRequestBytes(body, host, port, urlPath...)

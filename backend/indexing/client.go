@@ -102,7 +102,7 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 	}
 
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
-
+		utils.EnableCORS(&writer)
 		switch html.EscapeString(request.URL.Path) {
 
 		case "/index":
@@ -166,6 +166,8 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 }
 
 func (client *IndexerClient) Log(msg string, args ...any) {
+
+	log.Printf(msg, args...)
 
 	port := strconv.Itoa(int(client.Port))
 	name := client.Name
