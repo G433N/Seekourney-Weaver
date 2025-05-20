@@ -233,6 +233,9 @@ func TestSignalBoundedBlock(test *testing.T) {
 }
 
 func TestBoundedRendezvous(test *testing.T) {
+	if testing.Short() {
+		test.Skip("skipping long test")
+	}
 	var waitGroup sync.WaitGroup
 	children := 1000
 	waitGroup.Add(children)
