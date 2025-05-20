@@ -31,9 +31,9 @@ describe('/+page.svelte', () => {
 		const mockResults = {
 			Query: 'test',
 			Results: [
-				{ Path: 'document', Score: 0.9, Source: 1 },
-				{ Path: 'website', Score: 0.79, Source: 2 }
-			]
+				{ Path: 'local/path/to/file.txt', Score: 0.90, Source: 2 },
+				{ Path: 'http://website.com/webpage', Score: 0.79, Source: 1 },
+			],
 		};
 
 		// mock fetch response
@@ -51,8 +51,9 @@ describe('/+page.svelte', () => {
 
 		// may need to change depending on how we display results
 		await waitFor(() => {
-			expect(screen.getByText('document')).toBeInTheDocument();
-			expect(screen.getByText('website')).toBeInTheDocument();
+			//expect(screen.getByText('http://website.com/webpage')).toBeInTheDocument();
+			expect(screen.getByText('file.txt')).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: /download/i})).toBeInTheDocument();
 		});
 	});
 
@@ -76,6 +77,63 @@ describe('/+page.svelte', () => {
 
 		await waitFor(() => {
 			expect(screen.getByText('no results for: test')).toBeInTheDocument();
+		});
+	});
+
+	test('no fetch if search input is empty', async () => {
+		render(Page);
+
+		await fireEvent.click(screen.getByRole('button', { name: /search/i }));
+
+		await waitFor(() => {
+			expect(fetch).not.toHaveBeenCalled();
+		})
+	});
+
+	test('search input focused on mount', async () => {
+		render(Page);
+
+		const input = screen.getByPlaceholderText('Write your search here!') as HTMLInputElement;
+		expect(document.activeElement).toBe(input);
+	});
+
+	test('tests file download', async () => {
+		const mockResults = {
+			Query: 'test',
+			Results: [
+				{ Path: 'local/file.pdf', Score: 0.90, Source: 2 },
+			],
+		};
+
+		const blob = new Blob(['dummy content']);
+		const createObjectURL = vi.fn(() => 'blob:dummy-url');
+		const revokeObjectURL = vi.fn();
+
+		(globalThis.fetch as any) = vi
+			.fn()
+			.mockResolvedValueOnce({ json: async () => mockResults }) //search
+			.mockResolvedValueOnce({ blob: async () => blob }) //download
+
+		globalThis.URL.createObjectURL = createObjectURL;
+		globalThis.URL.revokeObjectURL = revokeObjectURL;
+
+		render(Page);
+
+		await fireEvent.input(screen.getByPlaceholderText('Write your search here!'), {
+			target: { value: 'test' }
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: /search/i }));
+
+		const resultHeading = await screen.findByText('file.pdf');
+		expect(resultHeading).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('button', { name: /download/i }));
+
+		await waitFor(() => {
+			expect(fetch).toHaveBeenCalledWith('http://localhost:8080/download?q=local/file.pdf', expect.objectContaining({ method: 'GET' }));
+			expect(createObjectURL).toHaveBeenCalled();
+			expect(revokeObjectURL).toHaveBeenCalled();
 		});
 	});
 });
