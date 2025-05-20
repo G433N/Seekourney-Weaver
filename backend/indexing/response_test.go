@@ -90,3 +90,29 @@ func TestResponseDocs(t *testing.T) {
 	)
 	assert.Equal(t, goData.Data.Documents[1].Collection, udocs[1].Collection)
 }
+
+func TestResponsePathText(t *testing.T) {
+	pathTexts := []PathText{
+		{
+			Path: "test/path/1",
+			Text: "test text 1",
+		},
+		{
+			Path: "test/path/2",
+			Text: "test text 2",
+		},
+	}
+
+	jsonData := ResponsePathText(pathTexts)
+	goData := IndexerTextResponse{}
+	err := json.Unmarshal(jsonData, &goData)
+
+	assert.NoError(t, err)
+	assert.Equal(t, goData.Status, STATUSSUCCESSFUL)
+
+	assert.Equal(t, goData.Data.PathTexts[0].Path, pathTexts[0].Path)
+	assert.Equal(t, goData.Data.PathTexts[0].Text, pathTexts[0].Text)
+
+	assert.Equal(t, goData.Data.PathTexts[1].Path, pathTexts[1].Path)
+	assert.Equal(t, goData.Data.PathTexts[1].Text, pathTexts[1].Text)
+}

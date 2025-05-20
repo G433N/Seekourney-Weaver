@@ -49,8 +49,7 @@ func FreqMap(
 		pattern_string += currentQuote + "%"
 	}
 
-	// execute <unnamed>: SELECT path, JSON_VALUE( words , '$.linear' ) AS score FROM document WHERE words ?& $1
-	pattern := []string{pattern_string}
+	// pattern := []string{pattern_string}
 	var q string
 
 	// TODO: Make this not super ugly
@@ -63,8 +62,8 @@ func FreqMap(
 				"FROM document AS D, path_text as P",
 				"WHERE D.words ?& $1",
 				"AND NOT D.words ?& $2",
-				"AND D.path = T.path",
-				"AND T.plain_text LIKE $3",
+				"AND D.path = P.path",
+				"AND P.plain_text LIKE $3",
 			}, " ")
 		} else {
 			q = strings.Join([]string{
@@ -82,8 +81,8 @@ func FreqMap(
 				j,
 				"FROM document AS D, path_text as P",
 				"WHERE D.words ?& $1",
-				"AND D.path = T.path",
-				"AND T.plain_text LIKE $2",
+				"AND D.path = P.path",
+				"AND P.plain_text LIKE $2",
 			}, " ")
 		} else {
 			q = strings.Join([]string{
@@ -115,7 +114,7 @@ func FreqMap(
 				insert,
 				pq.StringArray(requiredWords),
 				pq.StringArray(minusWords),
-				pq.StringArray(pattern),
+				pattern_string,
 			)
 		} else {
 			err = ExecScan(
@@ -135,7 +134,7 @@ func FreqMap(
 				&result,
 				insert,
 				pq.StringArray(requiredWords),
-				pq.StringArray(pattern),
+				pattern_string,
 			)
 		} else {
 			err = ExecScan(

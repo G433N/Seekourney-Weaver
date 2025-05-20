@@ -44,10 +44,26 @@ func parseQuery(query utils.Query) utils.ParsedQuery {
 			currentFilterWord = ""
 		}
 
-		if currentByte == "\"" && inQuote {
+		if currentByte == "_" && inQuote {
 			parsedQuery.Quotes = append(parsedQuery.Quotes, currentQuote)
 			inQuote = false
 			currentQuote = ""
+			continue
+		}
+
+		if currentByte == "+" && !inPlus && !inMinus && !inQuote {
+			inPlus = true
+			continue
+		}
+
+		if currentByte == "-" && !inPlus && !inMinus && !inQuote {
+			inMinus = true
+			continue
+		}
+
+		if currentByte == "_" && !inPlus && !inMinus {
+			inQuote = true
+			continue
 		}
 
 		if inPlus {
@@ -59,18 +75,6 @@ func parseQuery(query utils.Query) utils.ParsedQuery {
 			currentQuote += currentByte
 		} else {
 			parsedQuery.ModifiedQuery += utils.Query(currentByte)
-		}
-
-		if currentByte == "+" && !inPlus && !inMinus && !inQuote {
-			inPlus = true
-		}
-
-		if currentByte == "-" && !inPlus && !inMinus && !inQuote {
-			inMinus = true
-		}
-
-		if currentByte == "\"" {
-			inQuote = true
 		}
 	}
 
