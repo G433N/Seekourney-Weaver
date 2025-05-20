@@ -246,7 +246,11 @@ func TestBoundedRendezvous(test *testing.T) {
 	waitGroup.Wait()
 }
 
-func testBoundedRendezvousHelper(test *testing.T, ID int, waitGroup *sync.WaitGroup) {
+func testBoundedRendezvousHelper(
+	test *testing.T,
+	ID int,
+	waitGroup *sync.WaitGroup,
+) {
 	sem1 := concurrencyUtils.NewSemaphore(0, 1)
 	sem2 := concurrencyUtils.NewSemaphore(0, 1)
 	result := []int{}
