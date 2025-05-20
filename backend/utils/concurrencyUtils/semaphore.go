@@ -243,7 +243,7 @@ func NewSemaphore(arg ...int) *Semaphore {
 	semaphore.Wait = semaphore.defaultWait
 	semaphore.TryWait = semaphore.defaultTryWait
 	semaphore.TrySignal = semaphore.defaultTrySignal
-	switch len := len(arg); len {
+	switch len(arg) {
 	case 2:
 		maxValue = arg[1]
 		if maxValue < 1 {
