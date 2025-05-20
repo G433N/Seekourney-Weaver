@@ -15,10 +15,6 @@ type Semaphore struct {
 	// mutex used for the internal value
 	syncLock sync.Mutex
 
-	// mutex used for the wait waiting group
-	waitLock  sync.Mutex
-	waitGroup sync.WaitGroup
-
 	/*
 		Signal
 		Increments the semaphores value.
@@ -52,10 +48,14 @@ type Semaphore struct {
 	// the maximum value of the semaphore
 	maxValue int
 
-	// mutex used for the signal waiting group
+	// mutex used for the signaling waitgroup
 	// only used for the bounded semaphore
-	signalLock  sync.Mutex
-	signalGroup sync.WaitGroup
+	signalingLock  sync.Mutex
+	signalingGroup sync.WaitGroup
+
+	// mutex used for the waiting waitgroup
+	waitingLock  sync.Mutex
+	waitingGroup sync.WaitGroup
 }
 
 /*
@@ -65,16 +65,16 @@ Decrement the semaphore’s value; block if the value is currently 0.
 func (semaphore *Semaphore) defaultWait() {
 
 	// so that multiple threads don't use the waitgroup at the same time
-	semaphore.waitLock.Lock()
-	defer semaphore.waitLock.Unlock()
+	semaphore.waitingLock.Lock()
+	defer semaphore.waitingLock.Unlock()
 
-	semaphore.waitGroup.Wait()
+	semaphore.waitingGroup.Wait()
 
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
 
 	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
+		semaphore.waitingGroup.Add(1)
 	}
 
 	semaphore.value--
@@ -88,21 +88,21 @@ Decrement the semaphore’s value; block if the value is currently 0.
 func (semaphore *Semaphore) boundedWait() {
 
 	// so that multiple threads don't use the waitgroup at the same time
-	semaphore.waitLock.Lock()
-	defer semaphore.waitLock.Unlock()
+	semaphore.waitingLock.Lock()
+	defer semaphore.waitingLock.Unlock()
 
 	//
-	semaphore.waitGroup.Wait()
+	semaphore.waitingGroup.Wait()
 
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
 
 	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
+		semaphore.waitingGroup.Add(1)
 	}
 
 	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Done()
+		semaphore.signalingGroup.Done()
 	}
 
 	semaphore.value--
@@ -121,11 +121,11 @@ func (semaphore *Semaphore) boundedTryWait() bool {
 		return false
 	}
 	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
+		semaphore.waitingGroup.Add(1)
 	}
 
 	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Done()
+		semaphore.signalingGroup.Done()
 	}
 
 	semaphore.value--
@@ -144,7 +144,7 @@ func (semaphore *Semaphore) defaultTryWait() bool {
 		return false
 	}
 	if semaphore.value == 1 {
-		semaphore.waitGroup.Add(1)
+		semaphore.waitingGroup.Add(1)
 	}
 	semaphore.value--
 	return true
@@ -159,7 +159,7 @@ func (semaphore *Semaphore) defaultSignal() {
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
 	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
+		semaphore.waitingGroup.Done()
 	}
 	semaphore.value++
 }
@@ -172,21 +172,21 @@ If it was 0 it will unblock any waiting threads.
 func (semaphore *Semaphore) boundedSignal() {
 
 	// so that multiple threads don't use the waitgroup at the same time
-	semaphore.signalLock.Lock()
-	defer semaphore.signalLock.Unlock()
+	semaphore.signalingLock.Lock()
+	defer semaphore.signalingLock.Unlock()
 
-	semaphore.signalGroup.Wait()
+	semaphore.signalingGroup.Wait()
 
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
 	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
+		semaphore.waitingGroup.Done()
 	}
 
 	semaphore.value++
 
 	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Add(1)
+		semaphore.signalingGroup.Add(1)
 	}
 
 }
@@ -195,7 +195,7 @@ func (semaphore *Semaphore) defaultTrySignal() bool {
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
 	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
+		semaphore.waitingGroup.Done()
 	}
 
 	semaphore.value++
@@ -207,7 +207,7 @@ func (semaphore *Semaphore) boundedTrySignal() bool {
 	semaphore.syncLock.Lock()
 	defer semaphore.syncLock.Unlock()
 	if semaphore.value == 0 {
-		semaphore.waitGroup.Done()
+		semaphore.waitingGroup.Done()
 	}
 
 	if semaphore.value == semaphore.maxValue {
@@ -217,7 +217,7 @@ func (semaphore *Semaphore) boundedTrySignal() bool {
 	semaphore.value++
 
 	if semaphore.value == semaphore.maxValue {
-		semaphore.signalGroup.Add(1)
+		semaphore.signalingGroup.Add(1)
 	}
 
 	return true
@@ -274,10 +274,10 @@ func NewSemaphore(arg ...int) *Semaphore {
 	semaphore.value = initialValue
 
 	if initialValue == 0 {
-		semaphore.waitGroup.Add(1)
+		semaphore.waitingGroup.Add(1)
 	}
 	if initialValue == maxValue {
-		semaphore.signalGroup.Add(1)
+		semaphore.signalingGroup.Add(1)
 	}
 	return &semaphore
 }
