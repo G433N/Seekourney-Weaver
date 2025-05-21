@@ -28,31 +28,55 @@ func SqlSearch(
 		panic(err)
 	}
 
+	scoreMap := new(utils.ScoreMap)
 	for word := range words.WordsIter(string(query)) {
-		word = config.Normalizer.Word(word)
+		scoreWord(db, scoreMap, word, docAmount)
+	}
 
-		freqMap, err := database.FreqMap(db, word)
-		idf := calculateIdf(freqMap, docAmount)
+	return topN(scoreMapIntoSearchResult(result), 10)
+}
+
+func scoreWord(db *sql.DB, scoreMap *utils.ScoreMap, word utils.Word, docAmount int) {
+
+	for normalizer := range utils.AMOUNT_NORMALIZERS {
+		err := scoreWordWithNormalizer(db, scoreMap, word, docAmount, utils.Normalizer(normalizer))
 
 		if err != nil {
 			log.Printf("Error: %s\n", err)
 			continue
 		}
+	}
+}
 
-		for path := range freqMap {
-			doc, err := document.DocumentFromDB(db, path)
+func scoreWordWithNormalizer(
+	db *sql.DB,
+	scoreMap *utils.ScoreMap,
+	unormalizedWord utils.Word,
+	docAmount int,
+	normalizer utils.Normalizer,
+) error {
 
-			if err != nil {
-				log.Printf("Error: %s\n", err)
-				continue
-			}
+	word := normalizer.Word(unormalizedWord)
 
-			tf := doc.CalculateTf(word)
-			result[path] += utils.Score(tf * idf)
-		}
+	freqMap, err := database.FreqMap(db, word, normalizer)
+	idf := calculateIdf(freqMap, docAmount)
+
+	if err != nil {
+		return err
 	}
 
-	return topN(scoreMapIntoSearchResult(result), 10)
+	for path := range freqMap {
+		doc, err := document.DocumentFromDB(db, path)
+
+		if err != nil {
+			return err
+		}
+
+		tf := doc.CalculateTf(word)
+		s := *scoreMap
+		s[path] += utils.Score(tf * idf)
+	}
+	return nil
 }
 
 // calculateIdf calculates the Inverse Document Frequency (IDF)

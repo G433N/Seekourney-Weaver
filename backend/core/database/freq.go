@@ -29,12 +29,15 @@ func (sqlPath sqlResult) SQLScan(rows *sql.Rows) (sqlResult, error) {
 }
 
 // FreqMap returns a map of paths to frequencies for a given word.
-func FreqMap(db *sql.DB, word utils.Word) (utils.WordFrequencyMap, error) {
+func FreqMap(db *sql.DB, word utils.Word, norm utils.Normalizer) (utils.WordFrequencyMap, error) {
 
 	wordStr := string(word)
 
+	subQuery :=
+		"collection_id = (SELECT collection_id FROM collection WHERE normalizer = $2);"
+
 	json := JsonValue("words", wordStr, "score")
-	q := Select().Queries("path", json).From("document").Where("words ?& $1")
+	q := Select().Queries("path", json).From("document").Where("words ?& $1 and " + subQuery)
 
 	w := []string{wordStr}
 
@@ -43,6 +46,6 @@ func FreqMap(db *sql.DB, word utils.Word) (utils.WordFrequencyMap, error) {
 	}
 
 	result := make(utils.WordFrequencyMap)
-	err := ExecScan(db, string(q), &result, insert, pq.StringArray(w))
+	err := ExecScan(db, string(q), &result, insert, pq.StringArray(w), norm)
 	return result, err
 }

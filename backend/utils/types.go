@@ -26,6 +26,8 @@ const (
 	Stemming
 )
 
+const AMOUNT_NORMALIZERS = 1
+
 // Source denotes the type of source indexed.
 // E.g. a local file or a web page.
 type Source int
