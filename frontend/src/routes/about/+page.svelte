@@ -32,4 +32,8 @@
 		font-weight: 500;
 		font-style: normal;
 	}
+
+	p {
+		font-weight: 400;
+	}
 </style>
