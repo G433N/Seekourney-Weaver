@@ -1,4 +1,4 @@
-import { writable } from '@svelte/store';
+import { writable } from 'svelte/store';
 
 export const showFiles = writable(true);
 export const showWebpages = writable(true);
@@ -9,4 +9,4 @@ export const cpuDefault = writable(true);
 export const maxCores = writable(8);
 export const cpuCores = writable(4);
 
-export const indexerList = writable<{ Name: string; Id: number; Port: number }[]>([]);
+export const indexerList = writable<{ ID: number; Name: string; ExecPath: string; Args: string[]; Port: number }[]>([]);

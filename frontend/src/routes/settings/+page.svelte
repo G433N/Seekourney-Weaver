@@ -8,7 +8,7 @@
 		maxCores,
 		cpuCores,
 		indexerList
-	} from 'src/lib/stores/settings';
+	} from '../../lib/stores/settings';
 
 	import { get } from 'svelte/store';
 
@@ -24,13 +24,13 @@
 
 	let indexerInput: '';
 	// let submittedIndexer: string = '';
-	let indexerList: IndexerResult[] = $state([]);
+	//let indexerList: IndexerResult[] = $state([]);
 
 	async function fetchIndexers(): Promise<void> {
 		try {
 			const res = await fetch('http://localhost:8080/all/indexers');
 			const data: IndexerResult[] = await res.json();
-			indexerList = data;
+			indexerList.set(data);
 		} catch (err) {
 			console.error('Failed to fetch indexers: ', err);
 		}
@@ -76,44 +76,49 @@
 	<div class="box">
 		<h3>Show:</h3>
 		<label class="toggle">
-			<input type="checkbox" bind:checked={showFiles} />
+			<input type="checkbox" bind:checked={$showFiles} />
 			Files
 		</label>
 		<label class="toggle">
-			<input type="checkbox" bind:checked={showWebpages} />
+			<input type="checkbox" bind:checked={$showWebpages} />
 			Webpages
 		</label>
 	</div>
 
 	<div class="box column">
 		<label class="toggle">
-			<input type="checkbox" bind:checked={showAllResults} />
+			<input type="checkbox" bind:checked={$showAllResults} />
 			Show all results
 		</label>
-
-		{#if !showAllResults}
-			<label class="max-label">
-				<div class="inputDiv">
-					Max results shown:
-					<input type="number" bind:value={maxResults} />
-				</div>
-			</label>
-		{/if}
+		
+		<label class="max-label">
+			<div class="inputDiv">
+				Max results shown:
+				<input type="number" bind:value={$maxResults} disabled={$showAllResults} />
+			</div>
+		</label>
 	</div>
 
-	<h2>Searching</h2>
+	<h2>
+		CPU usage
+		<span class="tooltip-wrapper">
+			<span class="info-icon">?</span>
+			<span class="tooltip-text">
+				CPU usage determines how much of the CPU the system is allowed to use. More cores means 
+				faster searching but may make other processes running on your device slower.
+			</span>
+		</span>
+	</h2>
 	<div class="box column">
 		<label class="toggle">
-			<input type="checkbox" bind:checked={cpuDefault} />
+			<input type="checkbox" bind:checked={$cpuDefault} />
 			default CPU usage
 		</label>
-		{#if !cpuDefault}
-			<div class="slider">
-				<label for="cpuSlider">CPU cores used:</label>
-				<input id="cpuSlider" type="range" min="1" max={maxCores} bind:value={cpuCores} />
-				<span>{cpuCores}</span>
-			</div>
-		{/if}
+		<div class="slider">
+			<label for="cpuSlider">CPU cores used:</label>
+			<input id="cpuSlider" type="range" min="1" max={$maxCores} bind:value={$cpuCores} disabled={$cpuDefault}/>
+			<span>{$cpuCores}</span>
+		</div>
 	</div>
 
 	<h2>
@@ -141,15 +146,15 @@
 			<p>
 				You can add your own custom indexer by providing the absolute path to a local executable on your device.
 			</p>
-			<div class="">
+			<div>
 				Indexer path:
-				<input type="text" bind:value={indexerInput} />
+				<input id="InputIndexer" type="text" bind:value={indexerInput} placeholder="/user/example/custom-indexer" />
 				<button id="indexerButton" onclick={() => addIndexer()}> Add </button>
 			</div>
 		</label>
 
-		{#if indexerList.length > 0}
-			{#each indexerList as indexer}
+		{#if $indexerList.length > 0}
+			{#each $indexerList as indexer}
 				<div class="inputDiv">
 					<h3>
 						{indexer.Name}, ID: {indexer.ID}
@@ -291,6 +296,10 @@
 	.tooltip-wrapper:hover .tooltip-text {
 		visibility: visible;
 		opacity: 1;
+	}
+
+	#InputIndexer {
+		width: 350px;
 	}
 
 </style>
