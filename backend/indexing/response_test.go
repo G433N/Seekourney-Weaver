@@ -54,16 +54,16 @@ func TestResponseExiting(t *testing.T) {
 func TestResponseDocs(t *testing.T) {
 	udocs := []UnnormalizedDocument{
 		{
-			Path:     "test/path/1",
-			Source:   utils.SourceLocal,
-			Words:    utils.FrequencyMap{"first": 1, "second": 2},
-			SourceID: 99,
+			Path:       "test/path/1",
+			Source:     utils.SourceLocal,
+			Words:      utils.FrequencyMap{"first": 1, "second": 2},
+			Collection: 99,
 		},
 		{
-			Path:     "test/path/2",
-			Source:   utils.SourceWeb,
-			Words:    utils.FrequencyMap{"green": 42, "blue": 5},
-			SourceID: 99,
+			Path:       "test/path/2",
+			Source:     utils.SourceWeb,
+			Words:      utils.FrequencyMap{"green": 42, "blue": 5},
+			Collection: 99,
 		},
 	}
 
@@ -80,7 +80,7 @@ func TestResponseDocs(t *testing.T) {
 		t,
 		reflect.DeepEqual(goData.Data.Documents[0].Words, udocs[0].Words),
 	)
-	assert.Equal(t, goData.Data.Documents[0].SourceID, udocs[0].SourceID)
+	assert.Equal(t, goData.Data.Documents[0].Collection, udocs[0].Collection)
 
 	assert.Equal(t, goData.Data.Documents[1].Path, udocs[1].Path)
 	assert.Equal(t, goData.Data.Documents[1].Source, udocs[1].Source)
@@ -88,5 +88,5 @@ func TestResponseDocs(t *testing.T) {
 		t,
 		reflect.DeepEqual(goData.Data.Documents[1].Words, udocs[1].Words),
 	)
-	assert.Equal(t, goData.Data.Documents[1].SourceID, udocs[1].SourceID)
+	assert.Equal(t, goData.Data.Documents[1].Collection, udocs[1].Collection)
 }

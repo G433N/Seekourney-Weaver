@@ -34,9 +34,10 @@ func Normalize(
 
 	return Document{
 		udoc: udoc{
-			Path:   doc.Path,
-			Source: doc.Source,
-			Words:  freqMap,
+			Path:       doc.Path,
+			Source:     doc.Source,
+			Words:      freqMap,
+			Collection: doc.Collection,
 		},
 		// SourceID:   ??? TODO or in event loop
 		LastIndexed: time.Now(),
@@ -96,7 +97,7 @@ func (doc Document) SQLGetName() string {
 
 // SQLGetFields returns the fields to be inserted into the database
 func (doc Document) SQLGetFields() []string {
-	return []string{"path", "type", "words"}
+	return []string{"path", "type", "words", "last_indexed", "collection_id"}
 }
 
 // SQLGetValues returns the values to be inserted into the database
@@ -109,7 +110,13 @@ func (doc Document) SQLGetValues() []any {
 		return []database.SQLValue{doc.Path, "file", nil}
 	}
 
-	return []database.SQLValue{doc.Path, "file", bytes}
+	timeBytes, err := doc.LastIndexed.Local().MarshalJSON()
+	if err != nil {
+		log.Printf("Error marshalling time: %s", err)
+		return []database.SQLValue{doc.Path, "file", nil}
+	}
+
+	return []database.SQLValue{doc.Path, "file", bytes, timeBytes, doc.Collection}
 }
 
 // SQLScan scans a row from the database into a Document
@@ -117,8 +124,10 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 	var path utils.Path
 	var source string
 	var words []byte
+	var timeBytes []byte
+	var collectionID indexing.CollectionID
 
-	err := rows.Scan(&path, &source, &words)
+	err := rows.Scan(&path, &source, &words, &timeBytes, &collectionID)
 	if err != nil {
 		return Document{}, err
 	}
@@ -131,12 +140,21 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 		return Document{}, err
 	}
 
+	var lastIndexed time.Time
+	err = lastIndexed.UnmarshalJSON(timeBytes)
+	if err != nil {
+		log.Printf("Error unmarshalling time: %s", err)
+		return Document{}, err
+	}
+
 	return Document{
 		udoc: udoc{
-			Path:   path,
-			Source: utils.SourceLocal,
-			Words:  freqMap,
+			Path:       path,
+			Source:     utils.SourceLocal,
+			Words:      freqMap,
+			Collection: collectionID,
 		},
+		LastIndexed: lastIndexed,
 	}, nil
 }
 

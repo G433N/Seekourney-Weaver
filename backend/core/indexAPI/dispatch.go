@@ -122,6 +122,7 @@ func (handler *IndexHandler) Dispatch(
 
 	log.Printf("Dispatching indexing request to indexer %s", indexer.Name)
 	log.Printf("Collection path: %s", collection.Path)
+	log.Printf("Collection ID: %s", collection.ID)
 	settings := indexing.Settings{
 		Path:         collection.Path,
 		Type:         collection.SourceType,

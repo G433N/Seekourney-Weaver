@@ -384,7 +384,6 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 	go func() {
 		for _, rawDoc := range resp.Data.Documents {
 			normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
-			normalizedDoc.SourceID = "" // TODO change or set in Normalize
 
 			// TODO fix
 			// Error inserting row: pq: duplicate key value violates

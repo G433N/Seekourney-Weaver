@@ -7,8 +7,6 @@ import (
 
 type Context struct {
 	client *IndexerClient
-	// TODO: Remove this field
-	metadata *docMetadata
 }
 
 func NewContext(client *IndexerClient) Context {
@@ -17,8 +15,7 @@ func NewContext(client *IndexerClient) Context {
 	}
 
 	return Context{
-		client:   client,
-		metadata: nil,
+		client: client,
 	}
 }
 
@@ -26,57 +23,25 @@ func (cxt *Context) Log(msg string, args ...any) {
 	cxt.client.Log(msg, args...)
 }
 
-func (cxt *Context) hasMetadata() bool {
-	return cxt.metadata != nil
-}
-
 // TODO: Should return DOcumment builder
-func (cxt *Context) StartDoc(path utils.Path, source utils.Source) {
-	if cxt.hasMetadata() {
-		panic("Document already started")
-	}
+func (cxt *Context) StartDoc(path utils.Path, source utils.Source, settings Settings) *docBuilder {
 
-	cxt.metadata = &docMetadata{
-		path:   path,
-		source: source,
-		text:   make([]string, 0),
+	return &docBuilder{
+		path:       path,
+		source:     source,
+		text:       make([]string, 0),
+		collection: settings.CollectionID,
+		cxt:        cxt,
 	}
-}
-
-// TODO: Should be a methond on documment builder
-func (cxt *Context) AddText(text string) {
-	if !cxt.hasMetadata() {
-		panic("Use StartDoc before AddText")
-	}
-	cxt.metadata.AddText(text)
-}
-
-// Done is called when the document is finished.
-// It can take a function to modify the document before sending it.
-// This function needs to be thread safe.
-// When indexed the document is sent to the server.
-// TODO: Should be a methond on documment builder
-func (cxt *Context) Done(f *func(*UnnormalizedDocument)) {
-	if !cxt.hasMetadata() {
-		panic("Use StartDoc before Done")
-	}
-
-	if cxt.client.Parallel {
-		go index(cxt.client, *cxt.metadata, f)
-	} else {
-		index(cxt.client, *cxt.metadata, f)
-	}
-
-	cxt.metadata = nil
 }
 
 func index(
 	client *IndexerClient,
-	metadata docMetadata,
+	docBuilder docBuilder,
 	f *func(*UnnormalizedDocument),
 ) {
 
-	doc, err := metadata.index()
+	doc, err := docBuilder.index()
 	if err != nil {
 		client.Log("Error indexing document: %s", err)
 		return
@@ -89,14 +54,33 @@ func index(
 }
 
 // TODO: Better name -> Document builder
-type docMetadata struct {
-	path   utils.Path
-	source utils.Source
-	text   []string
+type docBuilder struct {
+	path       utils.Path
+	source     utils.Source
+	collection CollectionID
+	text       []string
+	cxt        *Context
 }
 
-func (metadata *docMetadata) AddText(text string) {
-	metadata.text = append(metadata.text, text)
+// TODO: Should be a methond on documment builder
+func (doc *docBuilder) AddText(text string) {
+	doc.text = append(doc.text, text)
+}
+
+// Done is called when the document is finished.
+// It can take a function to modify the document before sending it.
+// This function needs to be thread safe.
+// When indexed the document is sent to the server.
+// TODO: Should be a methond on documment builder
+func (doc *docBuilder) Done(f *func(*UnnormalizedDocument)) {
+
+	if doc.cxt.client.Parallel {
+		go index(doc.cxt.client, *doc, f)
+	} else {
+		index(doc.cxt.client, *doc, f)
+	}
+
+	*doc = docBuilder{}
 }
 
 // Index takes a Settings struct and returns an UnnormalizedDocument.
@@ -104,13 +88,14 @@ func (metadata *docMetadata) AddText(text string) {
 // from the text.
 // Return nil if there was an error converting the source type.
 // The text is cleared after the document is created.
-func (metadata *docMetadata) index() (*UnnormalizedDocument, error) {
+func (docBuilder *docBuilder) index() (*UnnormalizedDocument, error) {
 
-	text := strings.Join(metadata.text, "\n")
+	text := strings.Join(docBuilder.text, "\n")
 
 	doc := DocFromText(
-		metadata.path,
-		metadata.source,
+		docBuilder.path,
+		docBuilder.source,
+		docBuilder.collection,
 		text,
 	)
 

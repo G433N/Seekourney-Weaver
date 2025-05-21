@@ -15,7 +15,7 @@ func index(config *Config, cxt indexing.Context, settings indexing.Settings) {
 	case utils.UrlSource:
 		HandleUrl(cxt, settings)
 	default:
-		cxt.Log("Unknown source type: %s", settings.Type)
+		cxt.Log("Unknown source type: %d", settings.Type)
 	}
 }
 
@@ -32,7 +32,7 @@ func main() {
 }
 
 func HandleFile(cxt indexing.Context, settings indexing.Settings) {
-	IndexFile(settings.Path, cxt)
+	IndexFile(settings.Path, cxt, settings)
 }
 
 func HandleDir(
@@ -42,7 +42,7 @@ func HandleDir(
 ) {
 
 	for path := range config.WalkDirConfig.WalkDir(settings.Path) {
-		IndexFile(path, cxt)
+		IndexFile(path, cxt, settings)
 	}
 }
 

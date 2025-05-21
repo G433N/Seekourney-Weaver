@@ -288,9 +288,9 @@ func test() {
 	id := allIndexers()
 
 	col := utils.UnregisteredCollection{
-		Path:                "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/",
+		Path:                "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
 		IndexerID:           id,
-		SourceType:          utils.DirSource,
+		SourceType:          utils.FileSource,
 		Recursive:           true,
 		RespectLastModified: false,
 		Normalfunc:          utils.Stemming,

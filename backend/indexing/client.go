@@ -140,7 +140,6 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 			// Currently this never sends a response
 			os.Exit(0)
 		default:
-			log.Println("Unknown path:", request.URL)
 			client.Log("Unknown path: %s", request.URL)
 		}
 	}

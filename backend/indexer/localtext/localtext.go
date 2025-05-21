@@ -41,16 +41,16 @@ func ReadPathToString(path utils.Path) (string, error) {
 	return string(content), nil
 }
 
-func IndexFile(path utils.Path, cxt indexing.Context) {
+func IndexFile(path utils.Path, cxt indexing.Context, settings indexing.Settings) {
 	text, err := ReadPathToString(path)
 	if err != nil {
 		cxt.Log("Error reading file: %s", err)
 		return
 	}
 
-	cxt.StartDoc(path, utils.SourceLocal)
-	cxt.AddText(text)
-	cxt.Done(nil)
+	doc := cxt.StartDoc(path, utils.SourceLocal, settings)
+	doc.AddText(text)
+	doc.Done(nil)
 }
 
 // ConfigName returns the name of the config.
