@@ -81,6 +81,8 @@ func main() {
 		index(args[2:])
 	case "test":
 		test()
+	case "pdf":
+		testPDF()
 	case "quit":
 		shutdownServer()
 	default:
@@ -293,7 +295,38 @@ func test() {
 		SourceType:          utils.FileSource,
 		Recursive:           true,
 		RespectLastModified: false,
-		Normalfunc:          utils.Stemming,
+		Normalfunc:          utils.ToLower,
+	}
+
+	body = utils.JsonBody(col)
+	_, err = utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return
+	}
+
+	allCollections()
+
+}
+
+func testPDF() {
+
+	body := utils.StrBody("go run indexer/pdftotxt/main.go indexer/pdftotxt/pdftotext.go")
+	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "indexer")
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return
+	}
+
+	id := allIndexers()
+
+	col := utils.UnregisteredCollection{
+		Path:                "/home/carbon/Projects/go_indexer/backend/indexer/pdftotxt/pdf/EXAMPLE.pdf",
+		IndexerID:           id,
+		SourceType:          utils.FileSource,
+		Recursive:           true,
+		RespectLastModified: false,
+		Normalfunc:          utils.ToLower,
 	}
 
 	body = utils.JsonBody(col)

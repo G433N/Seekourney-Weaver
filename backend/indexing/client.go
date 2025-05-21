@@ -123,7 +123,7 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 
 			cxt := NewContext(client)
 
-			f(cxt, settings)
+			go f(cxt, settings)
 
 		case "/name":
 			_, err := fmt.Fprintf(writer, "%s\n", string(client.Name))

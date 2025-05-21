@@ -1,4 +1,4 @@
-package pdftotext
+package main
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"seekourney/timing"
+	"seekourney/utils/timing"
 )
 
 // converts one pdf to images, replace exec.command later
@@ -115,7 +115,7 @@ func imagesToTextAsync(image string, dir string) []string {
 }
 
 func Run() {
-	prefix := "pdftotxt/"
+	prefix := ""
 	sw := timing.Measure(timing.PfdToImage)
 	pdftoimg(prefix+"pdf/EXAMPLE.pdf", prefix+"covpdf/", "-png") //kör pdftoimg först på din pdf, lägg pdf i pdf folder och byt ut "EXAMPLE" med dess namn
 	sw.Stop()
@@ -123,7 +123,7 @@ func Run() {
 	defer sw.Stop()
 	// test := imgToText("covpdf/page-1.png")
 	// imagesToText("", prefix+"covpdf/")
-	imagesToTextAsync("", prefix+"covpdf/")
-	// fmt.Println(test)
+	test := imagesToTextAsync("", prefix+"covpdf/")
+	fmt.Println(test)
 	// clearOutputDir(prefix + "/covpdf/")
 }
