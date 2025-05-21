@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import Page from './+page.svelte';
+import Settings from './settings/+page.svelte';
 
 describe('/+page.svelte', () => {
 	beforeEach(() => {
@@ -137,3 +138,13 @@ describe('/+page.svelte', () => {
 		});
 	});
 });
+
+describe('Settings page', () => {
+	test('renders checkboxes  for filters', () => {
+		render(Settings);
+
+		expect(screen.getByRole('checkbox', { name: /Files/i })).toBeInTheDocument();
+		expect(screen.getByRole('checkbox', { name: /Webpages/i })).toBeInTheDocument();
+		expect(screen.getByRole('checkbox', { name: /Show all results/i })).toBeInTheDocument();
+	})
+})
