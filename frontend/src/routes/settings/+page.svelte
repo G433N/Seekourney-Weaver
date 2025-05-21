@@ -1,7 +1,11 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	interface IndexerResult {
+		ID: number;
 		Name: string;
-		Id: number;
+		ExecPath: string;
+		Args: string[];
 		Port: number;
 	}
 
@@ -18,33 +22,49 @@
 	// let submittedIndexer: string = '';
 	let indexerList: IndexerResult[] = $state([]);
 
-	async function addIndexer(): Promise<void> {
-		if (indexerInput.length > 0) {
-			// submittedIndexer = indexerInput;
-			//const res = await fetch(`http://localhost:8080/addIndexer?q=${submittedIndexer}`); //TODO: what name??
-			//const json = await res.json() as IndexerResult;
-			//indexerList = [...indexerList, json];
-
-			let mockResult: IndexerResult = {
-				Name: 'indexer',
-				Id: Math.round(Math.random() * 100),
-				Port: 1
-			};
-
-			indexerList = [...indexerList, mockResult];
-			indexerInput = '';
-			// TODO: unsure of how response should look, might not work
-			// TODO: add some fix for duplicates?
+	async function fetchIndexers(): Promise<void> {
+		try {
+			const res = await fetch('http://localhost:8080/all/indexers');
+			const data: IndexerResult[] = await res.json();
+			indexerList = data;
+		} catch (err) {
+			console.error('Failed to fetch indexers: ', err);
 		}
 	}
 
+	async function addIndexer(): Promise<void> {
+		if (!indexerInput) return;
+
+		try {
+			await fetch('http://localhost:8080/push/indexer', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'text/plain'
+				},
+				body: indexerInput
+			});
+
+			indexerInput = '';
+			await fetchIndexers();
+		} catch (err) {
+			console.error('Failed to fetch indexer: ', err);
+		}
+	}
+
+	/*
 	async function deleteIndexer(indexer: IndexerResult): Promise<void> {
-		fetch(`http://localhost:8080/addIndexer?q=${indexer}`); //TODO: what name??
+		//fetch(`http://localhost:8080/addIndexer?q=${indexer}`); //TODO: what name??
 
-		indexerList = indexerList.filter((elem) => elem.Id !== indexer.Id);
-
+		//indexerList = indexerList.filter((elem) => elem.Id !== indexer.Id);
+		console.log('delete indexer');
 		// TODO: unsure if we get a response?
 	}
+	*/
+
+	onMount(() => {
+		fetchIndexers();
+	});
+
 </script>
 
 <main style="max-width: 600px;">
@@ -92,9 +112,31 @@
 		{/if}
 	</div>
 
-	<h2>Indexer</h2>
+	<h2>
+		Indexer
+		<span class="tooltip-wrapper">
+			<span class="info-icon">?</span>
+			<span class="tooltip-text">
+				An indexer is a small program that looks through files or websites and creates a list of what they contain
+				, like words in documents, so you can search and find things quickly.
+				<br>
+				<br>
+				How to use:
+				<br>
+				1. Enter the absolute path in the search field, the indexer must be located among your files.
+				<br>
+				2. Click "Add" - this will register you indexer and start using it automatically
+				<br>
+				<br>
+				You can add multiple indexers to handle different kinds of data.
+			</span>
+		</span>
+	</h2>
 	<div class="box column">
 		<label class="max-label">
+			<p>
+				You can add your own custom indexer by providing the absolute path to a local executable on your device.
+			</p>
 			<div class="">
 				Indexer path:
 				<input type="text" bind:value={indexerInput} />
@@ -106,9 +148,14 @@
 			{#each indexerList as indexer}
 				<div class="inputDiv">
 					<h3>
-						{indexer.Name}, ID: {indexer.Id}, Port: {indexer.Port}
+						{indexer.Name}, ID: {indexer.ID}
 					</h3>
+					<small>
+						({indexer.ExecPath}) | {indexer.Args.join(' ')}
+					</small>
+					<!--
 					<button id="deleteButton" onclick={() => deleteIndexer(indexer)}> Delete </button>
+					-->
 				</div>
 			{/each}
 		{/if}
@@ -199,4 +246,47 @@
 		padding: 0.2rem 0.6rem;
 		font-size: 1rem;
 	}
+
+	p {
+		font-weight: 400;
+	}
+
+	.tooltip-wrapper {
+		position: relative;
+		display: inline-block;
+		cursor: help;
+	}
+
+	.info-icon {
+		font-size: 1rem;
+		background-color: #eee;
+		border-radius: 50%;
+		padding: 0.2rem 0.4rem;
+	}
+
+	.tooltip-text {
+		visibility: hidden;
+		width: 320px;
+		background-color: #333;
+		color: #fff;
+		text-align: left;
+		border-radius: 8px;
+		padding: 0.75rem;
+		position: absolute;
+		z-index: 1;
+		bottom: 125%;
+		left: 50%;
+		transform: translateX(-50%);
+		opacity: 0;
+		transition: opacity 0.2s;
+		font-size: 0.9rem;
+		line-height: 1.4;
+		pointer-events: none;
+	}
+
+	.tooltip-wrapper:hover .tooltip-text {
+		visibility: visible;
+		opacity: 1;
+	}
+
 </style>
