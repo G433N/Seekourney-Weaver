@@ -57,13 +57,13 @@ func TestResponseDocs(t *testing.T) {
 			Path:       "test/path/1",
 			Source:     utils.SourceLocal,
 			Words:      utils.FrequencyMap{"first": 1, "second": 2},
-			Collection: 99,
+			Collection: "test_source_id",
 		},
 		{
 			Path:       "test/path/2",
 			Source:     utils.SourceWeb,
 			Words:      utils.FrequencyMap{"green": 42, "blue": 5},
-			Collection: 99,
+			Collection: "test_source_id",
 		},
 	}
 

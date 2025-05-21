@@ -1,7 +1,6 @@
 package indexAPI
 
 import (
-	"seekourney/core/normalize"
 	"seekourney/indexing"
 	"seekourney/utils"
 	"testing"
@@ -27,8 +26,8 @@ func makeTestIndexerData() IndexerData {
 	return IndexerData{
 		ID:       _TESTINDEXERID_,
 		Name:     "The Test Indexer",
-		ExecPath: "",
-		Args:     []string{"ls"},
+		ExecPath: "ls",
+		Args:     []string{""},
 		Port:     utils.MININDEXERPORT,
 	}
 }
@@ -41,12 +40,12 @@ func makeTestCollection() Collection {
 		UnregisteredCollection: UnregisteredCollection{
 			Path:                _TESTPATH_,
 			IndexerID:           "testid",
-			SourceType:          indexing.FileSource,
+			SourceType:          utils.FileSource,
 			Recursive:           false,
 			RespectLastModified: false,
-			Normalfunc:          normalize.ToLower,
+			Normalfunc:          utils.ToLower,
 		},
-		ID: 123,
+		ID: "ID",
 	}
 }
 
@@ -197,6 +196,7 @@ func TestNewDispatchErrors(t *testing.T) {
 	assert.NoError(t, errs.DispatchAttempt)
 }
 
+// This test will fail due to Dispatch expecting the indexer to be started
 func TestDispatchSuccessIsRunning(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).

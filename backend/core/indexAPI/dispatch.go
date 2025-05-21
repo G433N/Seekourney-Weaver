@@ -137,10 +137,6 @@ func (handler *IndexHandler) Dispatch(
 
 	body := utils.JsonBody(settings)
 
-	log.Printf("Request body: ", *body)
-
-	log.Printf("Collection path: %s", collection.Path)
-
 	resp, err := utils.PostRequest(
 		body,
 		_ENDPOINTPREFIX_,
