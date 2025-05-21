@@ -190,7 +190,7 @@ func RegisterIndexer(
 	name, err := GetRequest(active, "name")
 	utils.PanicOnError(err)
 
-	indexer.Name = string(name)
+	indexer.Name = strings.TrimSpace(name)
 
 	log.Printf("Indexer name: %s", name)
 
