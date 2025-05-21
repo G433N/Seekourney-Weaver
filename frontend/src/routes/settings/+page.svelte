@@ -1,22 +1,25 @@
 <script lang="ts">
+	import {
+		showFiles,
+		showWebpages,
+		showAllResults,
+		maxResults,
+		cpuDefault,
+		maxCores,
+		cpuCores,
+		indexerList
+	} from 'src/lib/stores/settings';
+
+	import { get } from 'svelte/store';
+
 	interface IndexerResult {
 		Name: string;
 		Id: number;
 		Port: number;
 	}
 
-	let showFiles: boolean = $state(true);
-	let showWebpages: boolean = $state(true);
-	let showAllResults: boolean = $state(true);
-	let maxResults: number = $state(100);
-
-	let cpuDefault: boolean = $state(true);
-	let maxCores: number = $state(8);
-	let cpuCores: number = $state(4);
-
-	let indexerInput: string = $state('');
+	let indexerInput: '';
 	// let submittedIndexer: string = '';
-	let indexerList: IndexerResult[] = $state([]);
 
 	async function addIndexer(): Promise<void> {
 		if (indexerInput.length > 0) {

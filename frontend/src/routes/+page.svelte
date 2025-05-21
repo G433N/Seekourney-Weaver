@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { showFiles, showWebpages, showAllResults, maxResults } from '$lib/stores/settings';
+	import { get } from 'svelte/store';
 
 	interface SearchResult {
 		Path: string;
@@ -24,7 +26,18 @@
 			submittedQuery = query;
 			const res = await fetch(`http://localhost:8080/search?q=${query}`);
 			const json = (await res.json()) as SearchResponse;
-			results = json.Results;
+			let filteredResults = json.Results;
+
+			filteredResults = filteredResults.filter(
+				(res) =>
+					(res.Source === 1 && get(showWebpages)) ||
+					(res.Source !== 1 && get(showFiles))
+			);
+
+			if (!get(showAllResults)) {
+				filteredResults = filteredResults.slice(0, get(maxResults));
+			}
+
 			console.log(results);
 			// results = [
 			// 	{
@@ -42,6 +55,7 @@
 			// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
 			// 	}
 			// ];
+			results = filteredResults;
 			searched = true;
 		} else {
 			searched = false;
