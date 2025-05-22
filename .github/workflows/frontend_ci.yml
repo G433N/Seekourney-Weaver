@@ -44,10 +44,10 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Run frontend Unit Tests
+      - name: Run frontend Unit and E2E tests
+      # Need long timeout for E2E tests.
         run: |
-          timeout 10 npm run test
-          timeout 60 npx playwright test
+          timeout 100 npm run test
 
       - name: Frontend Linting
         run: npx eslint .
