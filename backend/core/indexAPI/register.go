@@ -106,6 +106,7 @@ func (ind IndexerData) SQLScan(rows *sql.Rows) (IndexerData, error) {
 
 }
 
+// IndexerFromDB returns an indexer from the database, with the given ID
 func IndexerFromDB(db *sql.DB, id IndexerID) (IndexerData, error) {
 	var indexer IndexerData
 

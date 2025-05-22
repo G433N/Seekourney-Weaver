@@ -16,6 +16,10 @@ import (
 	"strconv"
 )
 
+// IndexerClient abstracts away most of the boilerplate code and infrastructure
+// needed to run an indexer client. It is a wrapper around the http server
+// that handles the requests and responses. It also handles the logging and
+// error handling. It should be used as a singleton
 type IndexerClient struct {
 	Port       utils.Port
 	Name       string
@@ -24,6 +28,11 @@ type IndexerClient struct {
 	channel    chan *UnnormalizedDocument
 }
 
+// NewClient creates a new IndexerClient. It reads the command line for
+// the following flags:
+// 1. port: the port to run the indexer on, in the range of 39000-39499
+// 2. par: whether to run in parallel or not
+// 3. conf: the config file to use, Optional
 func NewClient(name string) *IndexerClient {
 	portFlag := flag.Uint("port", 0,
 		"Port to run the indexer on, in the range of 39000-39499")
@@ -89,6 +98,14 @@ func NewClient(name string) *IndexerClient {
 	return client
 
 }
+
+// Start starts the indexer client. It listens for requests on the
+// specified port and handles them.
+// Its path are:
+// 1. /index: starts the indexing process
+// 2. /name: returns the name of the indexer
+// 3. /ping: returns a ping response
+// 4. /shutdown: shuts down the indexer
 
 func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 
@@ -164,6 +181,7 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 	}
 }
 
+// Log, sends a log message to the server.
 func (client *IndexerClient) Log(msg string, args ...any) {
 
 	log.Printf(msg, args...)

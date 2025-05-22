@@ -5,15 +5,17 @@ import (
 	"seekourney/utils"
 )
 
+// index is used insice client.Start() to handle reading fil into text
 func index(config *Config, cxt indexing.Context, settings indexing.Settings) {
 
 	switch settings.Type {
 	case utils.FILE_SOURCE:
-		HandleFile(cxt, settings)
+		IndexFile(settings.Path, cxt, settings)
 	case utils.DIR_SOURCE:
 		HandleDir(config, cxt, settings)
 	case utils.URL_SOURCE:
-		HandleUrl(cxt, settings)
+		var cxt indexing.Context = cxt
+		cxt.Log("Does not support URL indexing!!!")
 	default:
 		cxt.Log("Unknown source type: %d", settings.Type)
 	}
@@ -31,10 +33,7 @@ func main() {
 
 }
 
-func HandleFile(cxt indexing.Context, settings indexing.Settings) {
-	IndexFile(settings.Path, cxt, settings)
-}
-
+// HandleDir indexes all files in a directory and subdirectories
 func HandleDir(
 	config *Config,
 	cxt indexing.Context,
@@ -44,8 +43,4 @@ func HandleDir(
 	for path := range config.WalkDirConfig.WalkDir(settings.Path) {
 		IndexFile(path, cxt, settings)
 	}
-}
-
-func HandleUrl(cxt indexing.Context, settings indexing.Settings) {
-	cxt.Log("Does not support URL indexing!!!")
 }

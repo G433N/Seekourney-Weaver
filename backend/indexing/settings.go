@@ -6,6 +6,8 @@ import (
 	"seekourney/utils"
 )
 
+// CollectionID is a type that represents the ID of a collection.
+// Used to locate a collection in the database.
 type CollectionID utils.ObjectId
 
 // TODO: Find a better name for this

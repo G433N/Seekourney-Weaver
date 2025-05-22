@@ -94,6 +94,7 @@ func (col Collection) SQLScan(rows *sql.Rows) (Collection, error) {
 
 }
 
+// CollectionFromDB returns a Collection from the database, with the given ID.
 func CollectionFromDB(
 	db *sql.DB,
 	id indexing.CollectionID,

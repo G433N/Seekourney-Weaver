@@ -37,12 +37,15 @@ type DispatchErrors struct {
 	DispatchAttempt   error
 }
 
+// RunningIndexer is a struct that represents an indexer running on the system.
 type RunningIndexer struct {
 	ID   IndexerID
 	Exec *exec.Cmd
 	Port utils.Port
 }
 
+// GetRequestJSON sends a GET request to the indexer and returns the response
+// as a JSON object.
 func GetRequestJSON[T any](
 	indexer *RunningIndexer,
 	urlPath ...string,
@@ -50,6 +53,8 @@ func GetRequestJSON[T any](
 	return utils.GetRequestJSON[T](_ENDPOINTPREFIX_, indexer.Port, urlPath...)
 }
 
+// GetRequest sends a GET request to the indexer and returns the response as a
+// string.
 func GetRequest(indexer *RunningIndexer, urlPath ...string) (string, error) {
 	return utils.GetRequest(_ENDPOINTPREFIX_, indexer.Port, urlPath...)
 }
@@ -74,10 +79,15 @@ func PostRequest(
 	return utils.PostRequest(body, _ENDPOINTPREFIX_, indexer.Port, urlPath...)
 }
 
+// Wait waits for the indexer to finish executing.
+// It also synchronizes stdout and stderr output
 func (indexer *RunningIndexer) Wait() error {
 	return indexer.Exec.Wait()
 }
 
+// IndexHandler keeps track of all indexers running on the system and
+// synchronizes access to them.
+// It is used to dispatch indexing requests to the indexers.
 type IndexHandler struct {
 	Mutex    sync.Mutex
 	Indexers map[IndexerID]*RunningIndexer
@@ -103,12 +113,14 @@ func newDispatchErrors() DispatchErrors {
 	}
 }
 
+// DispatchReindex requests reindexing of a document
 func (handler *IndexHandler) DispatchReindex(
 	db *sql.DB,
 	path utils.Path,
 ) error {
 	// get doc, get collection from db
 	// change signature
+	// TODO:
 	return nil
 }
 
@@ -169,6 +181,7 @@ func (handler *IndexHandler) Dispatch(
 		utils.PanicOnError(err)
 	}
 
+	// TODO: Use this system
 	// if resp.Status != indexing.STATUSSUCCESSFUL {
 	// 	errs.DispatchAttempt = errors.New(
 	// 		"indexer " + indexer.Name +
@@ -210,6 +223,7 @@ func (handler *IndexHandler) DispatchFromID(
 	return handler.DispatchFromCollection(db, collection)
 }
 
+// ShutdownAll tries to kill all running indexers
 func (handler *IndexHandler) ForceShutdownAll() {
 	handler.Mutex.Lock()
 	for _, indexer := range handler.Indexers {
@@ -223,62 +237,7 @@ func (handler *IndexHandler) ForceShutdownAll() {
 	handler.Mutex.Unlock()
 }
 
-/*
-// startupIndexer attempts to start the indexer using the given info state.
-// On fail, error containing stdout text is returned.
-func startupIndexer(info IndexerInfo) error {
-	stderr, err := info.cmd.StderrPipe()
-	if err != nil {
-		panic(err)
-	}
-
-	// Start indexer
-	if err := info.cmd.Start(); err != nil {
-		readBytes, ioErr := io.ReadAll(stderr)
-		if ioErr != nil {
-			panic(ioErr)
-		}
-		return errors.New(string(readBytes))
-	}
-
-	// If ping to indexer fails, consider startup failed.
-	client := http.Client{
-		Timeout: _SHORTTIMEOUT_,
-	}
-	resp, err := client.Get(string(info.endpoint) + _PING_)
-	if err != nil {
-		return err
-	}
-	defer closeResponse(resp)
-
-	parsedResp, err := parseResponse(resp)
-	if err != nil {
-		return err
-	}
-	if parsedResp.Status == indexing.STATUSSUCCESSFUL &&
-		parsedResp.Data.Message == indexing.MESSAGEPONG {
-		return nil
-	} else {
-		return errors.New("Ping response from indexer " + info.name +
-			" did not match expected data")
-	}
-}
-
-// shutdownIndexerForceful kills the process
-// associated with the indexer info.
-// Only the original indexer process gets killed.
-// This means any child processes that the indexer creates will be orphaned.
-func shutdownIndexerForceful(info IndexerInfo) error {
-	return info.cmd.Process.Kill()
-}
-
-// Helper for shutdownIndexerGraceful.
-func carelessShutdown(info IndexerInfo) {
-	err := shutdownIndexerForceful(info)
-	if err != nil {
-		println(err)
-	}
-}
+/* TODO: Reimplement old functions
 
 // shutdownIndexerGraceful requests shutdown of the process
 // associated with the indexer info, through the indexing API.

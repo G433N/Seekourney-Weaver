@@ -5,10 +5,15 @@ import (
 	"strings"
 )
 
+// Context is a struct that holds the client and provides methods
+// to log messages and create documents. It is used in client.Start()
+// this struct is here such that we can implment more feature later, without
+// breaking older code.
 type Context struct {
 	client *IndexerClient
 }
 
+// NewContext creates a new Context struct.
 func NewContext(client *IndexerClient) Context {
 	if client == nil {
 		panic("client cannot be nil")
@@ -19,11 +24,12 @@ func NewContext(client *IndexerClient) Context {
 	}
 }
 
+// Log is a method that logs messages to the server.
 func (cxt *Context) Log(msg string, args ...any) {
 	cxt.client.Log(msg, args...)
 }
 
-// TODO: Should return DOcumment builder
+// StartDoc creates a new document builder.
 func (cxt *Context) StartDoc(path utils.Path, source utils.Source, settings Settings) *docBuilder {
 
 	return &docBuilder{
@@ -35,6 +41,9 @@ func (cxt *Context) StartDoc(path utils.Path, source utils.Source, settings Sett
 	}
 }
 
+// index makes a docBuilder into a document and indexes it. After that
+// the function f is called on the document, to do any modifications.
+// The document is then sent to the server.
 func index(
 	client *IndexerClient,
 	docBuilder docBuilder,
@@ -53,7 +62,7 @@ func index(
 	client.channel <- doc
 }
 
-// TODO: Better name -> Document builder
+// DocBuilder represents a partally completed document
 type docBuilder struct {
 	path       utils.Path
 	source     utils.Source
@@ -62,7 +71,7 @@ type docBuilder struct {
 	cxt        *Context
 }
 
-// TODO: Should be a methond on documment builder
+// AddText adds text to the document.
 func (doc *docBuilder) AddText(text string) {
 	doc.text = append(doc.text, text)
 }
@@ -71,7 +80,6 @@ func (doc *docBuilder) AddText(text string) {
 // It can take a function to modify the document before sending it.
 // This function needs to be thread safe.
 // When indexed the document is sent to the server.
-// TODO: Should be a methond on documment builder
 func (doc *docBuilder) Done(f *func(*UnnormalizedDocument)) {
 
 	if doc.cxt.client.Parallel {

@@ -33,7 +33,9 @@ func Default(config *Config) *Config {
 	}
 }
 
-func ReadPathToString(path utils.Path) (string, error) {
+// ReadFileToString reads the content of a file at the given path
+// and returns it as a string.
+func ReadFileToString(path utils.Path) (string, error) {
 	content, err := os.ReadFile(string(path))
 	if err != nil {
 		return "", err
@@ -41,8 +43,9 @@ func ReadPathToString(path utils.Path) (string, error) {
 	return string(content), nil
 }
 
+// IndexFile indexes a file at the given path.
 func IndexFile(path utils.Path, cxt indexing.Context, settings indexing.Settings) {
-	text, err := ReadPathToString(path)
+	text, err := ReadFileToString(path)
 	if err != nil {
 		cxt.Log("Error reading file: %s", err)
 		return
