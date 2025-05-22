@@ -137,3 +137,62 @@ Indexer must respond with:
 }
 ```
 And immediately exit all it's associated processes.
+
+# Changelog Server
+
+# /all/indexers
+Response body
+```json
+[
+  {
+    "ID": "1747669102342c",
+    "Name": "LocalText\n",
+    "ExecPath": "go",
+    "Args": [
+      "run",
+      "indexer/localtext/main.go",
+      "indexer/localtext/localtext.go"
+    ],
+    "Port": 39000
+  },
+]
+```
+# /all/collections
+Response body
+``` json
+[
+  {
+    "Path": "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
+    "IndexerID": "17479209612f6f",
+    "SourceType": 0,
+    "Recursive": true,
+    "RespectLastModified": false,
+    "Normalfunc": 1,
+    "ID": "17479209635f16"
+  },
+]
+```
+
+# /push/paths
+should be removed fron the API
+# /push/docs
+unormalised documment struct has changed, see struct def
+# /index
+takes a settings struct a body not a path in the url
+# /push/collection
+takes a UnregisteredCollection struct as a body
+```json
+{
+    "Path": "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
+    "IndexerID": "17478382672209",
+    "SourceType": 0,
+    "Recursive": true,
+    "RespectLastModified": false,
+    "Normalfunc": 0,
+  }
+```
+# /push/indexer
+takes a path to indexer or command for indexer, as body
+
+# Changlog Indexer
+See Client.go
