@@ -62,6 +62,13 @@
 		}
 	}
 
+	async function refreshSearch(): Promise<void> {
+		if (submittedQuery.length > 0) {
+			query = submittedQuery;
+			await search();
+		}
+	}
+
 	// TODO: test if it works with branch search-and-download
 	async function downloadFile(path: string): Promise<void> {
 		fetch(`http://localhost:8080/download?q=${path}`, {
@@ -98,6 +105,10 @@
 		/>
 
 		<button on:click={search} id="searchButton"> Search </button>
+
+		<button on:click={refreshSearch} class="round-button" title="Refresh results">
+			↻
+		</button>
 	</div>
 
 	{#if searched == true && results.length > 0}
@@ -193,5 +204,23 @@
 	.searchInfo {
 		font-size: rem;
 		margin: 0;
+	}
+
+	.round-button {
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 50%;
+		border: 1px solid #ccc;
+		background-color: #f0eeee;
+		cursor: pointer;
+		font-size: 1.2rem;
+		line-height: 1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.round-button:hover {
+		background-color: #e2e2e2;
 	}
 </style>
