@@ -5,9 +5,6 @@ import (
 	"sync"
 )
 
-// currently unused
-//const _STACKMAXLEN_ = 1_000_000
-
 /*
 Stack is a thread-safe generic stack implementation.
 Can Pop, Push and has non-blocking versions too.
