@@ -49,13 +49,13 @@ Push
 adds an element to the queue.
 If the queue is full, it blocks until space is available.
 */
-func (queue *CyclicQueue[T]) Push(URL T) {
-	queue.emptySem.Wait()
-	queue.lock.Lock()
-	defer queue.lock.Unlock()
-	queue.queue[queue.write] = URL
-	queue.write = (queue.write + 1) % len(queue.queue)
-	queue.filledSem.Signal()
+func (cq *CyclicQueue[T]) Push(elem T) {
+	cq.emptySem.Wait()
+	cq.lock.Lock()
+	defer cq.lock.Unlock()
+	cq.queue[cq.write] = elem
+	cq.write = (cq.write + 1) % len(cq.queue)
+	cq.filledSem.Signal()
 }
 
 /*
@@ -63,15 +63,15 @@ TryPush
 attempts to add an element to the queue.
 If the queue is full, it returns false without blocking.
 */
-func (queue *CyclicQueue[T]) TryPush(URL T) bool {
-	if !queue.emptySem.TryWait() {
+func (cq *CyclicQueue[T]) TryPush(elem T) bool {
+	if !cq.emptySem.TryWait() {
 		return false
 	}
-	queue.lock.Lock()
-	defer queue.lock.Unlock()
-	queue.queue[queue.write] = URL
-	queue.write = (queue.write + 1) % len(queue.queue)
-	queue.filledSem.Signal()
+	cq.lock.Lock()
+	defer cq.lock.Unlock()
+	cq.queue[cq.write] = elem
+	cq.write = (cq.write + 1) % len(cq.queue)
+	cq.filledSem.Signal()
 	return true
 }
 
@@ -80,15 +80,15 @@ Pop
 retrieves an element from the queue.
 If the queue is empty, it blocks until an element is available.
 */
-func (queue *CyclicQueue[T]) Pop() T {
-	queue.filledSem.Wait()
-	queue.lock.Lock()
-	defer queue.lock.Unlock()
-	URL := queue.queue[queue.read]
-	queue.read = (queue.read + 1) % len(queue.queue)
-	queue.emptySem.Signal()
+func (cq *CyclicQueue[T]) Pop() T {
+	cq.filledSem.Wait()
+	cq.lock.Lock()
+	defer cq.lock.Unlock()
+	elem := cq.queue[cq.read]
+	cq.read = (cq.read + 1) % len(cq.queue)
+	cq.emptySem.Signal()
 
-	return URL
+	return elem
 }
 
 /*
@@ -96,15 +96,15 @@ TryPop
 attempts to retrive an element from the queue.
 If the queue is empty, it returns false without blocking.
 */
-func (queue *CyclicQueue[T]) TryPop() (T, bool) {
-	if !queue.filledSem.TryWait() {
+func (cq *CyclicQueue[T]) TryPop() (T, bool) {
+	if !cq.filledSem.TryWait() {
 		var zeroValue T
 		return zeroValue, false
 	}
-	queue.lock.Lock()
-	defer queue.lock.Unlock()
-	URL := queue.queue[queue.read]
-	queue.read = (queue.read + 1) % len(queue.queue)
-	queue.emptySem.Signal()
-	return URL, true
+	cq.lock.Lock()
+	defer cq.lock.Unlock()
+	elem := cq.queue[cq.read]
+	cq.read = (cq.read + 1) % len(cq.queue)
+	cq.emptySem.Signal()
+	return elem, true
 }
