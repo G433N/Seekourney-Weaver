@@ -17,96 +17,210 @@ type Stack[T any] struct {
 	lock sync.Mutex
 	// stack is the slice that holds the elements
 	stack []T
-	// lenSem is a semaphore that tracks the number of elements in the stack
+	// filledSem tracks the number of elements in the stack
 	// used to block the Pop operation when the stack is empty
-	lenSem Semaphore
+	filledSem Semaphore
+	// emptySem tracks how many elements can be added before the stack is full
+	// and is only used when a max size is given
+	// used to block the Push operation when the stack is full
+	emptySem Semaphore
+
+	/*
+		Pop
+		retrieves the top element from the stack.
+		If empty, blocks until its not
+	*/
+	Pop func() T
+
+	/*
+	   TryPop
+	   retrieves the top element from the stack.
+	   If empty, returns false without blocking.
+	*/
+	TryPop func() (T, bool)
+
+	/*
+		Push
+		adds an element to the stack.
+		If a max size is given and the stack is full,
+		it blocks until space is available.
+	*/
+	Push func(T)
+
+	/*
+	   TryPush
+	   attempts to add an element to the stack.
+	   If a max size is given and stack is full, it returns false without blocking.
+	*/
+	TryPush func(T) bool
 }
 
 /*
 NewStack
 creates a new Stack with the optional maximum size.
 */
-func NewStack[T any](optionalMaxSize ...int) Stack[T] {
+func NewStack[T any](optionalMaxSize ...int) *Stack[T] {
 	if len(optionalMaxSize) == 1 {
-		return Stack[T]{
-			stack:  []T{},
-			lenSem: *NewSemaphore(0, optionalMaxSize[0]),
+		newStack := Stack[T]{
+			stack:     []T{},
+			filledSem: *NewSemaphore(0),
+			emptySem:  *NewSemaphore(optionalMaxSize[0]),
 		}
+		newStack.Pop = newStack.boundedPop
+		newStack.TryPop = newStack.boundedTryPop
+		newStack.Push = newStack.boundedPush
+		newStack.TryPush = newStack.boundedTryPush
+
+		return &newStack
 	}
 	if len(optionalMaxSize) > 1 {
 		log.Fatalln("NewStack", "only one size argument is allowed")
 	}
-	return Stack[T]{
-		stack:  []T{},
-		lenSem: *NewSemaphore(0),
-	}
+
+	newStack :=
+		Stack[T]{
+			stack:     []T{},
+			filledSem: *NewSemaphore(0),
+		}
+	newStack.Pop = newStack.defaultPop
+	newStack.TryPop = newStack.defaultTryPop
+	newStack.Push = newStack.defaultPush
+	newStack.TryPush = newStack.defaultTryPush
+
+	return &newStack
 }
 
 /*
 IsEmpty
 returns true if the stack is empty.
 */
-func (stack *Stack[T]) IsEmpty() bool {
-	stack.lock.Lock()
-	defer stack.lock.Unlock()
-	return len(stack.stack) == 0
+func (st *Stack[T]) IsEmpty() bool {
+	st.lock.Lock()
+	defer st.lock.Unlock()
+	return len(st.stack) == 0
 }
 
 /*
-Pop
+defaultPop
 retrieves the top element from the stack.
-If empty, blocks until its not
+If empty, blocks until its not.
+Is only used when a max size is not given.
 */
-func (stack *Stack[T]) Pop() T {
-	stack.lenSem.Wait()
-	stack.lock.Lock()
-	URL := stack.stack[len(stack.stack)-1]
-	stack.stack = stack.stack[:len(stack.stack)-1]
-	stack.lock.Unlock()
-	return URL
+func (st *Stack[T]) defaultPop() T {
+	st.filledSem.Wait()
+	st.lock.Lock()
+	elem := st.stack[len(st.stack)-1]
+	st.stack = st.stack[:len(st.stack)-1]
+	st.lock.Unlock()
+	return elem
 }
 
 /*
-TryPop
-retrieves the top element from the stack.
+defaultTryPop
+tries to retrieve the top element from the stack.
 If empty, returns false without blocking.
+Is only used when a max size is not given.
 */
-func (stack *Stack[T]) TryPop() (T, bool) {
-	if !stack.lenSem.TryWait() {
+func (st *Stack[T]) defaultTryPop() (T, bool) {
+	if !st.filledSem.TryWait() {
 		var zeroValue T
 		return zeroValue, false
 	}
-	stack.lock.Lock()
-	URL := stack.stack[len(stack.stack)-1]
-	stack.stack = stack.stack[:len(stack.stack)-1]
-	stack.lock.Unlock()
-	return URL, true
+	st.lock.Lock()
+	elem := st.stack[len(st.stack)-1]
+	st.stack = st.stack[:len(st.stack)-1]
+	st.lock.Unlock()
+	return elem, true
 }
 
 /*
-Push
+defaultPush
 adds an element to the stack.
-If the stack is full, it blocks until space is available.
+Is only used when a max size is not given.
 */
-func (stack *Stack[T]) Push(elem T) {
-	stack.lenSem.Signal()
+func (st *Stack[T]) defaultPush(elem T) {
+	st.lock.Lock()
+	st.stack = append(st.stack, elem)
+	st.filledSem.Signal()
+	st.lock.Unlock()
+}
+
+/*
+defaultTryPush
+tries to add an element to the stack.
+Is only used when a max size is not given.
+*/
+func (stack *Stack[T]) defaultTryPush(elem T) bool {
 	stack.lock.Lock()
 	stack.stack = append(stack.stack, elem)
+	stack.filledSem.Signal()
 	stack.lock.Unlock()
+	return true
 }
 
 /*
-TryPush
-attempts to add an element to the stack.
-If the stack is full, it returns false without blocking.
+boundedPop
+retrieves the top element from the stack.
+If empty, blocks until its not.
+Is only used when a max size is given.
 */
-func (stack *Stack[T]) TryPush(elem T) bool {
-	stack.lock.Lock()
-	if !stack.lenSem.TrySignal() {
+func (st *Stack[T]) boundedPop() T {
+
+	st.filledSem.Wait()
+	st.lock.Lock()
+	elem := st.stack[len(st.stack)-1]
+	st.stack = st.stack[:len(st.stack)-1]
+	st.emptySem.Signal()
+	st.lock.Unlock()
+	return elem
+}
+
+/*
+boundedTryPop
+tries to retrieve the top element from the stack.
+If empty, returns false without blocking.
+Is only used when a max size is given.
+*/
+func (st *Stack[T]) boundedTryPop() (T, bool) {
+	if !st.filledSem.TryWait() {
+		var zeroValue T
+		return zeroValue, false
+	}
+	st.lock.Lock()
+	elem := st.stack[len(st.stack)-1]
+	st.stack = st.stack[:len(st.stack)-1]
+	st.emptySem.Signal()
+	st.lock.Unlock()
+	return elem, true
+}
+
+/*
+boundedPush
+adds an element to the stack.
+If the stack is full it blocks until space is available.
+Is only used when a max size is given.
+*/
+func (st *Stack[T]) boundedPush(elem T) {
+	st.emptySem.Wait()
+	st.lock.Lock()
+	st.stack = append(st.stack, elem)
+	st.filledSem.Signal()
+	st.lock.Unlock()
+}
+
+/*
+boundedTryPush
+tries to add an element to the stack.
+If the stack is full it returns false without blocking
+Is only used when a max size is given.
+*/
+func (stack *Stack[T]) boundedTryPush(elem T) bool {
+	if !stack.emptySem.TryWait() {
 		return false
 	}
-
+	stack.lock.Lock()
 	stack.stack = append(stack.stack, elem)
+	stack.filledSem.Signal()
 	stack.lock.Unlock()
 	return true
 }
