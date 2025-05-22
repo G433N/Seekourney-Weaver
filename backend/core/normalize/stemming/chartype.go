@@ -7,8 +7,8 @@ import "iter"
 type charType int
 
 const (
-	vowel charType = iota
-	consonant
+	__VOWEL__ charType = iota
+	__CONSONANT__
 )
 
 // isVowel checks if a byte is a context free vowel
@@ -24,18 +24,19 @@ func isVowel(b byte) bool {
 // getCharType returns the charType of a byte
 func getCharType(char byte) charType {
 	if isVowel(char) {
-		return vowel
+		return __VOWEL__
+	} else {
+		return __CONSONANT__
 	}
-	return consonant
 }
 
 // inverse returns the inverse of the charType
 func (t charType) inverse() charType {
 	switch t {
-	case vowel:
-		return consonant
-	case consonant:
-		return vowel
+	case __VOWEL__:
+		return __CONSONANT__
+	case __CONSONANT__:
+		return __VOWEL__
 	}
 	panic("unreachable")
 }
@@ -45,7 +46,7 @@ func charTypeIter(word string) iter.Seq2[charType, charType] {
 	bytes := []byte(word)
 
 	return func(yield func(charType, charType) bool) {
-		prev := consonant
+		prev := __CONSONANT__
 		for _, char := range bytes {
 			var charType charType
 
@@ -69,7 +70,7 @@ func charTypeIter(word string) iter.Seq2[charType, charType] {
 func containsVowel(str string) bool {
 
 	for charType := range charTypeIter(str) {
-		if charType == vowel {
+		if charType == __VOWEL__ {
 			return true
 		}
 	}

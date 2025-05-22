@@ -1,5 +1,7 @@
 package stemming
 
+import "slices"
+
 // condition decides if a substitution is valid
 type condition func(stem string) bool
 
@@ -48,25 +50,21 @@ func dubbelConsonant(stem *stem) bool {
 func endsWith(chars ...byte) condition {
 	return func(stem string) bool {
 
-		l := len(stem)
+		length := len(stem)
 
-		if l == 0 {
+		if length == 0 {
 			return false
 		}
 
-		for _, char := range chars {
-			if stem[l-1] == char {
-				return true
-			}
-		}
-
-		return false
+		return slices.Contains(chars, stem[length-1])
 	}
 
 }
 
 // cvc checks if the stem ends with a consonant-vowel-consonant pattern
 // the secnd consonant must not be a w, x or y
+//
+// this is a special operation for the Porter stemming algorithm
 func cvc(stem string) bool {
 
 	l := len(stem)
@@ -77,6 +75,10 @@ func cvc(stem string) bool {
 
 	last := stem[l-3:]
 
+	// check if the first and last characters are consonants
+	// and the middle character is a vowel
+	// and the last character is not a w, x or y
+	// as defined in the Porter stemming algorithm
 	return !isVowel(last[0]) && isVowel(last[1]) && !isVowel(last[2]) &&
 		last[2] != 'w' && last[2] != 'x' && last[2] != 'y'
 }

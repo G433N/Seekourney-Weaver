@@ -44,14 +44,6 @@ func TestFiling(t *testing.T) {
 	testStem(t, "filing", "file")
 }
 
-// func TestRelational(t *testing.T) {
-// 	testStem(t, "relational", "relate")
-// }
-
-// func TestConditional(t *testing.T) {
-// 	testStem(t, "conditional", "condition")
-// }
-
 func TestRational(t *testing.T) {
 	testStem(t, "rational", "ration")
 }
@@ -63,10 +55,6 @@ func TestValency(t *testing.T) {
 func TestHesitancy(t *testing.T) {
 	testStem(t, "hesitancy", "hesit")
 }
-
-// func TestDigitizer(t *testing.T) {
-// 	testStem(t, "digitizer", "digit")
-// }
 
 func TestConformability(t *testing.T) {
 	testStem(t, "conformability", "conform")

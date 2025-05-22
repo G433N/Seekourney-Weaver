@@ -1,6 +1,7 @@
 package stemming
 
 // Source: https://snowballstem.org/algorithms/porter/stemmer.html
+// TODO: Explain the algorithm, maybe move from the report
 
 import (
 	"seekourney/utils"
@@ -10,7 +11,7 @@ import (
 
 type Word = utils.Word
 
-// stem is a struct that contains the stem data
+// stem represents a "stem" of a word
 type stem struct {
 	str string
 }
@@ -19,21 +20,25 @@ type stem struct {
 type ruleRes int
 
 const (
-	// miss is used to indicate that the rule was not matched
-	miss ruleRes = iota
-	// matched is used to indicate that the rule was matched, but not applyied
-	matched
-	// changed is used to indicate that the stem was changed
-	changed
+	// __MISS__ is used to indicate that the rule was not matched
+	__MISS__ ruleRes = iota
+	// __MATCHED__ is used to indicate that the rule was __MATCHED__,
+	// but not applied
+	__MATCHED__
+	// __CHANGED__ is used to indicate that the stem was __CHANGED__
+	__CHANGED__
 )
 
 // ruleFunc is a type that represents a rule function
 type ruleFunc func(stem *stem) ruleRes
 
 // Stem stems alphabetical ascci words and lowercases any other string
+//
+// It uses the Porter stemming algorithm, as described in the article:
+// https://snowballstem.org/algorithms/porter/stemmer.html
 func Stem(word Word) Word {
 
-	// Only stem ASCII words
+	// Only stem ASCCI words
 	for _, b := range []byte(word) {
 		if !words.IsASCIIAlpha(b) {
 			return utils.Word(strings.ToLower(string(word)))
@@ -42,7 +47,7 @@ func Stem(word Word) Word {
 
 	stem := wordIntoStemData(word)
 
-	// Step 1a
+	// Step 1a (As described in the article, refrenced at the top of this file)
 	rules(stem,
 		rule("sses", "ss"),
 		rule("ies", "i"),
@@ -167,13 +172,13 @@ func rules(stem *stem, rules ...ruleFunc) bool {
 
 	for _, rule := range rules {
 		res := rule(stem)
-		if res == changed {
+		if res == __CHANGED__ {
 			return true
 		}
 
 		// If the rule was not applied, but it matched, we need to
 		// return false, so we can stop applying rules
-		if res == matched {
+		if res == __MATCHED__ {
 			return false
 		}
 	}
@@ -198,18 +203,18 @@ func apply(
 	res, ok := strings.CutSuffix(stem.str, suffix)
 
 	if !ok {
-		return miss
+		return __MISS__
 	}
 
 	for _, cond := range conds {
 		if !cond(res) {
-			return matched
+			return __MATCHED__
 		}
 	}
 
 	stem.str = res + ending
 
-	return changed
+	return __CHANGED__
 }
 
 // removeLastChar removes the last character from the stem
