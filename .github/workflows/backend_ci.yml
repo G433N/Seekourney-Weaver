@@ -10,7 +10,7 @@ jobs:
   backend-ci:
     if: |
       contains(github.event.pull_request.labels.*.name, 'ready for review') &&
-      contains(github.event.pull_request.labels.*.name, 'frontend')
+      contains(github.event.pull_request.labels.*.name, 'backend')
 
     runs-on: ubuntu-latest
     defaults:

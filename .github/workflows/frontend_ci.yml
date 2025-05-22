@@ -32,6 +32,7 @@ jobs:
       - name: Set up npm
         uses: actions/setup-node@v4
         with:
+          cache-dependency-path: frontend/package-lock.json
           node-version: 21
           cache: 'npm'
 
