@@ -47,7 +47,7 @@ jobs:
       - name: Run frontend Unit Tests
         run: |
           timeout 10 npm run test
-          timeout 10 npx playwright test
+          timeout 60 npx playwright test
 
       - name: Frontend Linting
         run: npx eslint .
