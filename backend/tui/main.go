@@ -13,6 +13,7 @@ import (
 	"seekourney/tui/format"
 	"seekourney/utils"
 	"seekourney/utils/timing"
+	"strings"
 )
 
 // Strings for building URLs in HTTP requests
@@ -79,10 +80,8 @@ func main() {
 		getAll()
 	case "index":
 		index(args[2:])
-	case "test":
-		test()
-	case "pdf":
-		testPDF()
+	case "demo":
+		demo()
 	case "quit":
 		shutdownServer()
 	default:
@@ -228,36 +227,34 @@ func index(paths []string) {
 	}
 }
 
-type extractID struct {
-	ID utils.IndexerID
+type extract struct {
+	ID   utils.IndexerID
+	Args []string
 }
 
-func allIndexers() utils.IndexerID {
+func allIndexers() []extract {
 	res, err := utils.GetRequestBytes(_HOST_, _PORT_, "all", "indexers")
 
 	if err != nil {
-		log.Println("Error sending request:", err)
-		return ""
+		log.Fatalf("Error sending request:", err)
 	}
 
 	var bytes bytes.Buffer
 	err = json.Indent(&bytes, res, "", "  ")
 	if err != nil {
-		log.Println("Error indenting JSON:", err)
-		return ""
+		log.Fatalf("Error indenting JSON:", err)
 	}
 
 	log.Println("Response:", bytes.String())
 
-	var indexers []extractID
+	var indexers []extract
 	err = json.Unmarshal(res, &indexers)
 
 	if err != nil {
-		log.Println("Error unmarshalling JSON:", err)
-		return ""
+		log.Fatalln("Error unmarshalling JSON:", err)
 	}
 
-	return indexers[0].ID
+	return indexers
 }
 
 func allCollections() {
@@ -278,50 +275,117 @@ func allCollections() {
 	log.Println("Response:", bytes.String())
 }
 
-func test() {
+// func test() {
+//
+// 	body := utils.StrBody("go run indexer/localtext/main.go indexer/localtext/localtext.go")
+// 	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "indexer")
+// 	if err != nil {
+// 		log.Println("Error sending request:", err)
+// 		return
+// 	}
+//
+// 	id := allIndexers()
+//
+// 	col := utils.UnregisteredCollection{
+// 		Path:                "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md",
+// 		IndexerID:           id,
+// 		SourceType:          utils.FileSource,
+// 		Recursive:           true,
+// 		RespectLastModified: false,
+// 		Normalfunc:          utils.ToLower,
+// 	}
+//
+// 	body = utils.JsonBody(col)
+// 	_, err = utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
+// 	if err != nil {
+// 		log.Println("Error sending request:", err)
+// 		return
+// 	}
+//
+// 	allCollections()
+//
+// }
 
+// func testPDF() {
+//
+// 	body := utils.StrBody("go run indexer/pdftotxt/main.go indexer/pdftotxt/pdftotext.go")
+// 	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "indexer")
+// 	if err != nil {
+// 		log.Println("Error sending request:", err)
+// 		return
+// 	}
+//
+// 	id := allIndexers()
+//
+// 	col := utils.UnregisteredCollection{
+// 		Path:                "/home/oxygen/Downloads/OSPP_2025___Ripley.pdf",
+// 		IndexerID:           id,
+// 		SourceType:          utils.FileSource,
+// 		Recursive:           true,
+// 		RespectLastModified: false,
+// 		Normalfunc:          utils.ToLower,
+// 	}
+//
+// 	body = utils.JsonBody(col)
+// 	_, err = utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
+// 	if err != nil {
+// 		log.Println("Error sending request:", err)
+// 		return
+// 	}
+//
+// 	allCollections()
+//
+// }
+
+func demo() {
+	pdf := indexerPdf()
+	txt := indexerText()
+	log.Println("Text indexer ID:", txt)
+	log.Println("PDF indexer ID:", pdf)
+
+	addTextCollection(txt)
+	addPdfCollection(pdf)
+
+	allCollections()
+}
+
+func indexerText() utils.IndexerID {
 	body := utils.StrBody("go run indexer/localtext/main.go indexer/localtext/localtext.go")
 	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "indexer")
 	if err != nil {
-		log.Println("Error sending request:", err)
-		return
+		log.Fatalf("Error sending request:", err)
 	}
 
-	id := allIndexers()
-
-	col := utils.UnregisteredCollection{
-		Path:                "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
-		IndexerID:           id,
-		SourceType:          utils.FileSource,
-		Recursive:           true,
-		RespectLastModified: false,
-		Normalfunc:          utils.ToLower,
+	for _, index := range allIndexers() {
+		for _, arg := range index.Args {
+			if strings.Contains(arg, "localtext") {
+				return index.ID
+			}
+		}
 	}
-
-	body = utils.JsonBody(col)
-	_, err = utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
-	if err != nil {
-		log.Println("Error sending request:", err)
-		return
-	}
-
-	allCollections()
-
+	panic("Indexer not found")
 }
 
-func testPDF() {
-
+func indexerPdf() utils.IndexerID {
 	body := utils.StrBody("go run indexer/pdftotxt/main.go indexer/pdftotxt/pdftotext.go")
 	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "indexer")
 	if err != nil {
-		log.Println("Error sending request:", err)
-		return
+		log.Fatalf("Error sending request:", err)
 	}
 
-	id := allIndexers()
+	for _, index := range allIndexers() {
+		for _, arg := range index.Args {
+			if strings.Contains(arg, "pdftotxt") {
+				return index.ID
+			}
+		}
+	}
+	panic("Indexer not found")
+}
 
+func addTextCollection(id utils.IndexerID) {
 	col := utils.UnregisteredCollection{
-		Path:                "/home/carbon/Projects/go_indexer/backend/indexer/pdftotxt/pdf/EXAMPLE.pdf",
+		Path:                "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md",
 		IndexerID:           id,
 		SourceType:          utils.FileSource,
 		Recursive:           true,
@@ -329,13 +393,26 @@ func testPDF() {
 		Normalfunc:          utils.ToLower,
 	}
 
-	body = utils.JsonBody(col)
-	_, err = utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
+	body := utils.JsonBody(col)
+	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
 	if err != nil {
 		log.Println("Error sending request:", err)
-		return
+	}
+}
+
+func addPdfCollection(id utils.IndexerID) {
+	col := utils.UnregisteredCollection{
+		Path:                "/home/oxygen/Downloads/OSPP_2025___Ripley.pdf",
+		IndexerID:           id,
+		SourceType:          utils.FileSource,
+		Recursive:           true,
+		RespectLastModified: false,
+		Normalfunc:          utils.ToLower,
 	}
 
-	allCollections()
-
+	body := utils.JsonBody(col)
+	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "collection")
+	if err != nil {
+		log.Println("Error sending request:", err)
+	}
 }

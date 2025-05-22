@@ -59,6 +59,7 @@ func imagesToText(image string, dir string) []string {
 		defer sw.Stop()
 		if regex.MatchString(info.Name()) {
 			txt = append(txt, imgToText(path))
+			fmt.Println("image to text done: " + info.Name())
 		}
 		if err != nil {
 			fmt.Println("something went wrong when accessing file " + info.Name())

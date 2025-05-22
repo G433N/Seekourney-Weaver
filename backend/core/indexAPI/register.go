@@ -194,7 +194,7 @@ func RegisterIndexer(
 
 	log.Printf("Indexer name: %s", name)
 
-	_, err = GetRequest(active, "shutdown")
+	// _, err = GetRequest(active, "shutdown")
 	// utils.PanicOnError(err) // TODO actual error handling if shutdown fails
 	// TODO: Fix this, the indexer shutsdown before ansering
 

@@ -338,6 +338,10 @@ func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 	query := utils.Query(strings.Join(keys, " "))
 	results := search.SqlSearch(conf, serverParams.db, query)
 
+	for _, result := range results {
+		log.Print("Result: ", result.Path, " Score: ", result.Score)
+	}
+
 	response := utils.SearchResponse{
 		Query:   query,
 		Results: results,

@@ -31,7 +31,7 @@ func f(cxt indexing.Context, settings indexing.Settings) {
 func indexPdfToText(path utils.Path, cxt indexing.Context, settings indexing.Settings) {
 	pathStr := string(path)
 	pdftoimg(pathStr, "covpdf/", "-png")
-	res := imagesToTextAsync("", "covpdf/")
+	res := imagesToText("", "covpdf/")
 	doc := cxt.StartDoc(path, utils.SourceLocal, settings)
 	for _, text := range res {
 		doc.AddText(text)
