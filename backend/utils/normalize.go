@@ -10,9 +10,9 @@ import "strings"
 // This would make the indexer understad them as the same word.
 func (norm Normalizer) Word(str Word) Word {
 	switch norm {
-	case ToLower:
+	case TO_LOWER:
 		return Word(strings.ToLower(string(str)))
-	case Stemming:
+	case STEMMING:
 		panic("not implemented")
 	}
 	return str

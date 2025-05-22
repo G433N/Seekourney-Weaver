@@ -40,10 +40,10 @@ func makeTestCollection() Collection {
 		UnregisteredCollection: UnregisteredCollection{
 			Path:                _TESTPATH_,
 			IndexerID:           "testid",
-			SourceType:          utils.FileSource,
+			SourceType:          utils.FILE_SOURCE,
 			Recursive:           false,
 			RespectLastModified: false,
-			Normalfunc:          utils.ToLower,
+			Normalfunc:          utils.TO_LOWER,
 		},
 		ID: "ID",
 	}

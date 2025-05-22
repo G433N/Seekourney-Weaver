@@ -67,16 +67,20 @@ func RequestBodyJson[T any](
 	return data, err
 }
 
+// HttpBody is an abstraction over http request bodies.
 type HttpBody struct {
 	body []byte
 }
 
+// EmptyBody returns an empty HttpBody.
 func EmptyBody() *HttpBody {
 	return &HttpBody{
 		body: []byte{},
 	}
 }
 
+// JsonBody marshals a struct into a JSON byte slice and writes it to the
+// HttpBody.
 func JsonBody[T any](body T) *HttpBody {
 	bytes, err := json.Marshal(body)
 	PanicOnError(err)
@@ -85,6 +89,7 @@ func JsonBody[T any](body T) *HttpBody {
 	}
 }
 
+// StrBody creates an HttpBody from a string.
 func StrBody(body string) *HttpBody {
 	bytes := []byte(body)
 	return &HttpBody{
@@ -92,12 +97,14 @@ func StrBody(body string) *HttpBody {
 	}
 }
 
+// BytesBody creates an HttpBody from a byte slice.
 func BytesBody(body []byte) *HttpBody {
 	return &HttpBody{
 		body: body,
 	}
 }
 
+// intoReader converts an HttpBody into an io.ReadCloser.
 func intoReader(body *HttpBody) io.ReadCloser {
 	if body == nil {
 		return nil
@@ -105,6 +112,7 @@ func intoReader(body *HttpBody) io.ReadCloser {
 	return io.NopCloser(bytes.NewReader(body.body))
 }
 
+// respIntoBytes reads the response body and returns it as a byte slice.
 func respIntoBytes(resp *http.Response) ([]byte, error) {
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -120,6 +128,8 @@ func respIntoBytes(resp *http.Response) ([]byte, error) {
 	return respByte, err
 }
 
+// GetRequestBytes sends a GET request and returns the response
+// as a byte slice.
 func GetRequestBytes(
 	host string,
 	port Port,
@@ -137,6 +147,8 @@ func GetRequestBytes(
 	return respIntoBytes(resp)
 }
 
+// GetRequestJSON sends a GET request and returnes the response unmarshalled
+// into a struct.
 func GetRequestJSON[T any](
 	host string,
 	port Port,
@@ -153,6 +165,7 @@ func GetRequestJSON[T any](
 	return respData, err
 }
 
+// GetRequest sends a GET request and returns the response as a string.
 func GetRequest(host string, port Port, urlPath ...string) (string, error) {
 	respByte, err := GetRequestBytes(host, port, urlPath...)
 	if err != nil {
@@ -163,7 +176,7 @@ func GetRequest(host string, port Port, urlPath ...string) (string, error) {
 	return respString, nil
 }
 
-// PostRequestBytes sends a POST request to the indexer and returns the response
+// PostRequestBytes sends a POST request and returns the response
 // as bytes.
 func PostRequestBytes(
 	body *HttpBody,
@@ -171,7 +184,6 @@ func PostRequestBytes(
 	port Port,
 	urlPath ...string,
 ) ([]byte, error) {
-	// TODO: Implement PostRequestBytes
 
 	url := host + ":" + port.String() + "/" + strings.Join(urlPath, "/")
 	req, err := http.NewRequest("POST", url, intoReader(body))
@@ -192,8 +204,8 @@ func PostRequestBytes(
 	return respIntoBytes(resp)
 }
 
-// PostRequestJSON sends a POST request to the indexer and returns the response
-// as a JSON object.
+// PostRequestJSON sends a POST request and returns the response unmarshalled
+// into a struct.
 func PostRequestJSON[T any](
 	body *HttpBody,
 	host string,

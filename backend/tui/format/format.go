@@ -43,9 +43,9 @@ func PrintSearchResponse(response utils.SearchResponse) {
 		var source string
 
 		switch result.Source {
-		case utils.SourceLocal:
+		case utils.SOURCE_LOCAL:
 			source = "local"
-		case utils.SourceWeb:
+		case utils.SOURCE_WEB:
 			source = "web"
 		default:
 			source = "unknown"

@@ -55,13 +55,13 @@ func TestResponseDocs(t *testing.T) {
 	udocs := []UnnormalizedDocument{
 		{
 			Path:       "test/path/1",
-			Source:     utils.SourceLocal,
+			Source:     utils.SOURCE_LOCAL,
 			Words:      utils.FrequencyMap{"first": 1, "second": 2},
 			Collection: "test_source_id",
 		},
 		{
 			Path:       "test/path/2",
-			Source:     utils.SourceWeb,
+			Source:     utils.SOURCE_WEB,
 			Words:      utils.FrequencyMap{"green": 42, "blue": 5},
 			Collection: "test_source_id",
 		},

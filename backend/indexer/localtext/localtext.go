@@ -48,7 +48,7 @@ func IndexFile(path utils.Path, cxt indexing.Context, settings indexing.Settings
 		return
 	}
 
-	doc := cxt.StartDoc(path, utils.SourceLocal, settings)
+	doc := cxt.StartDoc(path, utils.SOURCE_LOCAL, settings)
 	doc.AddText(text)
 	doc.Done(nil)
 }

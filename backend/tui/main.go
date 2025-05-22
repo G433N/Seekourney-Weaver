@@ -59,9 +59,6 @@ func init() {
 // args are formatted like commandline arguments ("client", command, args)
 func main() {
 
-	var num float32 = 0.0
-	log.Println("Num:", num)
-
 	args := os.Args
 
 	if len(args) < 2 {
@@ -185,10 +182,12 @@ func shutdownServer() {
 	printResponse(resp)
 }
 
+// index sends a request to the indexer to index the given paths.
+// selects the indexer with the port utils.MININDEXERPORT
 func index(paths []string) {
 
-	d := "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md"
-	paths = append(paths, d)
+	// d := "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md"
+	// paths = append(paths, d)
 	log.Println("Indexing paths:", paths)
 
 	for _, path := range paths {
@@ -226,10 +225,13 @@ func index(paths []string) {
 	}
 }
 
+// extractID is a struct used to extract the ID from the json response
 type extractID struct {
 	ID utils.IndexerID
 }
 
+// allIndexers fetches all indexers from the server and returns the id of
+// the first one. It also prints the indexers
 func allIndexers() utils.IndexerID {
 	res, err := utils.GetRequestBytes(_HOST_, _PORT_, "all", "indexers")
 
@@ -258,6 +260,7 @@ func allIndexers() utils.IndexerID {
 	return indexers[0].ID
 }
 
+// allCollections fetches all collections from the server and prints them.
 func allCollections() {
 	res, err := utils.GetRequestBytes(_HOST_, _PORT_, "all", "collections")
 
@@ -276,6 +279,8 @@ func allCollections() {
 	log.Println("Response:", bytes.String())
 }
 
+// test is a test function that changes all the time and uses absolute paths.
+// avoid!
 func test() {
 
 	body := utils.StrBody("go run indexer/localtext/main.go indexer/localtext/localtext.go")
@@ -290,10 +295,10 @@ func test() {
 	col := utils.UnregisteredCollection{
 		Path:                "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
 		IndexerID:           id,
-		SourceType:          utils.FileSource,
+		SourceType:          utils.FILE_SOURCE,
 		Recursive:           true,
 		RespectLastModified: false,
-		Normalfunc:          utils.Stemming,
+		Normalfunc:          utils.STEMMING,
 	}
 
 	body = utils.JsonBody(col)

@@ -14,6 +14,8 @@ import (
 
 type udoc = indexing.UnnormalizedDocument
 
+// Document represents contains the information about an indexed document.
+// This document is stored in the database and have been normalized.
 type Document struct {
 	udoc
 	LastIndexed time.Time
@@ -39,7 +41,6 @@ func Normalize(
 			Words:      freqMap,
 			Collection: doc.Collection,
 		},
-		// SourceID:   ??? TODO or in event loop
 		LastIndexed: time.Now(),
 	}
 }
@@ -150,7 +151,7 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 	return Document{
 		udoc: udoc{
 			Path:       path,
-			Source:     utils.SourceLocal,
+			Source:     utils.SOURCE_LOCAL,
 			Words:      freqMap,
 			Collection: collectionID,
 		},
@@ -176,6 +177,7 @@ func (doc *Document) CalculateTf(word utils.Word) float64 {
 
 }
 
+// UpdateDB updates the document in the database
 func (doc *Document) UpdateDB(db *sql.DB) error {
 
 	pairs := []string{}

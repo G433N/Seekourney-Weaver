@@ -22,8 +22,8 @@ type Score float64
 type Normalizer int
 
 const (
-	ToLower Normalizer = iota
-	Stemming
+	TO_LOWER Normalizer = iota
+	STEMMING
 )
 
 // Source denotes the type of source indexed.
@@ -32,10 +32,10 @@ type Source int
 
 const (
 	// Source is the source of the document
-	// SourceLocal is a local file
-	SourceLocal Source = iota
-	// SourceWeb is a web page
-	SourceWeb
+	// SOURCE_LOCAL is a local file
+	SOURCE_LOCAL Source = iota
+	// SOURCE_WEB is a web page
+	SOURCE_WEB
 )
 
 // TODO: Should probably use utils.Source instead of SourceType or rename it
@@ -44,9 +44,9 @@ const (
 type SourceType int
 
 const (
-	FileSource SourceType = iota
-	DirSource
-	UrlSource
+	FILE_SOURCE SourceType = iota
+	DIR_SOURCE
+	URL_SOURCE
 )
 
 // FrequencyMap gives the frequency of a given word.
@@ -94,6 +94,7 @@ type FileType string
 // [MININDEXERPORT, MAXINDEXERPORT].
 type Port uint
 
+// String returns the string representation of a Port.
 func (p Port) String() string {
 	return strconv.Itoa(int(p))
 }
@@ -102,13 +103,16 @@ func (p Port) String() string {
 // E.g. "http://localhost:39010".
 type Endpoint string
 
+// ObjectId is a unique identifier for an object in the database.
 type ObjectId string
 
 // IndexerID is a unique identifier for an indexer.
 type IndexerID ObjectId
 
+// UnregisteredCollection is a struct that contains information about a collection
+// that has not been add to the database yet.
 type UnregisteredCollection struct {
-	// Root path / start of reqursive indexing
+	// Root path / start of recursive indexing
 	Path Path
 
 	// Indexer used to index this collection

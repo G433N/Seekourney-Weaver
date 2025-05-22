@@ -17,12 +17,11 @@ type CollectionID utils.ObjectId
 //
 //  2. Type: the type of source (file, directory, or URL)
 //
-//  3. Recursive: whether to index recursively
+//  3. CollectionID: the ID of the collection that owns the indexed documents
 //
-//  4. Parallel: whether to index in parallel
+//  4. Recursive: whether to index recursively
 //
-//  5. Config: the config file to be used for indexing, if nil, the default
-//     config file will be used
+//  5. Parallel: whether to index in parallel
 type Settings struct {
 	Path         utils.Path   `json:"path"`
 	Type         SourceType   `json:"type"`

@@ -158,8 +158,6 @@ func Run(args []string) {
 		serverParams := serverFuncParams{writer: writer, db: db}
 
 		switch html.EscapeString(request.URL.Path) {
-		// TODO figure out where we can do goroutines
-		// we cant use resp writer concurrently nor read resp body
 		case _ALL_:
 			handleAll(serverParams)
 		case _ALL_INDEXERS_:
@@ -379,8 +377,6 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 		return
 	}
 
-	// Create goroutine for normalising and inserting into db,
-	// as it might take significant time.
 	go func() {
 		for _, rawDoc := range resp.Data.Documents {
 			normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
@@ -388,6 +384,7 @@ func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
 			// TODO fix
 			// Error inserting row: pq: duplicate key value violates
 			// unique constraint "document_pkey"
+			// TODO: This not fixed Max will look into it
 
 			exists, err := document.DocumentExsitsDB(
 				serverParams.db,

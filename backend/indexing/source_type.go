@@ -12,11 +12,11 @@ type SourceType = utils.SourceType
 func StrToSourceType(str string) (SourceType, error) {
 	switch str {
 	case "file":
-		return utils.FileSource, nil
+		return utils.FILE_SOURCE, nil
 	case "dir":
-		return utils.DirSource, nil
+		return utils.DIR_SOURCE, nil
 	case "url":
-		return utils.UrlSource, nil
+		return utils.URL_SOURCE, nil
 	default:
 		return 0, errors.New("invalid source type")
 	}
@@ -25,11 +25,11 @@ func StrToSourceType(str string) (SourceType, error) {
 // SourceTypeToStr converts a SourceType to a string.
 func SourceTypeToStr(t SourceType) string {
 	switch t {
-	case utils.FileSource:
+	case utils.FILE_SOURCE:
 		return "file"
-	case utils.DirSource:
+	case utils.DIR_SOURCE:
 		return "dir"
-	case utils.UrlSource:
+	case utils.URL_SOURCE:
 		return "url"
 	default:
 		return "unknown"
@@ -47,12 +47,12 @@ func SourceTypeFromPath(path utils.Path) (SourceType, error) {
 	}
 
 	if stat.IsDir() {
-		return utils.DirSource, nil
+		return utils.DIR_SOURCE, nil
 	}
 
 	// TODO: What to do about symlinks and simlar things?
 	if stat.Mode().IsRegular() {
-		return utils.FileSource, nil
+		return utils.FILE_SOURCE, nil
 	}
 
 	return 0, errors.New("unknown source type")

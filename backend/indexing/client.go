@@ -113,11 +113,11 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 			}
 
 			switch settings.Type {
-			case utils.FileSource:
+			case utils.FILE_SOURCE:
 				client.Log("Indexing file: %s", settings.Path)
-			case utils.DirSource:
+			case utils.DIR_SOURCE:
 				client.Log("Indexing directory: %s", settings.Path)
-			case utils.UrlSource:
+			case utils.URL_SOURCE:
 				client.Log("Indexing URL: %s", settings.Path)
 			}
 

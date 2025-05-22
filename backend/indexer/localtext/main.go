@@ -8,11 +8,11 @@ import (
 func index(config *Config, cxt indexing.Context, settings indexing.Settings) {
 
 	switch settings.Type {
-	case utils.FileSource:
+	case utils.FILE_SOURCE:
 		HandleFile(cxt, settings)
-	case utils.DirSource:
+	case utils.DIR_SOURCE:
 		HandleDir(config, cxt, settings)
-	case utils.UrlSource:
+	case utils.URL_SOURCE:
 		HandleUrl(cxt, settings)
 	default:
 		cxt.Log("Unknown source type: %d", settings.Type)

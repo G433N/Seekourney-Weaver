@@ -160,8 +160,6 @@ func generatePort(db *sql.DB) utils.Port {
 	return result
 }
 
-// isUnoccupiedPort checks if another indexer already has been registered
-
 // RegisterIndexer adds a new indexer to the system.
 // Returns the RegisterID representing the indexer and success status.
 func RegisterIndexer(
