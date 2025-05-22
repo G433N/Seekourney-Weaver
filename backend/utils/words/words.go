@@ -14,7 +14,7 @@ func IsAscii(char byte) bool {
 
 // IsUTF8 returns true if the byte is a UTF-8 character.
 func IsUTF8(char byte) bool {
-	return char&UTF8Prefix != 0
+	return char&UTF8PREFIX != 0
 }
 
 // IsASCIIAlphaNumeric returns true if the byte is an ASCII alphanumeric
