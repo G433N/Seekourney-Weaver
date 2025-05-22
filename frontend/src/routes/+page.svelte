@@ -165,6 +165,7 @@
 		display: flex;
 		gap: 0.5rem;
 		margin-bottom: 2rem;
+		align-items: center;
 	}
 
 	#searchButton {
@@ -210,7 +211,6 @@
 		width: 2.5rem;
 		height: 2.5rem;
 		border-radius: 50%;
-		border: 1px solid #ccc;
 		background-color: #f0eeee;
 		cursor: pointer;
 		font-size: 1.2rem;

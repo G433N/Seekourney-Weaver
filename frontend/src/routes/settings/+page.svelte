@@ -91,7 +91,7 @@
 			Show all results
 		</label>
 		
-		<label class="max-label">
+		<label class="max-label" class:disabled-label={$showAllResults}>
 			<div class="inputDiv">
 				Max results shown:
 				<input type="number" bind:value={$maxResults} disabled={$showAllResults} />
@@ -115,9 +115,9 @@
 			default CPU usage
 		</label>
 		<div class="slider">
-			<label for="cpuSlider">CPU cores used:</label>
+			<label for="cpuSlider" class:disabled-label={$cpuDefault}>CPU cores used:</label>
 			<input id="cpuSlider" type="range" min="1" max={$maxCores} bind:value={$cpuCores} disabled={$cpuDefault}/>
-			<span>{$cpuCores}</span>
+			<span class:disabled-label={$cpuDefault}>{$cpuCores}</span>
 		</div>
 	</div>
 
@@ -197,6 +197,11 @@
 		font-size: 1rem;
 	}
 
+	.disabled-label {
+		color: #999;
+		opacity: 0.7;
+	}
+
 	.slider {
 		width: 100%;
 		display: flex;
@@ -262,15 +267,27 @@
 
 	.tooltip-wrapper {
 		position: relative;
-		display: inline-block;
-		cursor: help;
+  		display: inline-flex;
+  		align-items: center;
+  		justify-content: center;
+  		cursor: help;
+  		width: 1.2em;
+  		height: 1.2em;
 	}
 
 	.info-icon {
-		font-size: 1rem;
-		background-color: #eee;
-		border-radius: 50%;
-		padding: 0.2rem 0.4rem;
+	  	font-size: 0.7em;
+  		width: 1.1em;
+  		height: 1.1em;
+  		border-radius: 50%;
+  		background-color: white;
+  		border: 2px solid black;
+  		color: black;
+  		font-weight: bold;
+  		display: flex;
+  		align-items: center;
+  		justify-content: center;
+  		line-height: 1;
 	}
 
 	.tooltip-text {
