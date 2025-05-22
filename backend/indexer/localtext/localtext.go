@@ -10,6 +10,9 @@ import (
 	"seekourney/utils/timing"
 )
 
+const TEXTCONFIGFILE utils.Path = "localtext.json"
+
+// Config is the options config for the text indexer.
 type Config struct {
 	ParrallelIndexing bool
 	// TODO: Remove this and use the global config
@@ -18,13 +21,11 @@ type Config struct {
 
 type doc = indexing.UnnormalizedDocument
 
-// IndexFile creates a new document from a file
-// It takes a path to the file
-// It returns a Document
+// IndexFile creates a new document from a filepath.
 func IndexFile(path utils.Path) (doc, error) {
-
 	t := timing.Measure(timing.DocFromFile, string(path))
 	defer t.Stop()
+
 	content, err := os.ReadFile(string(path))
 	if err != nil {
 		return doc{}, err
@@ -33,11 +34,9 @@ func IndexFile(path utils.Path) (doc, error) {
 	return indexing.DocFromBytes(path, utils.SourceLocal, content), nil
 }
 
-// IndexIter iterates over a sequence of paths and indexes them
+// IndexIter is an iterator over a sequence of paths, and will index them.
 func IndexIter(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
-
 	return func(yield func(utils.Path, doc) bool) {
-
 		for path := range paths {
 			doc, err := IndexFile(path)
 			if err != nil {
@@ -52,10 +51,9 @@ func IndexIter(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 	}
 }
 
-// IndexIterParallel iterates over a sequence of paths and indexes them in
-// parallel
+// IndexIterParallel is an iterator over a sequence of paths,
+// and will index them in parallel.
 func IndexIterParallel(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
-
 	type result struct {
 		path utils.Path
 		doc  indexing.UnnormalizedDocument
@@ -93,9 +91,9 @@ func IndexIterParallel(paths iter.Seq[utils.Path]) iter.Seq2[utils.Path, doc] {
 
 }
 
-// Recursivly indexes a dictonary and all its subfolders
+// IndexDir is an iterator that recursivly indexes a dictonary and
+// all its subfolders.
 func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
-
 	walk := config.WalkDirConfig.WalkDir(path)
 
 	if config.ParrallelIndexing {
@@ -105,10 +103,10 @@ func (config *Config) IndexDir(path utils.Path) iter.Seq2[utils.Path, doc] {
 	return IndexIter(walk)
 }
 
+// Default creates a new config with default values.
 func Default(config *config.Config) *Config {
-
-	w := utils.NewWalkDirConfig().
-		SetAllowedExts([]string{
+	wdConfig := utils.NewWalkDirConfig().
+		SetAllowedExtns([]string{
 			".txt",
 			".md",
 			".json",
@@ -119,17 +117,20 @@ func Default(config *config.Config) *Config {
 			".csv",
 		})
 	return &Config{
-		WalkDirConfig:     w,
+		WalkDirConfig:     wdConfig,
 		ParrallelIndexing: config.ParrallelIndexing,
 	}
 }
 
+// ConfigName returns the name of the config.
 func (Config) ConfigName() string {
 	return "Local Text Indexer"
 }
 
+// Load tries to load a config from localtext.json.
+// If it does not exist, a new config with default values will be loaded.
 func Load(config *config.Config) *Config {
-	path := "localtext.json"
+	path := TEXTCONFIGFILE
 	return utils.LoadOrElse(path, func() *Config {
 		return Default(config)
 	}, func() *Config { return &Config{} })

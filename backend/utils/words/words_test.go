@@ -1,6 +1,7 @@
 package words
 
 import (
+	"github.com/stretchr/testify/assert"
 	"seekourney/utils"
 	"testing"
 )
@@ -13,21 +14,18 @@ func TestWordsIter(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsIterEmpty(t *testing.T) {
 	s := ""
 
 	for range WordsIter(s) {
-		t.Errorf("Expected no words, got one")
+		assert.FailNow(t, "Expected no words, got one")
 	}
 }
 
@@ -38,14 +36,11 @@ func TestWordsIterSingleWord(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsIterPunctionation(t *testing.T) {
@@ -54,14 +49,11 @@ func TestWordsIterPunctionation(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsNewLine(t *testing.T) {
@@ -70,14 +62,11 @@ func TestWordsNewLine(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsIterMultipleSpaces(t *testing.T) {
@@ -86,14 +75,11 @@ func TestWordsIterMultipleSpaces(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsIterMultipleLines(t *testing.T) {
@@ -102,14 +88,11 @@ func TestWordsIterMultipleLines(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsIterNummeric(t *testing.T) {
@@ -118,14 +101,11 @@ func TestWordsIterNummeric(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsIterUTF8(t *testing.T) {
@@ -134,14 +114,11 @@ func TestWordsIterUTF8(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }
 
 func TestWordsIterParenthesis(t *testing.T) {
@@ -150,12 +127,9 @@ func TestWordsIterParenthesis(t *testing.T) {
 
 	i := 0
 	for w := range WordsIter(s) {
-		if w != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], w)
-		}
+		assert.Equal(t, w, expected[i])
 		i++
 	}
-	if i != len(expected) {
-		t.Errorf("Expected %d words, got %d", len(expected), i)
-	}
+
+	assert.Equal(t, i, len(expected))
 }

@@ -5,7 +5,7 @@ import (
 	"seekourney/utils"
 )
 
-// Document is a struct that represents a document
+// UnnormalizedDocument is a struct that represents a raw document.
 type UnnormalizedDocument struct {
 	Path   utils.Path
 	Source utils.Source
@@ -14,9 +14,7 @@ type UnnormalizedDocument struct {
 	Words utils.FrequencyMap
 }
 
-// DocNew creates a new document
-// It takes a path, a source,
-// It returns a Document
+// DocNew creates a new document.
 func DocNew(path utils.Path, source utils.Source) UnnormalizedDocument {
 	return UnnormalizedDocument{
 		Path:   path,
@@ -25,9 +23,7 @@ func DocNew(path utils.Path, source utils.Source) UnnormalizedDocument {
 	}
 }
 
-// DocFromText creates a new document from a string
-// It takes a path, a source, and a string to index
-// It returns a Document
+// DocFromText creates a new document from a string.
 func DocFromText(
 	path utils.Path,
 	source utils.Source,
@@ -38,9 +34,7 @@ func DocFromText(
 	return doc
 }
 
-// DocFromBytes creates a new document from a byte slice
-// It takes a path, a source, and a byte slice to index
-// It returns a Document
+// DocFromBytes creates a new document from a byte slice.
 func DocFromBytes(
 	path utils.Path,
 	source utils.Source,
@@ -53,7 +47,7 @@ func DocFromBytes(
 
 // Misc
 
-// DebugPrint prints information about the document
+// DebugPrint prints information about the document.
 func (doc *UnnormalizedDocument) DebugPrint() {
 	log.Printf(
 		"Document = {Path: %s, Type: %d, Length: %d}",

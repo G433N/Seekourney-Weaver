@@ -15,16 +15,16 @@ import (
 
 // Strings for building URLs in HTTP requests
 const (
-	link      = "http://localhost:8080"
-	search    = "/search?"
-	searchKey = "q"
-	add       = "/add?"
-	addKey    = "p"
-	quit      = "/quit"
-	all       = "/all"
+	_COREENDPOINT_ utils.Endpoint = "http://localhost:8080"
+	_SEARCH_       string         = "/search?"
+	_SEARCHKEY_    string         = "q"
+	_ADD_          string         = "/add?"
+	_ADDKEY_       string         = "p"
+	_QUIT_         string         = "/quit"
+	_ALL_          string         = "/all"
 )
 
-// Prints a usage string and terminates
+// argumentError prints a usage string and terminates client process.
 func argumentError() {
 	fmt.Println("usage: client <command> [<args>]")
 	fmt.Println()
@@ -36,6 +36,8 @@ func argumentError() {
 	os.Exit(1)
 }
 
+// init runs before any other code in this package.
+// https://golangdocs.com/init-function-in-golang
 func init() {
 	// Initialize the timing package
 	timing.Init(timing.Default())
@@ -70,29 +72,34 @@ func main() {
 	}
 }
 
-// Panics on a given error if an error occured sending a request
+// checkHTTPError panics on a given error if an error
+// occured when sending a request.
 func checkHTTPError(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-// Prints a HTTP response to stdout
+// printResponse prints a HTTP response to stdout.
 func printResponse(response *http.Response) {
 	bytes, _ := io.ReadAll(response.Body)
 	fmt.Print(string(bytes))
 }
 
+// searchForTerms requests a search for given terms through Core,
+// and prints the results.
+// Handler for command /search.
 func searchForTerms(terms []string) {
-
 	sw := timing.Measure(timing.Search)
 	defer sw.Stop()
 
 	values := url.Values{}
 	for _, term := range terms {
-		values.Add(searchKey, term)
+		values.Add(_SEARCHKEY_, term)
 	}
-	response, err := http.Get(link + search + values.Encode())
+	response, err := http.Get(
+		string(_COREENDPOINT_) + _SEARCH_ + values.Encode(),
+	)
 	checkHTTPError(err)
 
 	bytes, _ := io.ReadAll(response.Body)
@@ -107,24 +114,32 @@ func searchForTerms(terms []string) {
 	format.PrintSearchResponse(result)
 }
 
+// addPath adds given paths to the database through Core,
+// and prints the response.
+// Handler for command /add.
 func addPath(paths []string) {
 	values := url.Values{}
 	for _, term := range paths {
-		values.Add(addKey, term)
+		values.Add(_ADDKEY_, term)
 	}
-	response, err := http.Get(link + add + values.Encode())
+	response, err := http.Get(string(_COREENDPOINT_) + _ADD_ + values.Encode())
 	checkHTTPError(err)
 	printResponse(response)
 }
 
+// getAll fetches all paths stored in database through Core,
+// and prints them.
+// Handler for command /all.
 func getAll() {
-	response, err := http.Get(link + all)
+	response, err := http.Get(string(_COREENDPOINT_) + _ALL_)
 	checkHTTPError(err)
 	printResponse(response)
 }
 
+// shutdownServer remotely shuts down Core.
+// Handler for command /quit.
 func shutdownServer() {
-	response, err := http.Get(link + quit)
+	response, err := http.Get(string(_COREENDPOINT_) + _QUIT_)
 	checkHTTPError(err)
 	printResponse(response)
 }

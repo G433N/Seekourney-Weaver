@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 // TODO: WalkDir is not tested with symbolic/hard links.
@@ -12,12 +13,13 @@ import (
 // NOTE: WalkDir is also a STDLib function in Go, but this is a custom iterator
 // implementation.
 
-// Constants for the always forbidden directories
+// alwaysForbiddenDirs returns constants for the always forbidden directories.
 func alwaysForbiddenDirs() []string {
 	return []string{".", ".."}
 }
 
-// Constants for the default forbidden directories
+// defaultForbiddenDirs returns constants for the default forbidden directories
+// that are not covered by alwaysForbiddenDirs.
 func defaultForbiddenDirs() []string {
 	return []string{".git", ".svn", ".hg", ".idea", ".vscode"}
 }
@@ -53,17 +55,16 @@ func (config *WalkDirConfig) SetForbiddenDirs(dirs []string) *WalkDirConfig {
 	return config
 }
 
-// SetAllowedExts sets the forbidden file extensions for the WalkDirConfig.
+// SetAllowedExtns sets the forbidden file extensions for the WalkDirConfig.
 // If there are no allowed file extensions, all files are returned.
-func (config *WalkDirConfig) SetAllowedExts(exts []string) *WalkDirConfig {
+func (config *WalkDirConfig) SetAllowedExtns(exts []string) *WalkDirConfig {
 	config.AllowedExts = exts
 	return config
 }
 
-// WalkDir returns a sequence of file paths in the given directory and its
+// WalkDir is an iterator over file paths in the given directory and its
 // subdirectories.
 func (config *WalkDirConfig) WalkDir(path Path) iter.Seq[Path] {
-
 	return func(yield func(Path) bool) {
 		config.walkDirIter(yield, path)
 	}
@@ -103,7 +104,6 @@ func (config *WalkDirConfig) forEachDir(
 	yield func(Path) bool,
 	dirPath Path,
 ) bool {
-
 	if config.Verbose {
 		log.Printf("Found directory: %s\n", dirPath)
 	}
@@ -130,7 +130,6 @@ func (config *WalkDirConfig) forEachFile(
 	yield func(Path) bool,
 	filePath Path,
 ) bool {
-
 	if config.Verbose {
 		log.Printf("Found file: %s\n", filePath)
 	}
@@ -148,30 +147,16 @@ func (config *WalkDirConfig) forEachFile(
 // isValidDir checks if the directory is valid based on the forbidden
 // directories.
 func (config *WalkDirConfig) isValidDir(path Path) bool {
-
 	name := filepath.Base(string(path))
-
-	for _, dir := range config.ForbiddenDirs {
-		if dir == name {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(config.ForbiddenDirs, name)
 }
 
 // isValidFile checks if the file is valid based on the allowed file extensions.
 func (config *WalkDirConfig) isValidFile(path Path) bool {
-
 	if len(config.AllowedExts) == 0 {
 		return true
 	}
 
 	fileExt := filepath.Ext(string(path))
-
-	for _, ext := range config.AllowedExts {
-		if ext == fileExt {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(config.AllowedExts, fileExt)
 }

@@ -57,6 +57,20 @@ If you create a new type "Date", the differnce is clearer.
 Test function style: https://pkg.go.dev/testing   
 The assert library should be used.
 
+Tests that take a long time, or for some other reason should NOT be run on CI
+should have the following if-check:
+```go
+func TestSuperLongTest(t *testing.T) {
+    if testing.Short() {
+        t.Skip("skipping long test")
+    }
+
+    // Actual test code below.
+    // ...
+}
+```
+You can skip running these tests locally as well by running `go test -short`.
+
 ## Packages
 
 Right now it is not necessary to write documentation for packages.

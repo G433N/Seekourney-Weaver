@@ -41,7 +41,6 @@ func scan[T SQLScan[T]](rows *sql.Rows) (T, error) {
 // returns an iterator of objects of type T.
 // Every row is scanned into an object of type T and yielded to the caller.
 func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
-
 	return func(yield func(utils.Result[T]) bool) {
 		for Rows.Next() {
 			obj, err := scan[T](Rows)
@@ -60,6 +59,7 @@ func ScanRowsIter[T SQLScan[T]](Rows *sql.Rows) iter.Seq[utils.Result[T]] {
 
 // / Write
 
+// SQLValue represents a value fetched from SQL database.
 type SQLValue = any
 
 // SQLWrite is an interface that defines methods
@@ -76,28 +76,26 @@ type SQLWrite interface {
 	SQLGetValues() []SQLValue
 }
 
-// objectTemplate is a type that represents a SQL Object row thing
-// TODO: Imporve this
+// objectTemplate is a type that represents a SQL Object row thing.
+// TODO: Improve this
 type objectTemplate string
 
-// valueSubstitution is a type that represents a SQL value substitution
+// valueSubstitution is a type that represents a SQL value substitution.
 type valueSubstitution string
 
-// Statment is a type that represents a SQL statement
+// Statment is a type that represents a SQL statement.
 type Statment string
 
 /// Insert
 
-// InsertInto executes an INSERT statement into the database
+// InsertInto executes an INSERT statement into the database.
 func InsertInto(db *sql.DB, object SQLWrite) (sql.Result, error) {
 	stmt := InsertIntoStatment(object)
-
 	return db.Exec(string(stmt), object.SQLGetValues()...)
 }
 
-// InsertIntoStatment creates an INSERT statement from a SQLWrite object
+// InsertIntoStatment creates an INSERT statement from a SQLWrite object.
 func InsertIntoStatment(template SQLWrite) Statment {
-
 	return insertIntoStatment(
 		sqlTemplate(template),
 		sqlValueSubstition(template),
@@ -105,7 +103,7 @@ func InsertIntoStatment(template SQLWrite) Statment {
 }
 
 // insertIntoStatment creates an INSERT statement from a template
-// and a value substitution
+// and a value substitution.
 func insertIntoStatment(
 	template objectTemplate,
 	sub valueSubstitution,
@@ -120,7 +118,7 @@ func insertIntoStatment(
 
 }
 
-// sqlTemplate creates a SQL template from a Go struct/object
+// sqlTemplate creates a SQL template from a Go struct/object.
 func sqlTemplate(template SQLWrite) objectTemplate {
 	name := template.SQLGetName()
 	fields := template.SQLGetFields()
@@ -128,7 +126,7 @@ func sqlTemplate(template SQLWrite) objectTemplate {
 	return objectTemplate(name + " (" + strings.Join(fields, ",") + ")")
 }
 
-// sqlValueSubstition creates a SQL value substitution from a Go struct/object
+// sqlValueSubstition creates a SQL value substitution from a Go struct/object.
 func sqlValueSubstition(template SQLWrite) valueSubstitution {
 	values := template.SQLGetValues()
 
@@ -146,20 +144,20 @@ func sqlValueSubstition(template SQLWrite) valueSubstitution {
 
 /// Select
 
-// SelectStatment is a type that represents a SQL SELECT keyword
+// SelectStatment is a type that represents a SQL SELECT keyword.
 type SelectStatment string
 
-// SelectQuery is a type that represents a SQL SELECT with a query
+// SelectQuery is a type that represents a SQL SELECT with a query.
 type SelectQuery string
 
-// SelectFrom is a type that represents a SQL SELECT with a FROM clause
+// SelectFrom is a type that represents a SQL SELECT with a FROM clause.
 type SelectFrom string
 
-// SelectWhere is a type that represents a SQL SELECT with a WHERE clause
+// SelectWhere is a type that represents a SQL SELECT with a WHERE clause.
 type SelectWhere string
 
-// / JsonValue creates a JSON_VALUE SELECT statement
-// / of the form JSON_VALUE(sqlField, '$.jsonField') AS name
+// JsonValue creates a JSON_VALUE SELECT statement
+// of the form JSON_VALUE(sqlField, '$.jsonField') AS name.
 func JsonValue(sqlField string, jsonField string, name string) string {
 
 	s := []string{
@@ -175,32 +173,33 @@ func JsonValue(sqlField string, jsonField string, name string) string {
 	return strings.Join(s, " ")
 }
 
+// Select returns SELECT as a SelectStatement.
 func Select() SelectStatment {
 	return SelectStatment(_SELECT_)
 }
 
-// Queries adds a list of queries to the SQL statement
+// Queries adds a list of queries to the SQL statement.
 func (s SelectStatment) Queries(query ...string) SelectQuery {
 	return SelectQuery(string(s) + " " + strings.Join(query, ", "))
 }
 
-// QueryAll adds a wildcard (*) to the SQL statement
+// QueryAll adds a wildcard (*) to the SQL statement.
 func (s SelectStatment) QueryAll() SelectQuery {
 	return s.Queries("*")
 }
 
-// From adds a FROM clause to the SQL statement
+// From adds a FROM clause to the SQL statement.
 func (s SelectQuery) From(table string) SelectFrom {
 	return SelectFrom(string(s) + " " + _FROM_ + " " + table)
 }
 
-// Where adds a WHERE clause to the SQL statement
+// Where adds a WHERE clause to the SQL statement.
 func (s SelectFrom) Where(condition string) SelectWhere {
 	return SelectWhere(string(s) + " " + _WHERE_ + " " + condition)
 }
 
-// ExecExec executes a SQL statement and returns the result into obj
-// The insert function is used to insert the result into obj
+// ExecExec executes a SQL statement and returns the result into obj.
+// The insert function is used to insert the result into obj.
 func ExecScan[T SQLScan[T], U any](
 	db *sql.DB,
 	query string,
@@ -231,23 +230,26 @@ func ExecScan[T SQLScan[T], U any](
 	return nil
 }
 
-type num int
+// sqlInt is used to scan an int from a SQL row
+// we use this new type to bypass the local type restriction for methods
+// int is non local
+type sqlInt int
 
-func (n num) SQLScan(rows *sql.Rows) (num, error) {
+func (n sqlInt) SQLScan(rows *sql.Rows) (sqlInt, error) {
 	var i int
 	err := rows.Scan(&i)
 	if err != nil {
 		return 0, err
 	}
-	return num(i), nil
+	return sqlInt(i), nil
 }
 
+// RowAmount gets number of entries in a given row.
 func RowAmount(db *sql.DB, table string) (int, error) {
-
 	query := Select().Queries("COUNT(*)").From(table)
-	var count num
+	var count sqlInt
 
-	insert := func(res *num, sqlRes num) {
+	insert := func(res *sqlInt, sqlRes sqlInt) {
 		*res = sqlRes
 	}
 

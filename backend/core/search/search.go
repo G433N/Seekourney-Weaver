@@ -23,7 +23,6 @@ func SqlSearch(
 	result := make(utils.ScoreMap)
 
 	docAmount, err := database.RowAmount(db, "document")
-
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		panic(err)
@@ -60,9 +59,7 @@ func SqlSearch(
 // for a WordFrequencyMap.
 // See: https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Inverse_document_frequency
 func calculateIdf(freqMap utils.WordFrequencyMap, docAmount int) float64 {
-
 	popularity := float64(len(freqMap))
-
 	return math.Log2(float64(docAmount) / (popularity + 1))
 }
 
@@ -82,13 +79,10 @@ func scoreMapIntoSearchResult(scores utils.ScoreMap) []SearchResult {
 }
 
 // topN returns the top n results from the given results slice.
-func topN(
-	results []SearchResult,
-	n int,
-) []SearchResult {
+func topN(results []SearchResult, n int) []SearchResult {
 	if len(results) < n {
 		return results
+	} else {
+		return results[:n]
 	}
-
-	return results[:n]
 }

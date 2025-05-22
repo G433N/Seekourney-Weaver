@@ -5,7 +5,7 @@ import (
 	"seekourney/utils"
 )
 
-const UTF8Prefix = 0b10000000
+const UTF8PREFIX = 0b10000000
 
 // IsAscii returns true if the byte is an ASCII character.
 func IsAscii(char byte) bool {
@@ -74,10 +74,11 @@ func wordSplit(char byte) bool {
 
 }
 
-// / yieldWord yields a word from the byte slice.
-// / It takes a yield function, a byte slice, and the start and end indices of
-// the word. / It returns true if the iteration should continue, and false if it
-// should stop.
+// yieldWord yields a word from the byte slice.
+// It takes a yield function, a byte slice, and the start and end indices of
+// the word.
+// It returns true if the iteration should continue,
+// and false if it should stop.
 func yieldWord(
 	yield func(utils.Word) bool,
 	bytes []byte,
