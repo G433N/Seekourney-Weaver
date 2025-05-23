@@ -10,18 +10,19 @@ REPLACE THIS WITH SHORT DESCRIPTION OF YOUR CHANGES
 ## Checklist
 **All boxes checked before merging**
 
-**Only ticked off by the PR AUTHOR**
-- [ ] I've added tests that cover any source code changes/additions made,
+**Ticked off by the PR AUTHOR**
+- [ ] I've added tests that cover any source code changes/additions made.
 Alternatively, I've ensured there is an issue describing which code needs to be covered by tests
 - [ ] All tests pass
 - [ ] New features added and changes made have up-to-date (in-code) documentation
 - [ ] I've tried my best to follow the commit message convention
-- [ ] I've autoformatted my code changes
-- [ ] I've added the `ready for review` label to the PR
+- [ ] I've autoformatted my code changes and followed the code standards
+- [ ] I've added the `ready for review` label,
+and (if applicable) the `backend` or `frontend` label to the PR
 
-**Only ticked off by the CODE REVIEWER**
-The code has been reviewed, and any requested changes have been implemented by the PR author and accepted by the code reviewers
-- [ ] Reviewer A
-- [ ] Reviewer B
+
+Before merging changes, the code should have been reviewed,
+and any requested changes have been implemented by the PR author
+and accepted by the code reviewers
 
 **Check again that all CI checks are passing before merging PR**
