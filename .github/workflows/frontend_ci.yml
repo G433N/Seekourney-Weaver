@@ -1,0 +1,53 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+# All in one job to reduce GitHub-actions minutes used.
+# Only run if "ready for review" label exists on PR.
+jobs:
+  frontend-ci:
+    if: | 
+      contains(github.event.pull_request.labels.*.name, 'ready for review') && 
+      contains(github.event.pull_request.labels.*.name, 'frontend')
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Set up npm
+        uses: actions/setup-node@v4
+        with:
+          cache-dependency-path: frontend/package-lock.json
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npx playwright install
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run frontend Unit and E2E tests
+      # Need long timeout for E2E tests.
+        run: |
+          timeout 100 npm run test
+
+      - name: Frontend Linting
+        run: npx eslint .

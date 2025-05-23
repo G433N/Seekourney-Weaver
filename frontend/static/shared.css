@@ -1,0 +1,105 @@
+body {
+	background-color: rgb(255, 255, 255);
+	margin: 0;
+	padding: 0;
+}
+
+header {
+	background-color: #6085a0;
+	font-family: 'Krona One', sans-serif;
+	font-weight: 400;
+	font-style: normal;
+	text-align: center;
+	padding: 0.5rem;
+	font-size: 1.2rem;
+	/*font-weight: bold;*/
+	line-height: 1.2;
+}
+
+nav {
+	background-color: #aec6df;
+	font-family: 'Jost', sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 500;
+	font-style: normal;
+	display: flex;
+	justify-content: center;
+	gap: 6rem;
+	padding: 1rem;
+	position: relative; /* allows us to align children to the nav */
+}
+
+nav a {
+	color: black;
+	text-decoration: none;
+	position: relative;
+}
+
+nav a.active::after {
+	content: '';
+	position: absolute;
+	bottom: -1rem;
+	left: -50%;
+	width: 200%;
+	height: 2px;
+	background-color: #517188;
+}
+
+h2 {
+	text-align: center;
+	font-size: 2rem;
+	font-family: 'Jost', sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 500;
+	font-style: normal;
+}
+
+h3 {
+	font-size: 1.4rem;
+	font-family: 'Jost', sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 500;
+	font-style: normal;
+}
+
+label {
+	font-family: 'Jost', sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 500;
+	font-style: normal;
+}
+
+button {
+	background-color: #aec6df;
+	border-color: #aec6df;
+	font-family: 'Jost', sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 400;
+	font-style: normal;
+	border: none;
+	border-radius: 6px;
+}
+
+button:hover {
+	background-color: #7d98b2;
+}
+
+main {
+	margin: 2rem auto;
+	padding: 1rem;
+}
+
+input {
+	flex: 1;
+	padding: 0.75rem;
+	font-size: 1rem;
+	background-color: #f0eeee;
+	border-radius: 6px;
+	border: none;
+}
+
+input[type='text']:focus {
+	outline: none;
+	border: 2px solid #517188;
+	border-radius: 4px;
+}

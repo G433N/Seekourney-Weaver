@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Script that creates a docker container using docker run.
+# If run with the argument "test" will create a container in testing mode
+# The testing mode container will have a different name and will not store data
+# between sessions.
+
+CONTAINER_NAME=go-postgres
+PERSISTENT_DATA="-v $PWD/../data:/var/lib/postgresql/data"
+
+if [ "$1" = "test" ]; then
+  CONTAINER_NAME=go-postgres-test
+  PERSISTENT_DATA=""
+fi
+
+docker run --rm \
+    --name $CONTAINER_NAME \
+    -v "$PWD/initdb.sql":/docker-entrypoint-initdb.d/initdb.sql \
+    -e POSTGRES_USER=go-postgres \
+    -e POSTGRES_PASSWORD=go-postgres \
+    -p 5433:5432 \
+    $PERSISTENT_DATA \
+    postgres
