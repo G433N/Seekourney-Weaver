@@ -58,7 +58,7 @@ func TestLongLocalWikipediaHtml(t *testing.T) {
 		"Herbivore defense",
 		"Description",
 		"References",
-		"Seekourney-Weaver/testingFiles/htmlTest1.html",
+		"/testingFiles/htmlTest1.html",
 		"Cucumbers grown to eat fresh are called slicing cucumbers.",
 		"Cucumber shoots are regularly consumed as a vegetable," +
 			" especially in rural areas. In Thailand they are often served" +
@@ -88,7 +88,6 @@ func TestLocalLinkHopping(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
 	wa := regexp.MustCompile(`.*/`)
 
 	path := "file://" + wa.FindString(dir) + "testingFiles/"

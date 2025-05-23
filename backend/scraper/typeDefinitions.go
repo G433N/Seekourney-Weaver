@@ -2,7 +2,7 @@ package scraper
 
 import (
 	"regexp"
-	"seekourney/utils/Sync"
+	"seekourney/utils/concurrencyUtils"
 	"sync"
 
 	"github.com/gocolly/colly/v2"
@@ -86,7 +86,7 @@ type (
 
 	linkHandler struct {
 		filter       filter
-		storageStack Sync.Stack[*URLCompact]
+		storageStack concurrencyUtils.Stack[*URLCompact]
 
 		priorityQueue PriorityQueue
 
@@ -94,26 +94,26 @@ type (
 
 		outputChan chan URLString
 
-		outputSem Sync.Semaphore
+		outputSem concurrencyUtils.Semaphore
 
-		storedSem       Sync.Semaphore
+		storedSem       concurrencyUtils.Semaphore
 		quit            bool
 		handlersWorking sync.WaitGroup
 	}
 
 	URLCompact struct {
 		webFileBool bool
-		host        int
+		host        concurrencyUtils.ArrayPlusIndex
 		inner       innerPath
 	}
 
 	filter struct {
-		webhosts  Sync.ArrayPlus[hostPath]
+		webhosts  concurrencyUtils.ArrayPlus[hostPath]
 		filterMap map[hostPath]filterMapInner
 	}
 	filterMapInner struct {
 		webFileBool bool
-		index       int
+		index       concurrencyUtils.ArrayPlusIndex
 		filterMap   map[innerPath]bool
 	}
 

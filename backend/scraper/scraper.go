@@ -16,7 +16,7 @@ func debugPrint(a ...any) {
 }
 
 /*
-counterSync
+counterconcurrencyUtils
 syncs changes to the counter using a mutex.
 
 # Parameters:
@@ -25,7 +25,7 @@ syncs changes to the counter using a mutex.
 
 The function to run while owning the mutex
 */
-func (collector *CollectorStruct) counterSync(f func(counter *counter)) {
+func (collector *CollectorStruct) counterconcurrencyUtils(f func(counter *counter)) {
 	counter := &collector.counter
 
 	counter.counterLock.Lock()
@@ -42,7 +42,7 @@ It will block until it has enough links in the queue for all its requests.
 Is safe to run in a seperate go rutine.
 */
 func (collector *CollectorStruct) CollectorRepopulate() {
-	collector.counterSync(func(counter *counter) {
+	collector.counterconcurrencyUtils(func(counter *counter) {
 
 		amountFilled := counter.finishedCounter + counter.workingCounter
 		amountEmpty := _WORKSPACES_ - amountFilled
@@ -70,7 +70,7 @@ The amount of requests that couldn't be fullfilled.
 func (collector *CollectorStruct) CollectorRepopulateFixedNumber(
 	amountToScrape int) int {
 	amountDidntFit := 0
-	collector.counterSync(func(counter *counter) {
+	collector.counterconcurrencyUtils(func(counter *counter) {
 
 		amountFilled := counter.finishedCounter + counter.workingCounter
 		amountEmpty := _WORKSPACES_ - amountFilled
@@ -124,7 +124,7 @@ A slice containing the text from the scraped page.
 func (collector *CollectorStruct) ReadFinished() []string {
 	context := &collector.context
 	// removes 1 from finished
-	collector.counterSync(func(counter *counter) {
+	collector.counterconcurrencyUtils(func(counter *counter) {
 		// can currently become negative by this which
 		// isn't a case deeply explored but should work fine
 		// TODO: test for cases where FinishedCounter becomes negative
@@ -263,7 +263,7 @@ func NewCollector(async bool, localFiles bool) *CollectorStruct {
 
 		// needed bypass for synced scraping to work
 		if async {
-			collector.counterSync(f)
+			collector.counterconcurrencyUtils(f)
 		} else {
 			f(&collector.counter)
 		}
@@ -344,7 +344,7 @@ func (collector *CollectorStruct) RequestVisitToSite(link string) {
 visitNextLink
 dispatches a new worker to scrape the next link in the queue.
 
-Should only be called in the scope of [counterSync].
+Should only be called in the scope of [counterconcurrencyUtils].
 */
 func (collector *CollectorStruct) visitNextLink(counter *counter) {
 	for {

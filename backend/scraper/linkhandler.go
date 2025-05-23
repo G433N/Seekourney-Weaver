@@ -1,8 +1,7 @@
 package scraper
 
 import (
-	"log"
-	"seekourney/utils/Sync"
+	"seekourney/utils/concurrencyUtils"
 	"sync"
 )
 
@@ -34,10 +33,7 @@ func (filter *filter) toURLString(compactURL *URLCompact) URLString {
 	var fullURL URLString
 
 	if compactURL.webFileBool {
-		elem, ok := filter.webhosts.Peek(compactURL.host)
-		if !ok {
-			log.Fatal("Webhost peek failed, index out of bound")
-		}
+		elem := filter.webhosts.Peek(compactURL.host)
 		fullURL = "https://" + URLString(elem)
 	} else {
 		fullURL = "file://"
@@ -59,13 +55,7 @@ func (lH *linkHandler) outputHandler() {
 		lH.storedSem.Wait()
 		URL, sucess = lH.priorityQueue.pop()
 		if !sucess {
-			URL, sucess = lH.storageStack.Pop()
-		}
-		if !sucess {
-			log.Fatal(
-				"Couldn't find any URL",
-				"even though the semaphore had a signal",
-			)
+			URL = lH.storageStack.Pop()
 		}
 		lH.outputChan <- lH.filter.toURLString(URL)
 	}
@@ -90,7 +80,7 @@ func (lH *linkHandler) inputHandler() {
 			}
 			debugPrint("PriorityQueue full, redirecting to stack: ", URL)
 		}
-		notFull = lH.storageStack.Push(URL)
+		notFull = lH.storageStack.TryPush(URL)
 		if notFull {
 			lH.storedSem.Signal()
 			continue
@@ -103,7 +93,7 @@ func (lH *linkHandler) inputHandler() {
 func linkHandlerCreate() *linkHandler {
 
 	lH := linkHandler{
-		storageStack: Sync.NewStack[*URLCompact](),
+		storageStack: *concurrencyUtils.NewStack[*URLCompact](),
 		priorityQueue: PriorityQueue{
 			Queue: [_PRIOQUEUEMAXLEN_]*URLCompact{},
 			read:  0,
@@ -112,12 +102,12 @@ func linkHandlerCreate() *linkHandler {
 		},
 		inputChan:       make(chan linkInputWrap),
 		outputChan:      make(chan URLString),
-		outputSem:       *Sync.NewSemaphore(0),
-		storedSem:       *Sync.NewSemaphore(0),
+		outputSem:       *concurrencyUtils.NewSemaphore(),
+		storedSem:       *concurrencyUtils.NewSemaphore(),
 		quit:            false,
 		handlersWorking: sync.WaitGroup{},
 		filter: filter{
-			webhosts:  Sync.NewArrayPlus[hostPath](),
+			webhosts:  *concurrencyUtils.NewArrayPlus[hostPath](10_000),
 			filterMap: map[hostPath]filterMapInner{},
 		},
 	}
@@ -210,7 +200,7 @@ func (filter *filter) URLCompactCreate(
 }
 
 func (filter *filter) Whitelist(hostPath hostPath, webFileBool bool) {
-	index, ok := filter.webhosts.Push(hostPath)
+	index, ok := filter.webhosts.TryPush(hostPath)
 	if !ok {
 		debugPrint("webhost array full")
 		return
