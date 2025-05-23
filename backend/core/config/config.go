@@ -32,7 +32,7 @@ func New() *Config {
 	return &Config{
 		ParrallelIndexing:  true,
 		ParrallelSearching: true,
-		Normalizer:         utils.TO_LOWER,
+		Normalizer:         normalize.Stemming,
 	}
 }
 

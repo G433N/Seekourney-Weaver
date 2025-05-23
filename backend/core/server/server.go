@@ -22,19 +22,22 @@ import (
 	"seekourney/indexing"
 	"seekourney/utils"
 	"strings"
+	"testing"
 )
 
 const (
-	_SERVERADDRESS_       string     = ":8080"
-	_CONTAINERSTART_      string     = "./docker-start"
-	_CONTAINEROUTPUTFILE_ string     = "./docker.log"
-	_HOST_                string     = "localhost"
-	_DBPORT_              utils.Port = 5433
-	_CONTAINERNAME_       string     = "go-postgres"
-	_USER_                string     = "go-postgres"
-	_PASSWORD_            string     = "go-postgres"
-	_DBNAME_              string     = "go-postgres"
-	_EMPTYJSON_           JSONString = "{}"
+	_SERVERADDRESS_           string     = ":8080"
+	_CONTAINERSTART_          string     = "./docker-start"
+	_CONTAINEROUTPUTFILE_     string     = "./docker.log"
+	_TESTCONTAINEROUTPUTFILE_ string     = "./test-docker.log"
+	_HOST_                    string     = "localhost"
+	_DBPORT_                  utils.Port = 5433
+	_CONTAINERNAME_           string     = "go-postgres"
+	_TESTCONTAINERNAME_       string     = "go-postgres-test"
+	_USER_                    string     = "go-postgres"
+	_PASSWORD_                string     = "go-postgres"
+	_DBNAME_                  string     = "go-postgres"
+	_EMPTYJSON_               JSONString = "{}"
 )
 
 // HTTP requests.
@@ -56,7 +59,6 @@ const (
 type serverFuncParams struct {
 	writer io.Writer
 	db     *sql.DB
-	stop   context.CancelFunc
 }
 
 // startContainer start the database container using
@@ -78,10 +80,19 @@ func startContainer() {
 		}
 	}()
 
-	container := exec.Command("/bin/sh", _CONTAINERSTART_)
+	testArg := ""
+	containerOutputFile := _CONTAINEROUTPUTFILE_
 
-	outfile, err := os.Create(_CONTAINEROUTPUTFILE_)
+	if testing.Testing() {
+		testArg = "test"
+		containerOutputFile = _TESTCONTAINEROUTPUTFILE_
+	}
+	// TODO: Check in /bin/sh is needed
+	container := exec.Command("/bin/sh", _CONTAINERSTART_, testArg)
+
+	outfile, err := os.Create(containerOutputFile)
 	utils.PanicOnError(err)
+
 	container.Stdout = outfile
 	container.Stderr = outfile
 
@@ -94,8 +105,19 @@ func startContainer() {
 // stopContainer signals the database container to stop,
 // and will finish the command started by startContainer().
 func stopContainer() {
-	err := exec.Command("docker", "stop", "--signal", "SIGTERM",
-		_CONTAINERNAME_).Run()
+	containerName := _CONTAINERNAME_
+
+	if testing.Testing() {
+		containerName = _TESTCONTAINERNAME_
+	}
+
+	err := exec.Command(
+		"docker",
+		"stop",
+		"--signal",
+		"SIGTERM",
+		containerName,
+	).Run()
 
 	if err != nil {
 		panic(fmt.Sprintf("Error stopping container: %s\n", err))
@@ -177,7 +199,7 @@ func Run(args []string) {
 		case _PUSHINDEXER_:
 			handlePushIndexer(serverParams, request)
 		case _QUIT_:
-			handleQuit(serverParams)
+			handleQuit(serverParams, stop)
 		case _LOG_:
 			msg := request.URL.Query().Get("msg")
 			log.Printf("Log: %s\n", msg)
@@ -490,9 +512,9 @@ func handlePushCollection(
 
 // handleQuit handles a /quit request by initiating the shutdown process
 // by cancelling the server context.
-func handleQuit(serverParams serverFuncParams) {
+func handleQuit(serverParams serverFuncParams, stop context.CancelFunc) {
 	_, err := fmt.Fprintf(serverParams.writer, "Shutting down\n")
 	utils.PanicOnError(err)
 
-	serverParams.stop()
+	stop()
 }

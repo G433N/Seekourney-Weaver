@@ -2,3 +2,4 @@ test_data
 data/
 docker.log
 backend/a.out
+test-docker.log
