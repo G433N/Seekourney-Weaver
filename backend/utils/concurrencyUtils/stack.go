@@ -47,7 +47,8 @@ type Stack[T any] struct {
 	/*
 	   TryPush
 	   attempts to add an element to the stack.
-	   If a max size is given and stack is full, it returns false without blocking.
+	   If a max size is given and stack is full,
+	   it returns false without blocking.
 	*/
 	TryPush func(T) bool
 }
