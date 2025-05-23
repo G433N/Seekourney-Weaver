@@ -1,12 +1,12 @@
-package Sync_test
+package concurrencyUtils_test
 
 import (
-	"seekourney/utils/Sync"
+	"seekourney/utils/concurrencyUtils"
 	"testing"
 )
 
 func TestStack(t *testing.T) {
-	stack := Sync.NewStack[int]()
+	stack := concurrencyUtils.NewStack[int]()
 	for i := range 20 {
 		if ok := stack.TryPush(i); !ok {
 			t.Errorf("Push failed for value %d", i)
@@ -40,8 +40,8 @@ func TestStack(t *testing.T) {
 	}
 }
 func TestStackBlocking(t *testing.T) {
-	stack1 := Sync.NewStack[int]()
-	errSem1 := Sync.NewSemaphore()
+	stack1 := concurrencyUtils.NewStack[int]()
+	errSem1 := concurrencyUtils.NewSemaphore()
 
 	for range 20 {
 		go func() {
@@ -50,9 +50,9 @@ func TestStackBlocking(t *testing.T) {
 		}()
 	}
 
-	stack2 := Sync.NewStack[int](1)
+	stack2 := concurrencyUtils.NewStack[int](1)
 	stack2.Push(1)
-	errSem2 := Sync.NewSemaphore()
+	errSem2 := concurrencyUtils.NewSemaphore()
 	for range 20 {
 		go func() {
 			stack2.Push(1)

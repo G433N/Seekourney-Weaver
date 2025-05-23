@@ -1,14 +1,14 @@
-package Sync_test
+package concurrencyUtils_test
 
 import (
-	"seekourney/utils/Sync"
+	"seekourney/utils/concurrencyUtils"
 	"sync"
 	"testing"
 )
 
 func TestArrayPlusAdvanced(t *testing.T) {
-	arrPlus := Sync.NewArrayPlus[int](10)
-	errSem := Sync.NewSemaphore()
+	arrPlus := concurrencyUtils.NewArrayPlus[int](10)
+	errSem := concurrencyUtils.NewSemaphore()
 
 	wg := sync.WaitGroup{}
 	wg.Add(200)
@@ -37,8 +37,8 @@ func TestArrayPlusAdvanced(t *testing.T) {
 }
 
 func TestArrayPlusMaxSizeBlocking(t *testing.T) {
-	arrPlus := Sync.NewArrayPlus[int](17)
-	errSem := Sync.NewSemaphore()
+	arrPlus := concurrencyUtils.NewArrayPlus[int](17)
+	errSem := concurrencyUtils.NewSemaphore()
 
 	for range 17 {
 		arrPlus.Push(0)

@@ -1,13 +1,13 @@
-package Sync_test
+package concurrencyUtils_test
 
 import (
-	"seekourney/utils/Sync"
+	"seekourney/utils/concurrencyUtils"
 	"sync"
 	"testing"
 )
 
 func TestCyclicQueueBasicTryPopPush(t *testing.T) {
-	queue := Sync.NewCyclicQueue[int](5)
+	queue := concurrencyUtils.NewCyclicQueue[int](5)
 
 	for i := range 5 {
 		if !queue.TryPush(i) {
@@ -58,7 +58,7 @@ func TestCyclicQueueBasicTryPopPush(t *testing.T) {
 }
 
 func TestCyclicQueueBasicPushPop(t *testing.T) {
-	queue := Sync.NewCyclicQueue[int](5)
+	queue := concurrencyUtils.NewCyclicQueue[int](5)
 
 	for i := range 5 {
 		queue.Push(i)
@@ -106,7 +106,7 @@ func TestCyclicQueueBasicPushPop(t *testing.T) {
 }
 
 func TestCyclicQueueConcurrent(t *testing.T) {
-	queue := Sync.NewCyclicQueue[int](5)
+	queue := concurrencyUtils.NewCyclicQueue[int](5)
 
 	var wg sync.WaitGroup
 
@@ -135,7 +135,7 @@ func TestCyclicQueueConcurrent(t *testing.T) {
 }
 
 func TestCyclicQueueConcurrency2(t *testing.T) {
-	queueC := Sync.NewCyclicQueue[int](10)
+	queueC := concurrencyUtils.NewCyclicQueue[int](10)
 
 	var wg sync.WaitGroup
 	wg.Add(3)
@@ -163,11 +163,11 @@ func TestCyclicQueueConcurrency2(t *testing.T) {
 }
 
 func TestCyclicQueueAdvancedConcurrency(t *testing.T) {
-	queueA := Sync.NewCyclicQueue[int](7)
-	queueB := Sync.NewCyclicQueue[int](4)
-	queueC := Sync.NewCyclicQueue[int](11)
+	queueA := concurrencyUtils.NewCyclicQueue[int](7)
+	queueB := concurrencyUtils.NewCyclicQueue[int](4)
+	queueC := concurrencyUtils.NewCyclicQueue[int](11)
 
-	errSem := Sync.NewSemaphore(0)
+	errSem := concurrencyUtils.NewSemaphore(0)
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func() {

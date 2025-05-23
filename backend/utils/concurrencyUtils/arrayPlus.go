@@ -1,4 +1,4 @@
-package Sync
+package concurrencyUtils
 
 import "sync"
 
