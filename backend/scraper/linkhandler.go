@@ -1,7 +1,7 @@
 package scraper
 
 import (
-	"seekourney/utils/Sync"
+	"seekourney/utils/concurrencyUtils"
 	"sync"
 )
 
@@ -70,16 +70,18 @@ func (lH *linkHandler) inputHandler() {
 func linkHandlerCreate() *linkHandler {
 
 	lH := linkHandler{
-		storageStack:    Sync.NewStack[*URLCompact](),
-		priorityQueue:   Sync.NewCyclicQueue[*URLCompact](_PRIOQUEUEMAXLEN_),
+		storageStack: *concurrencyUtils.NewStack[*URLCompact](),
+		priorityQueue: concurrencyUtils.NewCyclicQueue[*URLCompact](
+			_PRIOQUEUEMAXLEN_,
+		),
 		inputChan:       make(chan linkInputWrap),
 		outputChan:      make(chan URLString),
-		outputSem:       *Sync.NewSemaphore(0),
-		storedSem:       *Sync.NewSemaphore(0),
+		outputSem:       *concurrencyUtils.NewSemaphore(0),
+		storedSem:       *concurrencyUtils.NewSemaphore(0),
 		quit:            false,
 		handlersWorking: sync.WaitGroup{},
 		filter: filter{
-			webhosts:  *Sync.NewArrayPlus[hostPath](1000),
+			webhosts:  *concurrencyUtils.NewArrayPlus[hostPath](1000),
 			filterMap: map[hostPath]filterMapInner{},
 		},
 	}
