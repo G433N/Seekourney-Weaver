@@ -377,6 +377,7 @@ func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 	sendJSON(serverParams.writer, response)
 }
 
+// handleDownload handles a /download request.
 func handleDownload(serverParams serverFuncParams, request []string) {
 	filePath := request[0]
 
