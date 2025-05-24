@@ -391,7 +391,10 @@ func handleDownload(serverParams serverFuncParams, request []string) {
 
 	openedFile, err := os.Open(cleanFilePath)
 	utils.PanicOnError(err)
-	defer openedFile.Close()
+	defer func() {
+		err := openedFile.Close()
+		utils.PanicOnError(err)
+	}()
 
 	_, err = io.Copy(serverParams.writer, openedFile)
 	utils.PanicOnError(err)
