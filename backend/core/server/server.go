@@ -201,7 +201,9 @@ func Run(args []string) {
 		case _PUSHINDEXER_:
 			handlePushIndexer(serverParams, request)
 		case _DOWNLOAD_:
-			handleDownload(serverParams, writer, request.URL.Query()["q"])
+			writer.Header().Set("Content-Disposition", "attachment")
+			writer.Header().Set("Content-Type", "application/octet-stream")
+			handleDownload(serverParams, request.URL.Query()["q"])
 		case _QUIT_:
 			handleQuit(serverParams, stop)
 		case _LOG_:
@@ -374,15 +376,17 @@ func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 	}
 	sendJSON(serverParams.writer, response)
 }
-func handleDownload(serverParams serverFuncParams, writer http.ResponseWriter, request []string) {
+
+func handleDownload(serverParams serverFuncParams, request []string) {
 	filePath := request[0]
 
 	log.Printf("File path: %s\n", filePath)
 	cleanFilePath := path.Clean(string(filePath))
 
-	writer.Header().Set("Content-Disposition", "attachment")
-	writer.Header().Set("Content-Type", "application/octet-stream")
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if cleanFilePath == "." {
+		sendError(serverParams.writer, "Error: Invalid file path", nil)
+		return
+	}
 
 	openedFile, err := os.Open(cleanFilePath)
 	utils.PanicOnError(err)
