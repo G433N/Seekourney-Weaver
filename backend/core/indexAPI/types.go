@@ -10,6 +10,7 @@ import (
 // TODO: Structured log messages and struct
 // TODO: Log should be in response body not query
 
+// start starts an indexer using data that is contined in the calling object..
 func (indexer *IndexerData) start() (*RunningIndexer, error) {
 	// TODO: Use timeout instead of sleep
 

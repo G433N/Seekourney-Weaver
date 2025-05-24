@@ -124,7 +124,7 @@ func (handler *IndexHandler) DispatchReindex(
 	return nil
 }
 
-// DispatchFromCollection requests indexing of a collection from the assigned
+// Dispatch requests indexing of a collection from the assigned
 // indexer of the collection.
 func (handler *IndexHandler) Dispatch(
 	indexer IndexerData,
@@ -223,7 +223,7 @@ func (handler *IndexHandler) DispatchFromID(
 	return handler.DispatchFromCollection(db, collection)
 }
 
-// ShutdownAll tries to kill all running indexers
+// ForceShutdownAll tries to kill all running indexers
 func (handler *IndexHandler) ForceShutdownAll() {
 	handler.Mutex.Lock()
 	for _, indexer := range handler.Indexers {

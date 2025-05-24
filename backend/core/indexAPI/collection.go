@@ -6,9 +6,30 @@ import (
 	"seekourney/core/database"
 	"seekourney/indexing"
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 )
 
-type UnregisteredCollection = utils.UnregisteredCollection
+// UnregisteredCollection is a struct that contains information about a collection
+// that has not been add to the database yet.
+type UnregisteredCollection struct {
+	// Root path / start of recursive indexing
+	Path utils.Path
+
+	// Indexer used to index this collection
+	IndexerID IndexerID
+
+	// Type of source
+	SourceType utils.SourceType
+
+	// If true, the indexer will index Recursivevly
+	Recursive bool
+
+	// If false will always index when reindexing is requested
+	RespectLastModified bool
+
+	// What function to normalize all documents with
+	Normalfunc normalize.Normalizer
+}
 
 // Collection is a struct that represents a collection of documents.
 // Stored in the database.
@@ -59,7 +80,7 @@ func (col Collection) SQLScan(rows *sql.Rows) (Collection, error) {
 	var recursive bool
 	var sourceType string
 	var respectLastModified bool
-	var normalizer utils.Normalizer
+	var normalizer normalize.Normalizer
 
 	err := rows.Scan(
 		&id,

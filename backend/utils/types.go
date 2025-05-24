@@ -18,14 +18,6 @@ type Frequency int
 // Score is a number representing how relevant a given Word is when searching.
 type Score float64
 
-// Normalizer is a type that represents a normalizer.
-type Normalizer int
-
-const (
-	TO_LOWER Normalizer = iota
-	STEMMING
-)
-
 // Source denotes the type of source indexed.
 // E.g. a local file or a web page.
 type Source int
@@ -108,25 +100,3 @@ type ObjectId string
 
 // IndexerID is a unique identifier for an indexer.
 type IndexerID ObjectId
-
-// UnregisteredCollection is a struct that contains information about a collection
-// that has not been add to the database yet.
-type UnregisteredCollection struct {
-	// Root path / start of recursive indexing
-	Path Path
-
-	// Indexer used to index this collection
-	IndexerID IndexerID
-
-	// Type of source
-	SourceType SourceType
-
-	// If true, the indexer will index Recursivevly
-	Recursive bool
-
-	// If false will always index when reindexing is requested
-	RespectLastModified bool
-
-	// What function to normalize all documents with
-	Normalfunc Normalizer
-}

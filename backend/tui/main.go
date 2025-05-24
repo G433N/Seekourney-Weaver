@@ -9,9 +9,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"seekourney/core/indexAPI"
 	"seekourney/indexing"
 	"seekourney/tui/format"
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 	"seekourney/utils/timing"
 )
 
@@ -292,13 +294,13 @@ func test() {
 
 	id := allIndexers()
 
-	col := utils.UnregisteredCollection{
+	col := indexAPI.UnregisteredCollection{
 		Path:                "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
 		IndexerID:           id,
 		SourceType:          utils.FILE_SOURCE,
 		Recursive:           true,
 		RespectLastModified: false,
-		Normalfunc:          utils.STEMMING,
+		Normalfunc:          normalize.STEMMING,
 	}
 
 	body = utils.JsonBody(col)

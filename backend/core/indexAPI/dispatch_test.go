@@ -3,6 +3,7 @@ package indexAPI
 import (
 	"seekourney/indexing"
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 	"testing"
 
 	"github.com/h2non/gock"
@@ -43,7 +44,7 @@ func makeTestCollection() Collection {
 			SourceType:          utils.FILE_SOURCE,
 			Recursive:           false,
 			RespectLastModified: false,
-			Normalfunc:          utils.TO_LOWER,
+			Normalfunc:          normalize.TO_LOWER,
 		},
 		ID: "ID",
 	}

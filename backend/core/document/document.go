@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"log"
 	"seekourney/core/database"
+	"seekourney/core/indexAPI"
 	"seekourney/indexing"
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 	"seekourney/utils/timing"
 	"sort"
 	"time"
@@ -21,16 +23,33 @@ type Document struct {
 	LastIndexed time.Time
 }
 
+// NewDocument creates a new docuemnt from the given values.
+func NewDocument(
+	path utils.Path,
+	source utils.Source,
+	words utils.FrequencyMap,
+	collection indexAPI.Collection,
+	lastIndexed time.Time) Document {
+	return Document{
+		udoc: udoc{
+			Path:   path,
+			Source: source,
+			Words:  words,
+		},
+		LastIndexed: lastIndexed,
+	}
+}
+
 // Normalize normalizes the document using the provided normalizer
 func Normalize(
 	doc indexing.UnnormalizedDocument,
-	normalizer utils.Normalizer,
+	normalizer normalize.Normalizer,
 ) Document {
 
 	freqMap := make(utils.FrequencyMap)
 
 	for k, v := range doc.Words {
-		k = normalizer.Word(k)
+		k = normalizer.NormalizeWord(k)
 		freqMap[k] += v
 	}
 

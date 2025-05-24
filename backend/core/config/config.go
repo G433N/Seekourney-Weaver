@@ -2,6 +2,7 @@ package config
 
 import (
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 )
 
 // TODO: Ensure that the config file is valid, currently this is a silent error
@@ -23,7 +24,7 @@ type Config struct {
 	// struct
 
 	// Normalizer is a function that normalizes words
-	Normalizer utils.Normalizer
+	Normalizer normalize.Normalizer
 }
 
 // New creates a new config
@@ -32,7 +33,7 @@ func New() *Config {
 	return &Config{
 		ParrallelIndexing:  true,
 		ParrallelSearching: true,
-		Normalizer:         normalize.Stemming,
+		Normalizer:         normalize.STEMMING,
 	}
 }
 

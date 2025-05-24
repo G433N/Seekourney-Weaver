@@ -147,7 +147,7 @@ func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	panicOnError(err)
 
 	jsonData, err := json.Marshal([]document.Document{testDocument1()})
-	checkIOError(err)
+	utils.PanicOnError(err)
 	expected.Write(jsonData)
 	expected.WriteByte('\n')
 
@@ -166,7 +166,7 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	jsonData, err := json.Marshal(
 		[]document.Document{testDocument1(), testDocument2()},
 	)
-	checkIOError(err)
+	utils.PanicOnError(err)
 	expected.Write(jsonData)
 	expected.WriteByte('\n')
 

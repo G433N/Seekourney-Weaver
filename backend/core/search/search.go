@@ -29,7 +29,7 @@ func SqlSearch(
 	}
 
 	for word := range words.WordsIter(string(query)) {
-		word = config.Normalizer.Word(word)
+		word = config.Normalizer.NormalizeWord(word)
 
 		freqMap, err := database.FreqMap(db, word)
 		idf := calculateIdf(freqMap, docAmount)
