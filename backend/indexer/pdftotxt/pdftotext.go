@@ -26,7 +26,7 @@ func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error{
 	defer doc.Close()
 	_, err = os.Stat(string(outputDir))
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(string(outputDir), 0755) //0755 is the file permission for the directory created
+		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
 		if err != nil {
 			return err
 		}
@@ -113,6 +113,12 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 	if err != nil {
 		return txt, err	
 	}
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
+		if err != nil {
+			return txt, err
+		}
+	}
 
 	walkHelper := func(path string, info os.FileInfo, err error) error {
 		if regex.MatchString(info.Name()) {
@@ -142,7 +148,7 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 imagesToTextParallel
 Converts multiple images from a directory to text in parallel.
 */
-func imagesToTextParallel(image utils.Path, dir utils.Path) ([]Text, error) {
+func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, error) {
 
 	regex, err := regexp.Compile(string(image) + "page-.*")
 	var txt []Text
@@ -152,6 +158,12 @@ func imagesToTextParallel(image utils.Path, dir utils.Path) ([]Text, error) {
 	ocrEngine, err = ocrInit()
 	if err != nil {
 		return txt, err	
+	}
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
+		if err != nil {
+			return txt, err
+		}
 	}
 
 	channel := make(chan utils.Result[Text])
@@ -173,7 +185,7 @@ func imagesToTextParallel(image utils.Path, dir utils.Path) ([]Text, error) {
 		return nil
 	}
 
-	err = filepath.Walk(string(dir), walkHelper)
+	err = filepath.Walk(string(outputDir), walkHelper)
 	{
 		if err != nil {
 			return txt, err
