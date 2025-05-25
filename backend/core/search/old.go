@@ -82,7 +82,7 @@ package search
 // 	query string,
 // ) utils.ScoreMap {
 //
-// 	// TODO: This is currently slower than the normal search function, I think
+// 	// TODO:This is currently slower than the normal search function, I think
 // 	// caching is faster / Marcus
 // 	result := make(utils.ScoreMap)
 //
@@ -138,7 +138,7 @@ package search
 //
 // 		if !ok {
 // 			log.Fatalf(
-// 				"Document %s not found in folder, this should be imposible\n",
+// 				"Document %s not in folder, this should be imposible\n",
 // 				path,
 // 			)
 // 		}

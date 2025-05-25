@@ -14,7 +14,7 @@ func index(config *Config, cxt indexing.Context, settings indexing.Settings) {
 	case utils.DIR_SOURCE:
 		HandleDir(config, cxt, settings)
 	case utils.URL_SOURCE:
-		var cxt indexing.Context = cxt
+		var cxt = cxt
 		cxt.Log("Does not support URL indexing!!!")
 	default:
 		cxt.Log("Unknown source type: %d", settings.Type)

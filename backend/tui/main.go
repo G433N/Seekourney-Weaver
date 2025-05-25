@@ -189,7 +189,8 @@ func shutdownServer() {
 func index(paths []string) {
 
 	// d :=
-	// "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md"
+	//	"/home/oxygen/Projects/Seekourney-Weaver/" +
+	//	"backend/test_data/docs.gl/todo.md"
 	// paths = append(paths, d)
 	log.Println("Indexing paths:", paths)
 
@@ -298,7 +299,8 @@ func test() {
 	id := allIndexers()
 
 	col := indexAPI.UnregisteredCollection{
-		Path:                "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
+		Path: "/home/carbon/Projects/go_indexer/" +
+			"backend/test_data/docs.gl/todo.md",
 		IndexerID:           id,
 		SourceType:          utils.FILE_SOURCE,
 		Recursive:           true,

@@ -13,8 +13,6 @@ type Config struct {
 	WalkDirConfig *utils.WalkDirConfig
 }
 
-type doc = indexing.UnnormalizedDocument
-
 // Default creates a new config with default values.
 func Default(config *Config) *Config {
 	wdConfig := utils.NewWalkDirConfig().
