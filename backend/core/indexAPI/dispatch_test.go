@@ -15,8 +15,16 @@ const (
 	// URI for mocking index requests.
 	// Workaround as we cant call function when definition const.
 	_TESTURI_  string     = "http://localhost:39042"
+	_TESTPORT_ utils.Port = 39042
+	// Dispatch now sends path with settings in hppt body,
+	// so this may be unused in test mocks.
 	_TESTPATH_ utils.Path = "home/george/my_cool_text_files"
 )
+
+// Post request functions add a slash between all words, but when mocking
+// we need to add it manually, this is shorthand for that.
+// Only use this in tests.
+const _SLASHINDEX_ string = "/index"
 
 // Use NewIndexHandler for making indexing handlers.
 
@@ -29,7 +37,7 @@ func makeTestIndexerData() IndexerData {
 		Name:     "The Test Indexer",
 		ExecPath: "ls",
 		Args:     []string{""},
-		Port:     utils.MININDEXERPORT,
+		Port:     _TESTPORT_,
 	}
 }
 
@@ -49,6 +57,8 @@ func makeTestCollection() Collection {
 		ID: "ID",
 	}
 }
+
+// TODO change startup and shutdown tests to work with new startup/shutdown
 
 /*
 // waitOnTestCMD is used instead of shutdownIndexerGraceful for some tests.
@@ -145,51 +155,6 @@ func TestShutdownInvalidResponse(t *testing.T) {
 }
 */
 
-/*
-func TestRequestIndexingSuccess(t *testing.T) {
-	defer gock.Off()
-	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
-		Reply(200).
-		JSON(indexing.ResponseSuccess(""))
-
-	respondingErr, outcomeErr := requestIndexing(info, _TESTPATH2_)
-	assert.True(t, gock.IsDone())
-
-	assert.NoError(t, respondingErr)
-	assert.NoError(t, outcomeErr)
-}
-
-func TestRequestIndexingFail(t *testing.T) {
-	defer gock.Off()
-	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
-		Reply(200).
-		JSON(indexing.ResponseFail("failed to index requested path"))
-
-	respondingErr, outcomeErr := requestIndexing(info, _TESTPATH2_)
-	assert.True(t, gock.IsDone())
-
-	assert.NoError(t, respondingErr)
-	assert.Error(t, outcomeErr)
-}
-
-// Same as TestRequestIndexingFail but with worse JSON response.
-func TestRequestIndexingInvalidJSON(t *testing.T) {
-	defer gock.Off()
-	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH2_)).
-		Reply(200).
-		JSON(map[string]string{"invalid": "JSON data send back"})
-
-	respondingErr, outcomeErr := requestIndexing(info, _TESTPATH2_)
-	assert.True(t, gock.IsDone())
-
-	assert.NoError(t, respondingErr)
-	assert.Error(t, outcomeErr)
-}
-*/
-
 func TestNewDispatchErrors(t *testing.T) {
 	errs := newDispatchErrors()
 	assert.True(t, errs.IndexerWasRunning)
@@ -201,7 +166,7 @@ func TestNewDispatchErrors(t *testing.T) {
 func TestDispatchSuccessIsRunning(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH_)).
+		Post(_SLASHINDEX_).
 		Reply(200).
 		JSON(indexing.ResponseSuccess(""))
 
@@ -219,7 +184,7 @@ func TestDispatchSuccessIsRunning(t *testing.T) {
 func TestDispatchSuccessNotRunning(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH_)).
+		Post(_SLASHINDEX_).
 		Reply(500).
 		JSON("")
 	gock.New(string(_TESTURI_)).
@@ -227,7 +192,7 @@ func TestDispatchSuccessNotRunning(t *testing.T) {
 		Reply(200).
 		JSON(indexing.ResponsePing())
 	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH_)).
+		Post(_SLASHINDEX_).
 		Reply(200).
 		JSON(indexing.ResponseSuccess(""))
 
@@ -245,7 +210,7 @@ func TestDispatchSuccessNotRunning(t *testing.T) {
 func TestDispatchStartupFail(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH_)).
+		Post(_SLASHINDEX_).
 		Reply(500).
 		JSON("")
 	gock.New(string(_TESTURI_)).
@@ -267,7 +232,7 @@ func TestDispatchStartupFail(t *testing.T) {
 func TestDispatchIndexFail(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEX_ + "/" + string(_TESTPATH_)).
+		Post(_SLASHINDEX_).
 		Reply(200).
 		JSON(indexing.ResponseFail("unable to fulfill indexing request"))
 
