@@ -12,14 +12,21 @@ type UnnormalizedDocument struct {
 
 	/// Map of normalized words to their frequency
 	Words utils.FrequencyMap
+
+	Collection CollectionID
 }
 
 // DocNew creates a new document.
-func DocNew(path utils.Path, source utils.Source) UnnormalizedDocument {
+func DocNew(
+	path utils.Path,
+	source utils.Source,
+	collection CollectionID,
+) UnnormalizedDocument {
 	return UnnormalizedDocument{
-		Path:   path,
-		Source: source,
-		Words:  make(utils.FrequencyMap),
+		Path:       path,
+		Source:     source,
+		Collection: collection,
+		Words:      make(utils.FrequencyMap),
 	}
 }
 
@@ -27,9 +34,10 @@ func DocNew(path utils.Path, source utils.Source) UnnormalizedDocument {
 func DocFromText(
 	path utils.Path,
 	source utils.Source,
+	collection CollectionID,
 	text string,
 ) UnnormalizedDocument {
-	doc := DocNew(path, source)
+	doc := DocNew(path, source, collection)
 	doc.Words = IndexString(text)
 	return doc
 }
@@ -38,9 +46,10 @@ func DocFromText(
 func DocFromBytes(
 	path utils.Path,
 	source utils.Source,
+	collection CollectionID,
 	bytes []byte,
 ) UnnormalizedDocument {
-	doc := DocNew(path, source)
+	doc := DocNew(path, source, collection)
 	doc.Words = IndexBytes(bytes)
 	return doc
 }

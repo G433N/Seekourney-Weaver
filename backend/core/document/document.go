@@ -5,14 +5,40 @@ import (
 	"encoding/json"
 	"log"
 	"seekourney/core/database"
-	"seekourney/core/normalize"
+	"seekourney/core/indexAPI"
 	"seekourney/indexing"
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 	"seekourney/utils/timing"
 	"sort"
+	"time"
 )
 
-type Document indexing.UnnormalizedDocument
+type udoc = indexing.UnnormalizedDocument
+
+// Document represents contains the information about an indexed document.
+// This document is stored in the database and have been normalized.
+type Document struct {
+	udoc
+	LastIndexed time.Time
+}
+
+// NewDocument creates a new docuemnt from the given values.
+func NewDocument(
+	path utils.Path,
+	source utils.Source,
+	words utils.FrequencyMap,
+	collection indexAPI.Collection,
+	lastIndexed time.Time) Document {
+	return Document{
+		udoc: udoc{
+			Path:   path,
+			Source: source,
+			Words:  words,
+		},
+		LastIndexed: lastIndexed,
+	}
+}
 
 // Normalize normalizes the document using the provided normalizer
 func Normalize(
@@ -23,14 +49,18 @@ func Normalize(
 	freqMap := make(utils.FrequencyMap)
 
 	for k, v := range doc.Words {
-		k = normalizer.Word(k)
+		k = normalizer.NormalizeWord(k)
 		freqMap[k] += v
 	}
 
 	return Document{
-		Path:   doc.Path,
-		Source: doc.Source,
-		Words:  freqMap,
+		udoc: udoc{
+			Path:       doc.Path,
+			Source:     doc.Source,
+			Words:      freqMap,
+			Collection: doc.Collection,
+		},
+		LastIndexed: time.Now(),
 	}
 }
 
@@ -87,7 +117,7 @@ func (doc Document) SQLGetName() string {
 
 // SQLGetFields returns the fields to be inserted into the database
 func (doc Document) SQLGetFields() []string {
-	return []string{"path", "type", "words"}
+	return []string{"path", "type", "words", "last_indexed", "collection_id"}
 }
 
 // SQLGetValues returns the values to be inserted into the database
@@ -100,7 +130,19 @@ func (doc Document) SQLGetValues() []any {
 		return []database.SQLValue{doc.Path, "file", nil}
 	}
 
-	return []database.SQLValue{doc.Path, "file", bytes}
+	timeBytes, err := doc.LastIndexed.Local().MarshalJSON()
+	if err != nil {
+		log.Printf("Error marshalling time: %s", err)
+		return []database.SQLValue{doc.Path, "file", nil}
+	}
+
+	return []database.SQLValue{
+		doc.Path,
+		"file",
+		bytes,
+		timeBytes,
+		doc.Collection,
+	}
 }
 
 // SQLScan scans a row from the database into a Document
@@ -108,8 +150,10 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 	var path utils.Path
 	var source string
 	var words []byte
+	var timeBytes []byte
+	var collectionID indexing.CollectionID
 
-	err := rows.Scan(&path, &source, &words)
+	err := rows.Scan(&path, &source, &words, &timeBytes, &collectionID)
 	if err != nil {
 		return Document{}, err
 	}
@@ -122,10 +166,21 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 		return Document{}, err
 	}
 
+	var lastIndexed time.Time
+	err = lastIndexed.UnmarshalJSON(timeBytes)
+	if err != nil {
+		log.Printf("Error unmarshalling time: %s", err)
+		return Document{}, err
+	}
+
 	return Document{
-		Path:   path,
-		Source: utils.SourceLocal,
-		Words:  freqMap,
+		udoc: udoc{
+			Path:       path,
+			Source:     utils.SOURCE_LOCAL,
+			Words:      freqMap,
+			Collection: collectionID,
+		},
+		LastIndexed: lastIndexed,
 	}, nil
 }
 
@@ -145,6 +200,24 @@ func (doc *Document) CalculateTf(word utils.Word) float64 {
 	freq := doc.Words[word]
 	return float64(freq) / float64(doc.GetWordCount())
 
+}
+
+// UpdateDB updates the document in the database
+func (doc *Document) UpdateDB(db *sql.DB) error {
+
+	pairs := []string{}
+	// Skip the first one, it's the path/primary key
+	q1 := database.Update("document").Set(pairs[1:]...)
+	query := q1.Where("path=$1")
+
+	log.Printf("Update query: %s", string(query))
+
+	_, err := db.Exec(
+		string(query),
+		doc.Path,
+	)
+
+	return err
 }
 
 // DocumentFromDB retrieves a document from the database
@@ -168,5 +241,28 @@ func DocumentFromDB(db *sql.DB, path utils.Path) (Document, error) {
 	)
 
 	return doc, err
+
+}
+
+// DocumentExsitsDB checks if a document exists in the database
+func DocumentExsitsDB(db *sql.DB, path utils.Path) (bool, error) {
+
+	// TODO: A better way to do this
+
+	doc, err := DocumentFromDB(db, path)
+	if err != nil {
+		return false, err
+	}
+
+	if doc.Path == "" {
+		return false, nil
+	}
+
+	if doc.Path != path {
+		// This should never happen
+		log.Panicf("Document path mismatch: %s != %s", doc.Path, path)
+	}
+
+	return true, nil
 
 }
