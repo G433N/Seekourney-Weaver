@@ -1,8 +1,8 @@
 package config
 
 import (
-	"seekourney/core/normalize"
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 )
 
 // TODO: Ensure that the config file is valid, currently this is a silent error
@@ -33,7 +33,7 @@ func New() *Config {
 	return &Config{
 		ParrallelIndexing:  true,
 		ParrallelSearching: true,
-		Normalizer:         normalize.Stemming,
+		Normalizer:         normalize.STEMMING,
 	}
 }
 

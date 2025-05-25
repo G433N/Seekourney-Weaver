@@ -17,9 +17,9 @@ import (
 	"seekourney/core/config"
 	"seekourney/core/database"
 	"seekourney/core/document"
-	"seekourney/core/folder"
+	"seekourney/core/indexAPI"
 	"seekourney/core/search"
-	"seekourney/indexer/localtext"
+	"seekourney/indexing"
 	"seekourney/utils"
 	"strings"
 	"testing"
@@ -42,10 +42,17 @@ const (
 
 // HTTP requests.
 const (
-	_ALL_    string = "/all"
-	_SEARCH_ string = "/search"
-	_ADD_    string = "/add"
-	_QUIT_   string = "/quit"
+	_ALL_             string = "/all"
+	_ALL_INDEXERS_    string = "/all/indexers"
+	_ALL_COLLECTIONS_ string = "/all/collections"
+	_SEARCH_          string = "/search"
+	_QUIT_            string = "/quit"
+	_PUSHPATHS_       string = "/push/paths"
+	_PUSHDOCS_        string = "/push/docs"
+	_INDEX_           string = "/index"
+	_PUSHCOLLECTION_  string = "/push/collection"
+	_PUSHINDEXER_     string = "/push/indexer"
+	_LOG_             string = "/log"
 )
 
 // serverFuncParams is used by server query handler functions.
@@ -58,6 +65,21 @@ type serverFuncParams struct {
 // the command defined in _CONTAINERSTART_.
 // Blocks until the container is closed.
 func startContainer() {
+
+	defer func() {
+		// TODO: Do something similar in IndexHandler for every indexer
+
+		if recover := recover(); recover != nil {
+			// TODO: Do we want to dot this, before starting the container?
+			err := exec.Command("docker", "kill", "go-postgres").Run()
+			utils.PanicOnError(err)
+			log.Fatalf(
+				"Error starting container: %s\nPlease, start the server again",
+				recover,
+			)
+		}
+	}()
+
 	testArg := ""
 	containerOutputFile := _CONTAINEROUTPUTFILE_
 
@@ -65,18 +87,19 @@ func startContainer() {
 		testArg = "test"
 		containerOutputFile = _TESTCONTAINEROUTPUTFILE_
 	}
-
-	container := exec.Command(_CONTAINERSTART_, testArg)
+	// TODO: Check in /bin/sh is needed
+	container := exec.Command("/bin/sh", _CONTAINERSTART_, testArg)
 
 	outfile, err := os.Create(containerOutputFile)
-	checkIOError(err)
+	utils.PanicOnError(err)
+
 	container.Stdout = outfile
 	container.Stderr = outfile
 
 	err = container.Run()
-	checkIOError(err)
+	utils.PanicOnError(err)
 	err = outfile.Close()
-	checkIOError(err)
+	utils.PanicOnError(err)
 }
 
 // stopContainer signals the database container to stop,
@@ -105,48 +128,6 @@ func stopContainer() {
 // Gets initialized in the Run function.
 var conf *config.Config
 
-// index loads the local file config and creates a folder object.
-// TODO: This function is temporay
-func index() folder.Folder {
-	// Load local file config
-	localConfig := localtext.Load(conf)
-
-	// TODO: Later when documents comes over the network, we can still use the
-	// same code. since it is an iterator
-	folder := folder.FromIter(
-		conf.Normalizer,
-		localConfig.IndexDir("test_data"),
-	)
-
-	rm := folder.ReverseMappingLocal()
-
-	files := folder.GetDocAmount()
-	words := len(rm)
-
-	log.Printf("Files: %d, Words: %d\n", files, words)
-
-	if files == 0 {
-		log.Fatal(
-			"No files found, run make downloadTestFiles to download test files",
-		)
-	}
-
-	return folder
-}
-
-// insertFolder inserts all documents in the given folder into the database.
-func insertFolder(db *sql.DB, folder *folder.Folder) {
-
-	for _, doc := range folder.GetDocs() {
-
-		_, err := database.InsertInto(db, doc)
-
-		if err != nil {
-			log.Printf("Error inserting row: %s\n", err)
-		}
-	}
-}
-
 /*
 Run runs an http server with a postgres instance within docker container.
 It can be accessed for example by `curl 'http://localhost:8080/search?q=key1'`
@@ -174,25 +155,6 @@ func Run(args []string) {
 
 	db := connectToDB()
 
-	loadFromDisc := true
-
-	if len(args) > 1 {
-		log.Fatal("Too many arguments")
-	} else if len(args) == 1 {
-		switch args[0] {
-		case "load":
-			loadFromDisc = false
-		}
-	}
-
-	if !loadFromDisc {
-		log.Println("Indexing files")
-		fold := index()
-		insertFolder(db, &fold)
-	} else {
-		log.Println("Loading from disk")
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	server := &http.Server{
@@ -210,19 +172,39 @@ func Run(args []string) {
 
 	log.Println("Server started at", _SERVERADDRESS_)
 
+	// Indexhandler is used to manage running indexers.
+	indexHandler := indexAPI.NewIndexHandler()
+
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
-		enableCORS(&writer)
+		utils.EnableCORS(&writer)
 		serverParams := serverFuncParams{writer: writer, db: db}
 
 		switch html.EscapeString(request.URL.Path) {
 		case _ALL_:
 			handleAll(serverParams)
+		case _ALL_INDEXERS_:
+			handleAllIndexers(serverParams)
+		case _ALL_COLLECTIONS_:
+			handleAllCollections(serverParams)
 		case _SEARCH_:
 			handleSearchSQL(serverParams, request.URL.Query()["q"])
-		case _ADD_:
-			handleAdd(serverParams, request.URL.Query()["p"])
+		case _PUSHPATHS_:
+			handlePushPaths(serverParams, request.URL.Query()["p"])
+		case _PUSHDOCS_:
+			handlePushDocs(serverParams, request)
+		case _INDEX_:
+			handleIndex(serverParams)
+		case _PUSHCOLLECTION_:
+			handlePushCollection(serverParams, request, &indexHandler)
+		case _PUSHINDEXER_:
+			handlePushIndexer(serverParams, request)
 		case _QUIT_:
 			handleQuit(serverParams, stop)
+		case _LOG_:
+			msg := request.URL.Query().Get("msg")
+			log.Printf("Log: %s\n", msg)
+		default:
+			log.Println("Unknown path:", request.URL)
 		}
 	}
 
@@ -233,6 +215,7 @@ func Run(args []string) {
 		if !errors.Is(err, http.ErrServerClosed) {
 			fmt.Println("Server encountered an error:", err)
 		}
+		indexHandler.ForceShutdownAll()
 		stop()
 	}()
 
@@ -252,31 +235,19 @@ func Run(args []string) {
 	stopContainer()
 }
 
-// enableCORS sets Cross-origin resource sharing on for a ResponseWriter.
-func enableCORS(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-// checkIOError panics on non-nil error.
-func checkIOError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 // recoverSQLError calls recover and writes a message to writer
 // if an SQL function panic'd.
 func recoverSQLError(writer io.Writer) {
 	if err := recover(); err != nil {
 		_, ioErr := fmt.Fprintf(writer, "SQL failed: %s\n", err)
-		checkIOError(ioErr)
+		utils.PanicOnError(ioErr)
 	}
 }
 
 // sendError writes msg and err to the writer.
 func sendError(writer io.Writer, msg string, err error) {
 	_, ioErr := fmt.Fprintf(writer, "%s: %s\n", msg, err)
-	checkIOError(ioErr)
+	utils.PanicOnError(ioErr)
 }
 
 // sendJSON marshals the given data to JSON and writes it to the writer.
@@ -292,6 +263,16 @@ func sendJSON(writer io.Writer, data any) {
 	if err != nil {
 		sendError(writer, "IO failed", err)
 	}
+}
+
+// respondWithSuccess sends an indexing success response through writer.
+func respondWithSuccess(writer io.Writer) {
+	_, err := fmt.Fprintf(
+		writer,
+		"%s",
+		string(indexing.ResponseSuccess("handling request to Core")),
+	)
+	utils.PanicOnError(err)
 }
 
 // handleAll handles an /all request,
@@ -319,6 +300,58 @@ func handleAll(serverParams serverFuncParams) {
 	sendJSON(serverParams.writer, docs)
 }
 
+// handleAllIndexers handles an /all/indexers request,
+// by querying all indexers in database and writing output to response writer.
+func handleAllIndexers(serverParams serverFuncParams) {
+
+	query := database.Select().
+		QueryAll().
+		From("indexer")
+
+	insert := func(docs *[]indexAPI.IndexerData, ind indexAPI.IndexerData) {
+		*docs = append(*docs, ind)
+	}
+
+	indexers := make([]indexAPI.IndexerData, 0)
+
+	err := database.ExecScan(serverParams.db, string(query), &indexers, insert)
+	if err != nil {
+		sendError(serverParams.writer, "SQL failed", err)
+		return
+	}
+
+	sendJSON(serverParams.writer, indexers)
+}
+
+// handleAllCollections handles an /all/collections request,
+// by querying all collections in database and writing output to response
+// writer.
+func handleAllCollections(serverParams serverFuncParams) {
+
+	query := database.Select().
+		QueryAll().
+		From("collection")
+
+	insert := func(docs *[]indexAPI.Collection, col indexAPI.Collection) {
+		*docs = append(*docs, col)
+	}
+
+	collections := make([]indexAPI.Collection, 0)
+
+	err := database.ExecScan(
+		serverParams.db,
+		string(query),
+		&collections,
+		insert,
+	)
+	if err != nil {
+		sendError(serverParams.writer, "SQL failed", err)
+		return
+	}
+
+	sendJSON(serverParams.writer, collections)
+}
+
 // handleSearchSQL handles a /search request.
 func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 	defer recoverSQLError(serverParams.writer)
@@ -338,18 +371,166 @@ func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 	sendJSON(serverParams.writer, response)
 }
 
-// handleAdd handles an /add request,
+// handlePushPaths handles an /push/path request,
 // by inserting a row to the database for each given path.
-func handleAdd(serverParams serverFuncParams, paths []string) {
-	// TODO: Albins pr should impl this
+func handlePushPaths(serverParams serverFuncParams, paths []string) {
 	panic("Not implemented")
+}
+
+// handlePushDocs handles a /push/docs request,
+// by normalizing documents send in request and adding them to db.
+func handlePushDocs(serverParams serverFuncParams, request *http.Request) {
+	respondWithSuccess(serverParams.writer)
+
+	body, err := io.ReadAll(request.Body)
+	utils.PanicOnError(err)
+
+	resp := indexing.IndexerResponse{}
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		log.Print("Main server failed to parse PushDocs request" +
+			" from indexer with error: " + err.Error())
+		return
+	}
+
+	if resp.Status != indexing.STATUSSUCCESSFUL {
+		log.Print("indexing request failed (messaged with PushDocs request)" +
+			" with message: " + resp.Data.Message)
+		return
+	}
+
+	if len(resp.Data.Documents) == 0 {
+		log.Print("indexer indexed path and produced zero documents " +
+			"(pushdocs request)")
+		return
+	}
+
+	go func() {
+		for _, rawDoc := range resp.Data.Documents {
+			normalizedDoc := document.Normalize(rawDoc, conf.Normalizer)
+
+			// TODO fix
+			// Error inserting row: pq: duplicate key value violates
+			// unique constraint "document_pkey"
+			// TODO: This not fixed Max will look into it
+
+			exists, err := document.DocumentExsitsDB(
+				serverParams.db,
+				normalizedDoc.Path,
+			)
+
+			if err != nil {
+				log.Printf("Error checking if document exists: %s\n", err)
+				continue
+			}
+
+			if exists {
+				err := normalizedDoc.UpdateDB(serverParams.db)
+				if err != nil {
+					log.Printf("Error updating document: %s\n", err)
+				}
+				continue
+			}
+
+			_, err = database.InsertInto(serverParams.db, normalizedDoc)
+
+			if err != nil {
+				log.Printf("Error inserting row: %s\n", err)
+			}
+
+			log.Print("Inserted document with path: ", normalizedDoc.Path)
+		}
+		log.Print("Handled pushdocs request successfully")
+	}()
+}
+
+// handleIndex handles an /index request by dispatching an indexing request
+// to the appropriate indexer.
+func handleIndex(serverParams serverFuncParams) {
+	panic("Not implemented")
+}
+
+// handlePushIndexer handles a /push/indexer request from frontend client
+// by generating a new Indexer, storing it, and starting the indexer.
+func handlePushIndexer(
+	serverParams serverFuncParams,
+	request *http.Request,
+) {
+	// TODO fail or success response after unmarshall?
+	// respondWithSuccess(serverParams.writer)
+
+	startupCMD, err := utils.RequestBodyString(request)
+
+	if err != nil {
+		log.Print("Main server failed to parse PushIndexer request" +
+			" from indexer with error: " + err.Error())
+		return
+	}
+
+	id, err := indexAPI.RegisterIndexer(serverParams.db, startupCMD)
+
+	if err != nil {
+		log.Print(
+			"Main server failed to register indexer with error: " + err.Error(),
+		)
+		return
+	}
+
+	// Respond with id
+	_, err = fmt.Fprintf(serverParams.writer, "%s", id)
+	utils.PanicOnError(err)
+}
+
+// handlePushCollection handles a /push/collection request from frontend client
+// by generating a new Collection, storing it, and indexing its associated path.
+func handlePushCollection(
+	serverParams serverFuncParams,
+	request *http.Request,
+	indexers *indexAPI.IndexHandler,
+) {
+	// TODO fail or success response after unmarshall?
+	// respondWithSuccess(serverParams.writer)
+
+	body, err := io.ReadAll(request.Body)
+	utils.PanicOnError(err)
+
+	// TODO change to correct reponse json format
+	unreg := indexAPI.UnregisteredCollection{}
+	err = json.Unmarshal(body, &unreg)
+	if err != nil {
+		log.Print("Main server failed to parse PushDocs request" +
+			" from indexer with error: " + err.Error())
+		return
+	}
+
+	collection, err := indexAPI.RegisterCollection(serverParams.db, unreg)
+	if err != nil {
+		panic("TODO")
+	}
+
+	// Respond with collection ID
+	_, err = fmt.Fprintf(serverParams.writer, "%s", collection.ID)
+	if err != nil {
+		log.Fatalf("Error writing collection ID: %s\n", err)
+	}
+
+	go func() {
+
+		// Dispatch may startup indexer and add to handler
+		// if it is not already running.
+		indexers.Mutex.Lock()
+		errs := indexers.DispatchFromCollection(serverParams.db, collection)
+		indexers.Mutex.Unlock()
+
+		logDispatchErrors(errs)
+	}()
 }
 
 // handleQuit handles a /quit request by initiating the shutdown process
 // by cancelling the server context.
 func handleQuit(serverParams serverFuncParams, stop context.CancelFunc) {
 	_, err := fmt.Fprintf(serverParams.writer, "Shutting down\n")
-	checkIOError(err)
+	utils.PanicOnError(err)
 
 	stop()
 }
