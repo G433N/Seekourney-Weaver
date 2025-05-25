@@ -264,7 +264,7 @@ func testHandleSearchSQLMultiple(
 
 func testHandleDownload(test *testing.T, serverParams serverFuncParams) {
 	workingDir, _ := os.Getwd()
-	fileDir := filepath.Join(workingDir, "core", "server", "db.go")
+	fileDir := filepath.Join(workingDir, "README.md")
 	expectedOpenedFile, err := os.ReadFile(fileDir)
 	if err != nil {
 		test.Error("Error reading file")
