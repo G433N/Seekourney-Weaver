@@ -83,8 +83,6 @@ func startContainer() {
 	testArg := ""
 	containerOutputFile := _CONTAINEROUTPUTFILE_
 
-	testArg = "test"
-
 	if testing.Testing() {
 		testArg = "test"
 		containerOutputFile = _TESTCONTAINEROUTPUTFILE_
