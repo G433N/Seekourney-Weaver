@@ -36,6 +36,8 @@ func (indexer *IndexerData) start() (*RunningIndexer, error) {
 
 	log.Printf("Starting indexer with command: %s %s\n", indexer.ExecPath, args)
 
+	time.Sleep(1 * time.Second)
+
 	resp, err := utils.GetRequestJSON[IndexerResponse](
 		_ENDPOINTPREFIX_,
 		indexer.Port,
@@ -50,8 +52,6 @@ func (indexer *IndexerData) start() (*RunningIndexer, error) {
 			"indexer did not respond to ping request after startup",
 		)
 	}
-
-	time.Sleep(1 * time.Second)
 
 	return &RunningIndexer{
 		ID:   indexer.ID,
