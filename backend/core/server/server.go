@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path"
 	"seekourney/core/config"
 	"seekourney/core/database"
 	"seekourney/core/document"
@@ -46,6 +47,7 @@ const (
 	_ALL_INDEXERS_    string = "/all/indexers"
 	_ALL_COLLECTIONS_ string = "/all/collections"
 	_SEARCH_          string = "/search"
+	_DOWNLOAD_        string = "/download"
 	_QUIT_            string = "/quit"
 	_PUSHPATHS_       string = "/push/paths"
 	_PUSHDOCS_        string = "/push/docs"
@@ -198,6 +200,10 @@ func Run(args []string) {
 			handlePushCollection(serverParams, request, &indexHandler)
 		case _PUSHINDEXER_:
 			handlePushIndexer(serverParams, request)
+		case _DOWNLOAD_:
+			writer.Header().Set("Content-Disposition", "attachment")
+			writer.Header().Set("Content-Type", "application/octet-stream")
+			handleDownload(serverParams, request.URL.Query()["q"])
 		case _QUIT_:
 			handleQuit(serverParams, stop)
 		case _LOG_:
@@ -369,6 +375,29 @@ func handleSearchSQL(serverParams serverFuncParams, keys []string) {
 		Results: results,
 	}
 	sendJSON(serverParams.writer, response)
+}
+
+// handleDownload handles a /download request.
+func handleDownload(serverParams serverFuncParams, request []string) {
+	filePath := request[0]
+
+	log.Printf("File path: %s\n", filePath)
+	cleanFilePath := path.Clean(string(filePath))
+
+	if cleanFilePath == "." {
+		sendError(serverParams.writer, "Error: Invalid file path", nil)
+		return
+	}
+
+	openedFile, err := os.Open(cleanFilePath)
+	utils.PanicOnError(err)
+	defer func() {
+		err := openedFile.Close()
+		utils.PanicOnError(err)
+	}()
+
+	_, err = io.Copy(serverParams.writer, openedFile)
+	utils.PanicOnError(err)
 }
 
 // handlePushPaths handles an /push/path request,
