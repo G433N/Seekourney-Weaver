@@ -9,7 +9,8 @@ import (
 	"seekourney/utils/normalize"
 )
 
-// UnregisteredCollection is a struct that contains information about a collection
+// UnregisteredCollection is a struct that contains information about a
+// collection
 // that has not been add to the database yet.
 type UnregisteredCollection struct {
 	// Root path / start of recursive indexing

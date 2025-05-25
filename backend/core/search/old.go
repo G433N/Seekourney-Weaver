@@ -11,7 +11,8 @@ package search
 // )
 //
 // // / scoreWord takes a folder, a reverse mapping and a word
-// // It returns a map of document paths and their corresponding score of the word
+// // It returns a map of document paths and their corresponding score of the
+// word
 // // Higher score means more relevant document
 // func scoreWord(
 // 	folder *folder.Folder,
@@ -48,7 +49,8 @@ package search
 // }
 //
 // // search takes a folder, a reverse mapping and a query
-// // It returns a map of document paths and their corresponding score of the query
+// // It returns a map of document paths and their corresponding score of the
+// query
 // // Higher score means more relevant document
 // func search(
 // 	normalize utils.Normalizer,
@@ -106,7 +108,8 @@ package search
 // }
 //
 // // Search performs a search on the folder using the reverse mapping
-// // It returns a slice of SearchResult sorted by value in descending order, max
+// // It returns a slice of SearchResult sorted by value in descending order,
+// max
 // // 10 results
 // func Search(
 // 	config *config.Config,

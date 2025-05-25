@@ -30,7 +30,11 @@ func (cxt *Context) Log(msg string, args ...any) {
 }
 
 // StartDoc creates a new document builder.
-func (cxt *Context) StartDoc(path utils.Path, source utils.Source, settings Settings) *docBuilder {
+func (cxt *Context) StartDoc(
+	path utils.Path,
+	source utils.Source,
+	settings Settings,
+) *docBuilder {
 
 	return &docBuilder{
 		path:       path,

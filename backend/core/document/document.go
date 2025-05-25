@@ -136,7 +136,13 @@ func (doc Document) SQLGetValues() []any {
 		return []database.SQLValue{doc.Path, "file", nil}
 	}
 
-	return []database.SQLValue{doc.Path, "file", bytes, timeBytes, doc.Collection}
+	return []database.SQLValue{
+		doc.Path,
+		"file",
+		bytes,
+		timeBytes,
+		doc.Collection,
+	}
 }
 
 // SQLScan scans a row from the database into a Document

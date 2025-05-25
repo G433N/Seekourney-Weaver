@@ -44,7 +44,11 @@ func ReadFileToString(path utils.Path) (string, error) {
 }
 
 // IndexFile indexes a file at the given path.
-func IndexFile(path utils.Path, cxt indexing.Context, settings indexing.Settings) {
+func IndexFile(
+	path utils.Path,
+	cxt indexing.Context,
+	settings indexing.Settings,
+) {
 	text, err := ReadFileToString(path)
 	if err != nil {
 		cxt.Log("Error reading file: %s", err)

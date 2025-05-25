@@ -324,7 +324,8 @@ func handleAllIndexers(serverParams serverFuncParams) {
 }
 
 // handleAllCollections handles an /all/collections request,
-// by querying all collections in database and writing output to response writer.
+// by querying all collections in database and writing output to response
+// writer.
 func handleAllCollections(serverParams serverFuncParams) {
 
 	query := database.Select().
@@ -337,7 +338,12 @@ func handleAllCollections(serverParams serverFuncParams) {
 
 	collections := make([]indexAPI.Collection, 0)
 
-	err := database.ExecScan(serverParams.db, string(query), &collections, insert)
+	err := database.ExecScan(
+		serverParams.db,
+		string(query),
+		&collections,
+		insert,
+	)
 	if err != nil {
 		sendError(serverParams.writer, "SQL failed", err)
 		return

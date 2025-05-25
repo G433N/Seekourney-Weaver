@@ -188,7 +188,8 @@ func shutdownServer() {
 // selects the indexer with the port utils.MININDEXERPORT
 func index(paths []string) {
 
-	// d := "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md"
+	// d :=
+	// "/home/oxygen/Projects/Seekourney-Weaver/backend/test_data/docs.gl/todo.md"
 	// paths = append(paths, d)
 	log.Println("Indexing paths:", paths)
 
@@ -285,7 +286,9 @@ func allCollections() {
 // avoid!
 func test() {
 
-	body := utils.StrBody("go run indexer/localtext/main.go indexer/localtext/localtext.go")
+	body := utils.StrBody(
+		"go run indexer/localtext/main.go indexer/localtext/localtext.go",
+	)
 	_, err := utils.PostRequest(body, _HOST_, _PORT_, "push", "indexer")
 	if err != nil {
 		log.Println("Error sending request:", err)

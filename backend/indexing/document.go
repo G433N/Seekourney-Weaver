@@ -17,7 +17,11 @@ type UnnormalizedDocument struct {
 }
 
 // DocNew creates a new document.
-func DocNew(path utils.Path, source utils.Source, collection CollectionID) UnnormalizedDocument {
+func DocNew(
+	path utils.Path,
+	source utils.Source,
+	collection CollectionID,
+) UnnormalizedDocument {
 	return UnnormalizedDocument{
 		Path:       path,
 		Source:     source,
