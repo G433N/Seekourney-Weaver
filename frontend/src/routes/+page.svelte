@@ -102,6 +102,7 @@
 			bind:this={searchInput}
 			type="text"
 			placeholder="Write your search here!"
+			on:keyup={ search }
 		/>
 
 		<button on:click={search} id="searchButton"> Search </button>
