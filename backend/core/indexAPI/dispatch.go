@@ -212,7 +212,8 @@ func (handler *IndexHandler) DispatchFromCollection(
 
 	q := database.Select().QueryAll().From("indexer").Where("id = $1")
 	var indexer IndexerData
-	database.ExecScan(db, string(q), &indexer, insert, indexerID)
+	err := database.ExecScan(db, string(q), &indexer, insert, indexerID)
+	utils.PanicOnError(err)
 
 	return handler.Dispatch(indexer, collection)
 }

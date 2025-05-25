@@ -140,13 +140,17 @@ const (
 func generatePort(db *sql.DB) utils.Port {
 	query := "SELECT t1.port + 1 " +
 		"FROM indexer t1 " +
-		"WHERE NOT EXISTS(SELECT * FROM indexer t2 WHERE t2.port = t1.port + 1 " +
+		"WHERE NOT EXISTS(SELECT * FROM indexer t2 " +
+		"WHERE t2.port = t1.port + 1 " +
 		"AND t2.port > " + utils.MININDEXERPORT.String() + ") " +
 		"ORDER BY t1.port LIMIT 1"
 
 	rows, err := db.Query(query)
 	utils.PanicOnError(err)
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		utils.PanicOnError(err)
+	}()
 
 	var result utils.Port
 	// if no indexers in table, will receive empty rows
@@ -194,6 +198,7 @@ func RegisterIndexer(
 	log.Printf("Indexer name: %s", name)
 
 	_, err = GetRequest(active, "shutdown")
+	log.Print(err) // TODO remove cause linter
 	// utils.PanicOnError(err) // TODO actual error handling if shutdown fails
 	// TODO: Fix this, the indexer shutsdown before ansering
 
