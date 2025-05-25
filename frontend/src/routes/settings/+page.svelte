@@ -99,10 +99,10 @@
 		};
 
 		try {
-			await fetch('http://localhost8080/push/collection', {
+			await fetch('http://localhost:8080/push/collection', {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'text/plain'
 				},
 				body: JSON.stringify(payload)
 			});
