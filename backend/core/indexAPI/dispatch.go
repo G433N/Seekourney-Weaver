@@ -66,7 +66,11 @@ func PostRequestJSON[T any](
 	indexer *RunningIndexer,
 	urlPath ...string,
 ) (T, error) {
-	return utils.PostRequestJSON[T](body, _ENDPOINTPREFIX_, indexer.Port, urlPath...)
+	return utils.PostRequestJSON[T](
+		body,
+		_ENDPOINTPREFIX_,
+		indexer.Port,
+		urlPath...)
 }
 
 // PostRequest sends a POST request to the indexer and returns the response as a
@@ -113,6 +117,7 @@ func newDispatchErrors() DispatchErrors {
 	}
 }
 
+/*
 // DispatchReindex requests reindexing of a document
 func (handler *IndexHandler) DispatchReindex(
 	db *sql.DB,
@@ -123,6 +128,7 @@ func (handler *IndexHandler) DispatchReindex(
 	// TODO:
 	return nil
 }
+*/
 
 // Dispatch requests indexing of a collection from the assigned
 // indexer of the collection.
@@ -149,7 +155,7 @@ func (handler *IndexHandler) Dispatch(
 
 	body := utils.JsonBody(settings)
 
-	resp, err := utils.PostRequest(
+	resp, err := utils.PostRequestJSON[IndexerResponse](
 		body,
 		_ENDPOINTPREFIX_,
 		indexer.Port,
@@ -171,7 +177,7 @@ func (handler *IndexHandler) Dispatch(
 
 		secondBody := utils.JsonBody(settings)
 		// Try indexing request again.
-		resp, err = utils.PostRequest(
+		resp, err = utils.PostRequestJSON[IndexerResponse](
 			secondBody,
 			_ENDPOINTPREFIX_,
 			indexer.Port,
@@ -181,13 +187,13 @@ func (handler *IndexHandler) Dispatch(
 		utils.PanicOnError(err)
 	}
 
-	// TODO: Use this system
-	// if resp.Status != indexing.STATUSSUCCESSFUL {
-	// 	errs.DispatchAttempt = errors.New(
-	// 		"indexer " + indexer.Name +
-	// 			" failed indexing request with message: " + resp.Data.Message)
-	// }
-	log.Printf("Indexer %s response: %s", indexer.Name, resp)
+	if resp.Status != indexing.STATUSSUCCESSFUL {
+		errs.DispatchAttempt = errors.New(
+			"indexer " + indexer.Name +
+				" failed indexing request with message: " + resp.Data.Message)
+	}
+	// TODO convert struct to string
+	// log.Printf("Indexer %s response: %s", indexer.Name, resp)
 	return errs
 }
 

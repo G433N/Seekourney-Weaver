@@ -1,8 +1,11 @@
 package indexAPI
 
 import (
+	"errors"
 	"log"
 	"os/exec"
+	"seekourney/indexing"
+	"seekourney/utils"
 	"testing"
 	"time"
 )
@@ -32,6 +35,21 @@ func (indexer *IndexerData) start() (*RunningIndexer, error) {
 	}
 
 	log.Printf("Starting indexer with command: %s %s\n", indexer.ExecPath, args)
+
+	resp, err := utils.GetRequestJSON[IndexerResponse](
+		_ENDPOINTPREFIX_,
+		indexer.Port,
+		_PING_,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Status != indexing.STATUSSUCCESSFUL ||
+		resp.Data.Message != indexing.MESSAGEPONG {
+		return nil, errors.New(
+			"indexer did not respond to ping request after startup",
+		)
+	}
 
 	time.Sleep(1 * time.Second)
 
