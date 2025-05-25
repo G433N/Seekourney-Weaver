@@ -139,7 +139,8 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 			}
 
 			resp := ResponseSuccess("Indexing started")
-			writer.Write(resp)
+			_, err = writer.Write(resp)
+			utils.PanicOnError(err)
 
 			cxt := NewContext(client)
 
