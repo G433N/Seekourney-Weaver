@@ -478,6 +478,7 @@ func handlePushIndexer(
 
 	// Respond with id
 	_, err = fmt.Fprintf(serverParams.writer, "%s", id)
+	utils.PanicOnError(err)
 }
 
 // handlePushCollection handles a /push/collection request from frontend client
