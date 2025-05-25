@@ -1,8 +1,9 @@
-package scraper
+package scraper_test
 
 import (
 	"path/filepath"
 	"regexp"
+	"seekourney/scraperIndexer/scraper"
 	"strings"
 	"testing"
 )
@@ -15,7 +16,7 @@ func TestLongLocalWikipediaHtml(t *testing.T) {
 
 	wa := regexp.MustCompile(`.*/`)
 	path := "file://" + wa.FindString(dir) + "testingFiles/"
-	newScraper := NewCollector(true, true)
+	newScraper := scraper.NewCollector(true, true)
 	newScraper.RequestVisitToSite(
 		path + "htmlTest1.html",
 	)
@@ -81,7 +82,7 @@ func TestLocalLinkHopping(t *testing.T) {
 	wa := regexp.MustCompile(`.*/`)
 
 	path := "file://" + wa.FindString(dir) + "testingFiles/"
-	newScraper := NewCollector(true, true)
+	newScraper := scraper.NewCollector(true, true)
 	newScraper.RequestVisitToSite(
 		path + "htmlTest2.html",
 	)
@@ -122,7 +123,7 @@ func TestLongLocalXml(t *testing.T) {
 
 	wa := regexp.MustCompile(`.*/`)
 	path := "file://" + wa.FindString(dir) + "testingFiles/"
-	newScraper := NewCollector(true, true)
+	newScraper := scraper.NewCollector(true, true)
 	newScraper.RequestVisitToSite(
 		path + "xmltest1.xml",
 	)
