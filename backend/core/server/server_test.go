@@ -5,7 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"seekourney/core/config"
@@ -134,6 +136,7 @@ func TestServer(test *testing.T) {
 	)
 	test.Run("TestHandleQuit", serverTest(testHandleQuit, serverParams))
 
+	test.Run("TestHandleDownload", serverTest(testHandleDownload, serverParams))
 	err := testDB.Close()
 	if err != nil {
 		panic(err)
@@ -147,7 +150,7 @@ func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	panicOnError(err)
 
 	jsonData, err := json.Marshal([]document.Document{testDocument1()})
-	checkIOError(err)
+	utils.PanicOnError(err)
 	expected.Write(jsonData)
 	expected.WriteByte('\n')
 
@@ -166,7 +169,7 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	jsonData, err := json.Marshal(
 		[]document.Document{testDocument1(), testDocument2()},
 	)
-	checkIOError(err)
+	utils.PanicOnError(err)
 	expected.Write(jsonData)
 	expected.WriteByte('\n')
 
@@ -257,6 +260,22 @@ func testHandleSearchSQLMultiple(
 		test.Log(response.Results)
 	}
 	buffer.Reset()
+}
+
+func testHandleDownload(test *testing.T, serverParams serverFuncParams) {
+	workingDir, _ := os.Getwd()
+	fileDir := filepath.Join(workingDir, "README.md")
+	expectedOpenedFile, err := os.ReadFile(fileDir)
+	if err != nil {
+		test.Error("Error reading file")
+	}
+
+	handleDownload(serverParams, []string{fileDir})
+
+	if !bytes.Equal(expectedOpenedFile, buffer.Bytes()) {
+		test.Error("Files not equal")
+		test.Log(workingDir)
+	}
 }
 
 // Expects context to be done after calling handleQuit

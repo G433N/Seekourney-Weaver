@@ -1,9 +1,9 @@
 package indexAPI
 
 import (
-	"os/exec"
-	"reflect"
+	"seekourney/indexing"
 	"seekourney/utils"
+	"seekourney/utils/normalize"
 	"testing"
 
 	"github.com/h2non/gock"
@@ -11,24 +11,56 @@ import (
 )
 
 const (
-	_TESTURI_ utils.Endpoint = utils.Endpoint(_ENDPOINTPREFIX_ + "39100")
+	_TESTINDEXERID_ IndexerID = "testid"
+	// URI for mocking index requests.
+	// Workaround as we cant call function when definition const.
+	_TESTURI_  string     = "http://localhost:39042"
+	_TESTPORT_ utils.Port = 39042
+	// Dispatch now sends path with settings in hppt body,
+	// so this may be unused in test mocks.
+	_TESTPATH_ utils.Path = "home/george/my_cool_text_files"
 )
 
-var testResponseFail IndexerResponse = IndexerResponse{
-	Status: _STATUSFAILURE_,
-	Data:   ResponseData{Message: "failed to server response"},
+// Post request functions add a slash between all words, but when mocking
+// we need to add it manually, this is shorthand for that.
+// Only use this in tests.
+const _SLASHINDEX_ string = "/index"
+
+// Use NewIndexHandler for making indexing handlers.
+
+// nameTestIndexerData creates IndexerData struct needed when testing dispatch.
+// By using a function we avoid any potential data to be modified in other
+// tests alternatively let use use less boiler-plate setting up.
+func makeTestIndexerData() IndexerData {
+	return IndexerData{
+		ID:       _TESTINDEXERID_,
+		Name:     "The Test Indexer",
+		ExecPath: "ls",
+		Args:     []string{""},
+		Port:     _TESTPORT_,
+	}
 }
 
-var testResponsePong IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
-	Data:   ResponseData{Message: _PONG_},
+// nameTestIndexerData creates Collection struct needed when testing dispatch.
+// By using a function we avoid any potential data to be modified in other
+// tests alternatively let use use less boiler-plate setting up.
+func makeTestCollection() Collection {
+	return Collection{
+		UnregisteredCollection: UnregisteredCollection{
+			Path:                _TESTPATH_,
+			IndexerID:           "testid",
+			SourceType:          utils.FILE_SOURCE,
+			Recursive:           false,
+			RespectLastModified: false,
+			Normalfunc:          normalize.TO_LOWER,
+		},
+		ID: "ID",
+	}
 }
 
-var testResponseExiting IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
-	Data:   ResponseData{Message: _EXITING_},
-}
+// TODO change startup and shutdown tests to work with new startup/shutdown
 
+/*
 // waitOnTestCMD is used instead of shutdownIndexerGraceful for some tests.
 // This is needed as shutdownIndexerGraceful will force kill if
 // correct JSON is not returned, which won't clean up resources.
@@ -43,14 +75,8 @@ func TestStartupPingFail(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponseFail)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponseFail(""))
+
 	defer waitOnTestCMD(info)
 
 	assert.Error(t, startupIndexer(info))
@@ -62,14 +88,8 @@ func TestStartupPingSuccess(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponsePing())
+
 	defer waitOnTestCMD(info)
 
 	assert.NoError(t, startupIndexer(info))
@@ -83,13 +103,7 @@ func TestStartupInvalidJSON(t *testing.T) {
 		Get(_PING_).
 		Reply(200).
 		JSON(map[string]string{"invalid": "JSON data send back"})
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+
 	defer waitOnTestCMD(info)
 
 	assert.Error(t, startupIndexer(info))
@@ -101,14 +115,8 @@ func TestShutdownValidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponsePing())
+
 
 	assert.NoError(t, startupIndexer(info))
 	assert.True(t, gock.IsDone())
@@ -116,7 +124,7 @@ func TestShutdownValidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseExiting)
+		JSON(indexing.ResponseExiting())
 
 	assert.NoError(t, shutdownIndexerGraceful(info))
 	assert.True(t, gock.IsDone())
@@ -131,14 +139,8 @@ func TestShutdownInvalidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponsePing())
+
 
 	assert.NoError(t, startupIndexer(info))
 	assert.True(t, gock.IsDone())
@@ -146,338 +148,101 @@ func TestShutdownInvalidResponse(t *testing.T) {
 	gock.New(string(_TESTURI_)).
 		Get(_SHUTDOWN_).
 		Reply(200).
-		JSON(testResponseFail)
+		JSON(indexing.ResponseFail("failing to shut down indexer"))
 
 	assert.Error(t, shutdownIndexerGraceful(info))
 	assert.True(t, gock.IsDone())
 }
+*/
 
-// Test data for mocking indexing requests.
-const testIndexFolderPath1 utils.Path = "home/george/my_cool_text_files"
-
-const testIndexFilePath1 utils.Path = "home/george/my_cool_text_files/first.txt"
-const testIndexFilePath2 utils.Path = "home/george/my_cool_text_files/other.txt"
-
-var testResponseDoc1 UnnormalizedDocument = UnnormalizedDocument{
-	Path:   testIndexFilePath1,
-	Source: utils.SourceLocal,
-	Words: utils.FrequencyMap{
-		"blue":   5,
-		"black":  2,
-		"red":    50,
-		"green":  34,
-		"orange": 11,
-	},
+func TestNewDispatchErrors(t *testing.T) {
+	errs := newDispatchErrors()
+	assert.True(t, errs.IndexerWasRunning)
+	assert.NoError(t, errs.StartupAttempt)
+	assert.NoError(t, errs.DispatchAttempt)
 }
 
-var testResponseDoc2 UnnormalizedDocument = UnnormalizedDocument{
-	Path:   testIndexFilePath2,
-	Source: utils.SourceLocal,
-	Words: utils.FrequencyMap{
-		"wood":  234,
-		"steel": 52,
-	},
-}
-
-var testIndexingResponse1 IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
-	Data: ResponseData{
-		Documents: []UnnormalizedDocument{testResponseDoc1},
-	},
-}
-var testIndexingResponse2 IndexerResponse = IndexerResponse{
-	Status: _STATUSSUCCESSFUL_,
-	Data: ResponseData{
-		Documents: []UnnormalizedDocument{
-			testResponseDoc1,
-			testResponseDoc2,
-		},
-	},
-}
-
-func TestRequestIndexingSimple(t *testing.T) {
+// This test will fail due to Dispatch expecting the indexer to be started
+func TestDispatchSuccessIsRunning(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
+		Post(_SLASHINDEX_).
 		Reply(200).
-		JSON(testIndexingResponse1)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponseSuccess(""))
 
-	docs, err := requestIndexing(info, testIndexFilePath1)
-	assert.NoError(t, err)
+	handler := NewIndexHandler()
+	errs := handler.Dispatch(makeTestIndexerData(), makeTestCollection())
 	assert.True(t, gock.IsDone())
 
-	assert.Equal(t, len(docs), 1)
-	assert.Equal(t, docs[0].Path, testIndexFilePath1)
-	assert.Equal(t, docs[0].Source, utils.SourceLocal)
-	assert.True(t, reflect.DeepEqual(docs[0].Words, testResponseDoc1.Words))
+	assert.True(t, errs.IndexerWasRunning)
+	assert.NoError(t, errs.StartupAttempt)
+	assert.NoError(t, errs.DispatchAttempt)
+	// Indexer was not added to running indexers map.
+	assert.Equal(t, len(handler.Indexers), 0)
 }
 
-func TestRequestIndexingTwo(t *testing.T) {
+func TestDispatchSuccessNotRunning(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFolderPath1)).
-		Reply(200).
-		JSON(testIndexingResponse2)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
-
-	docs, err := requestIndexing(info, testIndexFolderPath1)
-	assert.NoError(t, err)
-	assert.True(t, gock.IsDone())
-
-	assert.Equal(t, len(docs), 2)
-	assert.True(
-		t,
-		docs[0].Path == testIndexFilePath1 ||
-			docs[1].Path == testIndexFilePath1,
-	)
-	assert.True(
-		t,
-		docs[0].Path == testIndexFilePath2 ||
-			docs[1].Path == testIndexFilePath2,
-	)
-}
-
-func TestRequestIndexingFail(t *testing.T) {
-	defer gock.Off()
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
-		Reply(200).
-		JSON(testResponseFail)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
-
-	_, err := requestIndexing(info, testIndexFilePath1)
-	assert.Error(t, err)
-	assert.True(t, gock.IsDone())
-}
-
-// Same as TestRequestIndexingFail but with worse JSON response.
-func TestRequestIndexingInvalidJSON(t *testing.T) {
-	defer gock.Off()
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
-		Reply(200).
-		JSON(map[string]string{"invalid": "JSON data send back"})
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
-
-	_, err := requestIndexing(info, testIndexFilePath1)
-	assert.Error(t, err)
-	assert.True(t, gock.IsDone())
-}
-
-func TestNewIndexErrorsLow(t *testing.T) {
-	errs := newIndexErrors(1)
-	assert.NoError(t, errs.Startup)
-	assert.NoError(t, errs.Shutdown)
-	assert.Equal(t, len(errs.Indexing), 1)
-	assert.NoError(t, errs.Indexing[0])
-}
-
-func TestNewIndexErrorsHigh(t *testing.T) {
-	errs := newIndexErrors(42)
-	assert.NoError(t, errs.Startup)
-	assert.NoError(t, errs.Shutdown)
-	assert.Equal(t, len(errs.Indexing), 42)
-	for i := range errs.Indexing {
-		assert.NoError(t, errs.Indexing[i])
-	}
-}
-
-func TestIndexOneSuccess(t *testing.T) {
-	defer gock.Off()
+		Post(_SLASHINDEX_).
+		Reply(500).
+		JSON("")
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponsePong)
+		JSON(indexing.ResponsePing())
 	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
+		Post(_SLASHINDEX_).
 		Reply(200).
-		JSON(testIndexingResponse1)
-	gock.New(string(_TESTURI_)).
-		Get(_SHUTDOWN_).
-		Reply(200).
-		JSON(testResponseExiting)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponseSuccess(""))
 
-	docs, errStruct := IndexOne(info, testIndexFilePath1)
+	handler := NewIndexHandler()
+	errs := handler.Dispatch(makeTestIndexerData(), makeTestCollection())
 	assert.True(t, gock.IsDone())
 
-	assert.Equal(t, len(docs), 1) // Path yields 1 Document
-	assert.Equal(t, len(errStruct.Indexing), 1)
-	assert.NoError(t, errStruct.Startup)
-	assert.NoError(t, errStruct.Shutdown)
-	assert.NoError(t, errStruct.Indexing[0])
+	assert.False(t, errs.IndexerWasRunning)
+	assert.NoError(t, errs.StartupAttempt)
+	assert.NoError(t, errs.DispatchAttempt)
+	// Indexer was added to running indexers map.
+	assert.Equal(t, len(handler.Indexers), 1)
 }
 
-func TestIndexOneStartupFail(t *testing.T) {
+func TestDispatchStartupFail(t *testing.T) {
 	defer gock.Off()
+	gock.New(string(_TESTURI_)).
+		Post(_SLASHINDEX_).
+		Reply(500).
+		JSON("")
 	gock.New(string(_TESTURI_)).
 		Get(_PING_).
 		Reply(200).
-		JSON(testResponseFail)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponseFail("failed to startup indexer"))
 
-	_, errStruct := IndexOne(info, testIndexFilePath1)
+	handler := NewIndexHandler()
+	errs := handler.Dispatch(makeTestIndexerData(), makeTestCollection())
 	assert.True(t, gock.IsDone())
 
-	assert.Equal(t, len(errStruct.Indexing), 1)
-	assert.Error(t, errStruct.Startup)
-	assert.Error(t, errStruct.Shutdown)
-	assert.Error(t, errStruct.Indexing[0])
+	assert.False(t, errs.IndexerWasRunning)
+	assert.Error(t, errs.StartupAttempt)
+	assert.Error(t, errs.DispatchAttempt)
+	// Indexer was not added to running indexers map because startup failed.
+	assert.Equal(t, len(handler.Indexers), 0)
 }
 
-func TestIndexOneIndexFail(t *testing.T) {
+func TestDispatchIndexFail(t *testing.T) {
 	defer gock.Off()
 	gock.New(string(_TESTURI_)).
-		Get(_PING_).
+		Post(_SLASHINDEX_).
 		Reply(200).
-		JSON(testResponsePong)
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
-		Reply(200).
-		JSON(testResponseFail)
-	gock.New(string(_TESTURI_)).
-		Get(_SHUTDOWN_).
-		Reply(200).
-		JSON(testResponseExiting)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
+		JSON(indexing.ResponseFail("unable to fulfill indexing request"))
 
-	_, errStruct := IndexOne(info, testIndexFilePath1)
+	handler := NewIndexHandler()
+	errs := handler.Dispatch(makeTestIndexerData(), makeTestCollection())
 	assert.True(t, gock.IsDone())
 
-	assert.NoError(t, errStruct.Startup)
-	assert.NoError(t, errStruct.Shutdown)
-	assert.Error(t, errStruct.Indexing[0])
-}
-
-func TestIndexOneShutdownFail(t *testing.T) {
-	defer gock.Off()
-	gock.New(string(_TESTURI_)).
-		Get(_PING_).
-		Reply(200).
-		JSON(testResponsePong)
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
-		Reply(200).
-		JSON(testIndexingResponse1)
-	gock.New(string(_TESTURI_)).
-		Get(_SHUTDOWN_).
-		Reply(200).
-		JSON(testResponseFail)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
-
-	docs, errStruct := IndexOne(info, testIndexFilePath1)
-	assert.True(t, gock.IsDone())
-
-	assert.Equal(t, len(docs), 1) // Path yields 1 Document
-	assert.Equal(t, len(errStruct.Indexing), 1)
-	assert.NoError(t, errStruct.Startup)
-	assert.Error(t, errStruct.Shutdown)
-	assert.NoError(t, errStruct.Indexing[0])
-}
-
-func TestIndexManyPartialSuccess(t *testing.T) {
-	defer gock.Off()
-	gock.New(string(_TESTURI_)).
-		Get(_PING_).
-		Reply(200).
-		JSON(testResponsePong)
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
-		Reply(200).
-		JSON(testResponseFail)
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath2)).
-		Reply(200).
-		JSON(testResponseFail)
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFolderPath1)).
-		Reply(200).
-		JSON(testIndexingResponse2)
-	gock.New(string(_TESTURI_)).
-		Get(_INDEXFULL_ + "/" + string(testIndexFilePath1)).
-		Reply(200).
-		JSON(testResponseFail)
-	gock.New(string(_TESTURI_)).
-		Get(_SHUTDOWN_).
-		Reply(200).
-		JSON(testResponseExiting)
-	info := IndexerInfo{
-		name:             "TestIndexerName",
-		cmd:              exec.Command("ls"),
-		fileTypesHandled: []utils.FileType{"txt"},
-		id:               42,
-		endpoint:         _TESTURI_,
-	}
-
-	paths := []utils.Path{
-		testIndexFilePath1,
-		testIndexFilePath2,
-		testIndexFolderPath1,
-		testIndexFilePath1,
-	}
-	// First fails, second fails, third succeeds, fourth fails.
-	manyDocs, errStruct := IndexMany(info, paths)
-	assert.True(t, gock.IsDone())
-
-	assert.Equal(t, len(manyDocs), 4)
-	assert.Equal(t, len(manyDocs), len(errStruct.Indexing))
-	assert.NoError(t, errStruct.Startup)
-	assert.NoError(t, errStruct.Shutdown)
-
-	assert.Error(t, errStruct.Indexing[0])
-	assert.Error(t, errStruct.Indexing[1])
-	assert.NoError(t, errStruct.Indexing[2])
-	assert.Error(t, errStruct.Indexing[3])
-
-	// The successful indexing attempt should produce 2 documents.
-	assert.Equal(t, len(manyDocs[2]), 2)
+	assert.True(t, errs.IndexerWasRunning)
+	assert.NoError(t, errs.StartupAttempt)
+	assert.Error(t, errs.DispatchAttempt)
+	// Indexer was not added to running indexers map.
+	assert.Equal(t, len(handler.Indexers), 0)
 }

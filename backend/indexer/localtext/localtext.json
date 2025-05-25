@@ -1,0 +1,24 @@
+{
+  "WalkDirConfig": {
+    "Verbose": false,
+    "ForbiddenDirs": [
+      ".",
+      "..",
+      ".git",
+      ".svn",
+      ".hg",
+      ".idea",
+      ".vscode"
+    ],
+    "AllowedExts": [
+      ".txt",
+      ".md",
+      ".json",
+      ".xml",
+      ".html",
+      "htm",
+      ".xhtml",
+      ".csv"
+    ]
+  }
+}
