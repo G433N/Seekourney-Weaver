@@ -83,6 +83,8 @@ func startContainer() {
 	testArg := ""
 	containerOutputFile := _CONTAINEROUTPUTFILE_
 
+	testArg = "test"
+
 	if testing.Testing() {
 		testArg = "test"
 		containerOutputFile = _TESTCONTAINEROUTPUTFILE_
@@ -457,7 +459,7 @@ func handlePushIndexer(
 	request *http.Request,
 ) {
 	// TODO fail or success response after unmarshall?
-	respondWithSuccess(serverParams.writer)
+	// respondWithSuccess(serverParams.writer)
 
 	startupCMD, err := utils.RequestBodyString(request)
 
@@ -467,7 +469,7 @@ func handlePushIndexer(
 		return
 	}
 
-	_, err = indexAPI.RegisterIndexer(serverParams.db, startupCMD)
+	id, err := indexAPI.RegisterIndexer(serverParams.db, startupCMD)
 
 	if err != nil {
 		log.Print(
@@ -476,6 +478,8 @@ func handlePushIndexer(
 		return
 	}
 
+	// Respond with id
+	_, err = fmt.Fprintf(serverParams.writer, "%s", id)
 }
 
 // handlePushCollection handles a /push/collection request from frontend client
@@ -486,7 +490,7 @@ func handlePushCollection(
 	indexers *indexAPI.IndexHandler,
 ) {
 	// TODO fail or success response after unmarshall?
-	respondWithSuccess(serverParams.writer)
+	// respondWithSuccess(serverParams.writer)
 
 	body, err := io.ReadAll(request.Body)
 	utils.PanicOnError(err)
@@ -500,11 +504,18 @@ func handlePushCollection(
 		return
 	}
 
+	collection, err := indexAPI.RegisterCollection(serverParams.db, unreg)
+	if err != nil {
+		panic("TODO")
+	}
+
+	// Respond with collection ID
+	_, err = fmt.Fprintf(serverParams.writer, "%s", collection.ID)
+	if err != nil {
+		log.Fatalf("Error writing collection ID: %s\n", err)
+	}
+
 	go func() {
-		collection, err := indexAPI.RegisterCollection(serverParams.db, unreg)
-		if err != nil {
-			panic("TODO")
-		}
 
 		// Dispatch may startup indexer and add to handler
 		// if it is not already running.
