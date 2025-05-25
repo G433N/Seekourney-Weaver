@@ -138,6 +138,9 @@ func (client *IndexerClient) Start(f func(cxt Context, settings Settings)) {
 				client.Log("Indexing URL: %s", settings.Path)
 			}
 
+			resp := ResponseSuccess("Indexing started")
+			writer.Write(resp)
+
 			cxt := NewContext(client)
 
 			f(cxt, settings)
