@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"seekourney/core/database"
-	"seekourney/core/indexAPI"
 	"seekourney/indexing"
 	"seekourney/utils"
 	"seekourney/utils/normalize"
@@ -28,13 +27,14 @@ func NewDocument(
 	path utils.Path,
 	source utils.Source,
 	words utils.FrequencyMap,
-	collection indexAPI.Collection,
+	collection indexing.CollectionID,
 	lastIndexed time.Time) Document {
 	return Document{
 		udoc: udoc{
-			Path:   path,
-			Source: source,
-			Words:  words,
+			Path:       path,
+			Source:     source,
+			Words:      words,
+			Collection: collection,
 		},
 		LastIndexed: lastIndexed,
 	}

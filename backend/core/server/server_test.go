@@ -13,6 +13,8 @@ import (
 	"seekourney/core/config"
 	"seekourney/core/database"
 	"seekourney/core/document"
+	"seekourney/core/indexAPI"
+	"seekourney/indexing"
 	"seekourney/utils"
 )
 
@@ -35,9 +37,17 @@ func resetSQL(db *sql.DB) {
 	if db == nil {
 		return
 	}
-	_, err := db.Exec(`DROP TABLE document`)
+	_, err := db.Exec(`DROP TABLE path_text`)
 	panicOnError(err)
 
+	_, err = db.Exec(`DROP TABLE document`)
+	panicOnError(err)
+
+	_, err = db.Exec(`DROP TABLE collection`)
+	panicOnError(err)
+
+	_, err = db.Exec(`DROP TABLE indexer`)
+	panicOnError(err)
 	err = exec.Command(
 		"docker",
 		"exec",
@@ -146,7 +156,31 @@ func TestServer(test *testing.T) {
 func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	testIndexer := indexAPI.IndexerData{
+		ID:       utils.IndexerID("1"),
+		Name:     "TestIndexer",
+		ExecPath: "/some/indexer/path",
+		Args:     []string{"arg1"},
+		Port:     utils.Port(1),
+	}
+
+	_, err := database.InsertInto(serverParams.db, testIndexer)
+	panicOnError(err)
+
+	testCollection := indexAPI.Collection{
+		UnregisteredCollection: indexAPI.UnregisteredCollection{
+			Path:                "/some/dir/path",
+			IndexerID:           utils.IndexerID("1"),
+			SourceType:          0,
+			Recursive:           true,
+			RespectLastModified: false,
+		},
+		ID: indexing.CollectionID("1"),
+	}
+	_, err = database.InsertInto(serverParams.db, testCollection)
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
 	panicOnError(err)
 
 	jsonData, err := json.Marshal([]document.Document{testDocument1()})

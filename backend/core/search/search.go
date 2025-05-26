@@ -108,7 +108,7 @@ func SqlSearch(
 	parsedQuery := parseQuery(query)
 
 	for word := range words.WordsIter(string(parsedQuery.ModifiedQuery)) {
-		word = config.Normalizer.Word(word)
+		word = config.Normalizer.NormalizeWord(word)
 
 		freqMap, err := database.FreqMap(
 			db,

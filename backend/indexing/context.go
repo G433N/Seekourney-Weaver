@@ -66,8 +66,8 @@ func index(
 
 	// TODO: This could maybe be moved to start of functiion
 	// TODO: because the same operation is used in metadata.index()
-	text := strings.Join(metadata.text, "\n")
-	pathText := PathText{Path: metadata.path, Text: text}
+	text := strings.Join(docBuilder.text, "\n")
+	pathText := PathText{Path: docBuilder.path, Text: text}
 
 	client.channel <- doc
 
