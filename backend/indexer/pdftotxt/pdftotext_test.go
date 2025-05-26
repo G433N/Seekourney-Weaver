@@ -15,6 +15,7 @@ func TestPDFtoimgOnePage(t *testing.T){
 	if !slices.Contains(file_exists, "./covpdf/sample/page-1.jpeg") || err != nil{
 		t.Errorf(`pdftoimg = %q, %v, want "./covpdf/page-1.jpeg", error`, file_exists, err)
 	}
+	clearOutputDir("./covpdf/sample/")
 }
 
 
@@ -24,7 +25,6 @@ func TestPDFtoimgNoPDF(t *testing.T){
 	if slices.Contains(file_exists, "covpdf/page*") || err != nil{
 		t.Errorf(`pdftoimg = %q, %v, want "", error`, file_exists, err)
 	}
-	clearOutputDir("./covpdf/")
 }
 
 
@@ -40,7 +40,7 @@ func TestPDFtoimgMultiplePages(t *testing.T){
 	if !slices.Contains(file_exists, "covpdf/sample_multiple_pages/page-3.jpeg"){
 		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-3.jpeg", error`, file_exists, err)
 	}
-	clearOutputDir("./covpdf/")
+	clearOutputDir("./covpdf/sample_multiple_pages/")
 
 }
 
@@ -55,6 +55,7 @@ func TestImgtotext(t *testing.T){
 		t.Error("imgToText returned empty text")
 	}
 	fmt.Printf("Extracted text from single image: %s\n", text)
+	clearOutputDir("./covpdf/sample/")
 }
 /*
 func TestImgtotextNoImg(t *testing.T){

@@ -91,13 +91,10 @@ imgToText
 Uses Tesseract to recognise text from an image and returns all text as a string.
 */
 func imgToText(image utils.Path) (Text, error) {
-	fmt.Println("test")
 	extractedText, err := ocrEngine.TextFromImageFile(string(image))
-	fmt.Println("test")
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("test")
 	return Text(extractedText), nil
 }
 
@@ -138,7 +135,6 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 		}
 		return nil
 	}
-	fmt.Println("test")
 	err = filepath.Walk(string(outputDir), walkHelper)
 	{
 		if err != nil {
