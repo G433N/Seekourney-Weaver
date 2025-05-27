@@ -38,3 +38,12 @@ func TestParseQuery(t *testing.T) {
 			parsedQuery.Quotes[wordIndex])
 	}
 }
+
+func TestWordsFromQuotes(t *testing.T) {
+	quotes := []string{"test1 test2  test3  ", "hello world!", "*^good??error(()"}
+
+	expextedWords := []string{"test1", "test2", "test3", "hello", "world", "good", "error"}
+	retrievedWords := wordsFromQuotes(quotes)
+
+	assert.Equal(t, expextedWords, retrievedWords)
+}

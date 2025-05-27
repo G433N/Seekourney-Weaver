@@ -10,6 +10,7 @@ import (
 	"seekourney/utils"
 	"seekourney/utils/words"
 	"sort"
+	"strings"
 )
 
 // Parses a query for filters and removes anything
@@ -89,6 +90,20 @@ func parseQuery(query utils.Query) utils.ParsedQuery {
 	return parsedQuery
 }
 
+// wordsFromQuotes looks in all quotes from a search query
+// and returns all words.
+func wordsFromQuotes(quotes []string) []string {
+	retrievedWords := make([]string, 0)
+
+	for _, quote := range quotes {
+		for word := range words.WordsIter(quote) {
+			retrievedWords = append(retrievedWords, string(word))
+		}
+	}
+
+	return retrievedWords
+}
+
 type SearchResult = utils.SearchResult
 
 // SqlSearch performs a search in the database using SQL.
@@ -106,6 +121,13 @@ func SqlSearch(
 	}
 
 	parsedQuery := parseQuery(query)
+
+	stringFromQuotes := strings.Join(
+		wordsFromQuotes(parsedQuery.Quotes),
+		" ",
+	)
+
+	parsedQuery.ModifiedQuery += utils.Query(" " + stringFromQuotes)
 
 	for word := range words.WordsIter(string(parsedQuery.ModifiedQuery)) {
 		word = config.Normalizer.NormalizeWord(word)

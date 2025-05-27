@@ -149,22 +149,3 @@ func FreqMap(
 
 	return result, err
 }
-
-// // FreqMap returns a map of paths to frequencies for a given word.
-// func FreqMap(db *sql.DB, word utils.Word, _ []string, _ []string, _ []string) (utils.WordFrequencyMap, error) {
-//
-// 	wordStr := string(word)
-//
-// 	json := JsonValue("words", wordStr, "score")
-// 	q := Select().Queries("path", json).From("document").Where("words ?& $1")
-//
-// 	w := []string{wordStr}
-//
-// 	insert := func(res *utils.WordFrequencyMap, sqlRes sqlResult) {
-// 		(*res)[sqlRes.path] = sqlRes.score
-// 	}
-//
-// 	result := make(utils.WordFrequencyMap)
-// 	err := ExecScan(db, string(q), &result, insert, pq.StringArray(w))
-// 	return result, err
-// }
