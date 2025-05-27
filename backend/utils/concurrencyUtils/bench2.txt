@@ -1,0 +1,66 @@
+goos: linux
+goarch: amd64
+pkg: seekourney/utils/concurrencyUtils
+cpu: 11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1868961703 ns/op	  106320 B/op	    1269 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1935036935 ns/op	   99728 B/op	    1235 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1913712731 ns/op	   88944 B/op	    1127 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1936995305 ns/op	   87792 B/op	    1115 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	2008504802 ns/op	   88560 B/op	    1123 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1951788203 ns/op	   85968 B/op	    1096 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1941356044 ns/op	   78864 B/op	    1022 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1932741425 ns/op	   94320 B/op	    1183 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1914041040 ns/op	   94704 B/op	    1187 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1926475731 ns/op	   86736 B/op	    1104 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1913795542 ns/op	  101328 B/op	    1256 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1891084864 ns/op	   87120 B/op	    1108 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1923650141 ns/op	   88368 B/op	    1121 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1935384311 ns/op	   90768 B/op	    1146 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1978117676 ns/op	  102000 B/op	    1263 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1900783358 ns/op	  103920 B/op	    1283 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1874762484 ns/op	   91056 B/op	    1149 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1923028744 ns/op	   79728 B/op	    1031 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1901389755 ns/op	   92880 B/op	    1168 allocs/op
+BenchmarkSemaphoreChanelSmallBuffer1000_400-8   	       1	1903113747 ns/op	   97200 B/op	    1213 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2839965869 ns/op	   78496 B/op	    1025 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2726328084 ns/op	  104320 B/op	    1294 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2758221407 ns/op	   96832 B/op	    1216 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2777129886 ns/op	  112384 B/op	    1378 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2831532447 ns/op	   87232 B/op	    1116 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2877475364 ns/op	   86752 B/op	    1111 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2819000719 ns/op	   93184 B/op	    1178 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2833836595 ns/op	   93088 B/op	    1177 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2783855183 ns/op	  101920 B/op	    1269 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2753374152 ns/op	   85312 B/op	    1096 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2835244675 ns/op	   97792 B/op	    1226 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2868631150 ns/op	   89536 B/op	    1140 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2496867449 ns/op	  113536 B/op	    1390 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2798460855 ns/op	   91168 B/op	    1157 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2729590568 ns/op	   92416 B/op	    1170 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2765517759 ns/op	  102112 B/op	    1271 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2831756307 ns/op	   79264 B/op	    1033 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2835439676 ns/op	   95008 B/op	    1197 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2805287121 ns/op	   99904 B/op	    1248 allocs/op
+BenchmarkSemaphoreNewSmallbuffer1000_400-8      	       1	2759050400 ns/op	   77728 B/op	    1017 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       7	 193421111 ns/op	   65677 B/op	     875 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       6	 189793552 ns/op	   65008 B/op	     881 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       6	 188230823 ns/op	   65984 B/op	     891 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       6	 188986524 ns/op	   64224 B/op	     873 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       5	 206806862 ns/op	   67219 B/op	     904 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 266019646 ns/op	   67416 B/op	     906 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       3	 343444461 ns/op	   67360 B/op	     905 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 292096027 ns/op	   70176 B/op	     935 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 297008824 ns/op	   66504 B/op	     896 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 258668528 ns/op	   66264 B/op	     894 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 267998734 ns/op	   67776 B/op	     910 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 258607025 ns/op	   65208 B/op	     883 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 251388410 ns/op	   66600 B/op	     897 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 279072593 ns/op	   67248 B/op	     904 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 282333405 ns/op	   66360 B/op	     895 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 257402440 ns/op	   67176 B/op	     903 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 261395426 ns/op	   68472 B/op	     917 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       4	 256929863 ns/op	   65808 B/op	     889 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       5	 244393431 ns/op	   66547 B/op	     897 allocs/op
+BenchmarkSemaphoreNewNobuffer1000_400-8         	       5	 243912422 ns/op	   66566 B/op	     897 allocs/op
+PASS
+ok  	seekourney/utils/concurrencyUtils	169.799s
