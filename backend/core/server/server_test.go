@@ -13,8 +13,6 @@ import (
 	"seekourney/core/config"
 	"seekourney/core/database"
 	"seekourney/core/document"
-	"seekourney/core/indexAPI"
-	"seekourney/indexing"
 	"seekourney/utils"
 )
 
@@ -156,28 +154,10 @@ func TestServer(test *testing.T) {
 func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
-	testIndexer := indexAPI.IndexerData{
-		ID:       utils.IndexerID("1"),
-		Name:     "TestIndexer",
-		ExecPath: "/some/indexer/path",
-		Args:     []string{"arg1"},
-		Port:     utils.Port(1),
-	}
-
-	_, err := database.InsertInto(serverParams.db, testIndexer)
+	_, err := database.InsertInto(serverParams.db, testIndexer())
 	panicOnError(err)
 
-	testCollection := indexAPI.Collection{
-		UnregisteredCollection: indexAPI.UnregisteredCollection{
-			Path:                "/some/dir/path",
-			IndexerID:           utils.IndexerID("1"),
-			SourceType:          0,
-			Recursive:           true,
-			RespectLastModified: false,
-		},
-		ID: indexing.CollectionID("1"),
-	}
-	_, err = database.InsertInto(serverParams.db, testCollection)
+	_, err = database.InsertInto(serverParams.db, testCollection())
 	panicOnError(err)
 
 	_, err = database.InsertInto(serverParams.db, testDocument1())
@@ -195,8 +175,15 @@ func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
 	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
+
 	_, err = database.InsertInto(serverParams.db, testDocument2())
 	panicOnError(err)
 
@@ -214,7 +201,13 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 func testHandleSearchSQLSingle(test *testing.T, serverParams serverFuncParams) {
 	var response utils.SearchResponse
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
 	panicOnError(err)
 
 	handleSearchSQL(serverParams, []string{"key1"})
@@ -235,7 +228,13 @@ func testHandleSearchSQLInvalid(
 ) {
 	var response utils.SearchResponse
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
 	panicOnError(err)
 
 	handleSearchSQL(serverParams, []string{"badkey"})
@@ -254,12 +253,19 @@ func testHandleSearchSQLMultiple(
 ) {
 	var response utils.SearchResponse
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
 	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
+
 	_, err = database.InsertInto(serverParams.db, testDocument2())
 	panicOnError(err)
 
-	// key1 is unique to testDocument2
+	// key1 is unique to testDocument1
 	handleSearchSQL(serverParams, []string{"key1"})
 
 	err = json.Unmarshal([]byte(buffer.Bytes()), &response)
