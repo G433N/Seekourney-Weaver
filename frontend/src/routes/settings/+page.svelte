@@ -22,12 +22,7 @@
 		Port: number;
 	}
 
-	
-
 	let indexerInput: string = $state('');
-	// let submittedIndexer: string = '';
-	//let indexerList: IndexerResult[] = $state([]);
-
 	let collectionPath: string = $state('');
 	let sourceDropdownOpen: boolean = $state(false);
 	let selectedCollections: string = $state('Select type');
@@ -64,16 +59,6 @@
 			console.error('Failed to fetch indexer: ', err);
 		}
 	}
-
-	/*
-	async function deleteIndexer(indexer: IndexerResult): Promise<void> {
-		//fetch(`http://localhost:8080/addIndexer?q=${indexer}`); //TODO: what name??
-
-		//indexerList = indexerList.filter((elem) => elem.Id !== indexer.Id);
-		console.log('delete indexer');
-		// TODO: unsure if we get a response?
-	}
-	*/
 
 	async function addCollection(): Promise<void> {
 		const sourceMap = {
@@ -207,8 +192,9 @@
 			<p>
 				You can add your own custom indexer by providing the absolute path to a local executable on your device.
 			</p>
-			<div>
+			<div class="indexerInputDiv">
 				Indexer path:
+				<br>
 				<input id="InputIndexer" type="text" bind:value={indexerInput} placeholder="/user/example/custom-indexer" />
 				<button class="indexerButton" onclick={() => addIndexer()}> Add </button>
 			</div>
@@ -223,9 +209,6 @@
 					<small>
 						({indexer.ExecPath}) | {indexer.Args.join(' ')}
 					</small>
-					<!--
-					<button id="deleteButton" onclick={() => deleteIndexer(indexer)}> Delete </button>
-					-->
 				</div>
 			{/each}
 		{/if}
@@ -275,8 +258,9 @@
 				</div>
 			</div>
 
-			<div>
+			<div class="indexerInputDiv">
 				Path to file/folder/URL:
+				<br>
 				<input id="inputCollection" type="text" bind:value={collectionPath} placeholder="/user/example/folder-to-search" />
 				<button class="indexerButton" onclick={addCollection}>Add</button>
 			</div>
@@ -351,31 +335,20 @@
 		cursor: pointer;
 	}
 
-	/* Currently unused
-	.custom-scraper:hover {
-		background-color: #517188;
-	}
-	*/
-
 	.inputDiv {
 		display: flex;
 		align-items: center;
-		gap: 4rem; /* adds some spacing between text and input */
+		gap: 4rem; 
 	}
 
 	.inputDiv input {
-		margin-left: auto; /* optional: pushes input to far right */
+		margin-left: auto; 
 	}
 
 	.indexerButton {
 		padding: 0.65rem 1rem;
 		font-size: 1rem;
 		font-weight: 500;
-	}
-
-	#deleteButton {
-		padding: 0.2rem 0.6rem;
-		font-size: 1rem;
 	}
 
 	p {
@@ -433,7 +406,7 @@
 	}
 
 	#InputIndexer {
-		width: 350px;
+		width: 450px;
 	}
 
 	.indexer-div {
@@ -489,20 +462,9 @@
 		border-radius: 0;
 		cursor: pointer;
 	}
-	/*
-
-	.toggle {
-		padding: 8px 12px;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		background: white;
-		cursor: pointer;
-		min-width: 150px; 
-	}
-	*/
 
 	#inputCollection {
-		width: 280px;
+		width: 450px;
 	}
 
 	.dropdownToggle {
@@ -519,5 +481,10 @@
 	.dropdown .menu li button {
 		font-size: 1rem;
 	}	
+
+	.indexerInputDiv {
+		font-family: 'Jost', sans-serif;
+		font-weight: 500;
+	}
 
 </style>

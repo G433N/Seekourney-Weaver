@@ -37,24 +37,7 @@
 			if (!get(showAllResults)) {
 				filteredResults = filteredResults.slice(0, get(maxResults));
 			}
-
 			console.log(results);
-			// results = [
-			// 	{
-			// 		title: 'result 1',
-			// 		path: 'https://en.wikipedia.org/wiki/Bear',
-			// 		type: 'File',
-			// 		source: 'OSPP',
-			// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
-			// 	},
-			// 	{
-			// 		title: 'result 2',
-			// 		path: 'https://en.wikipedia.org/wiki/Bear',
-			// 		type: 'Webbsite',
-			// 		source: 'Wikipedia',
-			// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
-			// 	}
-			// ];
 			results = filteredResults;
 			searched = true;
 		} else {
@@ -69,7 +52,6 @@
 		}
 	}
 
-	// TODO: test if it works with branch search-and-download
 	async function downloadFile(path: string): Promise<void> {
 		fetch(`http://localhost:8080/download?q=${path}`, {
 			method: 'GET'
@@ -133,7 +115,6 @@
 								Relevance: {res.Score.toFixed(4)}
 							</p>
 						</div>
-						<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 					</div>
 				</a>
 			{:else}
@@ -152,7 +133,6 @@
 							Relevance: {res.Score.toFixed(4)}
 						</p>
 					</div>
-					<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 				</div>
 			{/if}
 		{/each}

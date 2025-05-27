@@ -6,7 +6,6 @@ import Settings from './settings/+page.svelte';
 
 describe('/+page.svelte', () => {
 	beforeEach(() => {
-		// mock global fetch before every test to not depend on backend behaviour for unit tests
 		globalThis.fetch = vi.fn();
 	});
 
@@ -50,9 +49,8 @@ describe('/+page.svelte', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
-		// may need to change depending on how we display results
+		
 		await waitFor(() => {
-			//expect(screen.getByText('http://website.com/webpage')).toBeInTheDocument();
 			expect(screen.getByText('file.txt')).toBeInTheDocument();
 			expect(screen.getByRole('button', { name: /download/i})).toBeInTheDocument();
 		});

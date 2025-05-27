@@ -1,7 +1,6 @@
 <script lang="ts">
 	let { children } = $props();
 	import { page } from '$app/stores';
-	// import { derived } from 'svelte/store';
 </script>
 
 <header>
