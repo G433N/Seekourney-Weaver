@@ -6,6 +6,29 @@ import (
 	"testing"
 )
 
+func TestTestTryWaitWithNormalWait(test *testing.T) {
+	if testing.Short() {
+		test.Skip("skipping long test")
+	}
+	wg := sync.WaitGroup{}
+	errSem := concurrencyUtils.NewSemaphore(10)
+
+	wg.Add(2000)
+	for range 2000 {
+		go func() {
+			defer wg.Done()
+			for range 2000 {
+				errSem.Wait()
+				errSem.Signal()
+				if errSem.TryWait() {
+					errSem.Signal()
+				}
+			}
+		}()
+	}
+	wg.Wait()
+}
+
 func TestTryWait(test *testing.T) {
 	semaphore := concurrencyUtils.NewSemaphore()
 	if semaphore.TryWait() {

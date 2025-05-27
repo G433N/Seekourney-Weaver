@@ -3,9 +3,11 @@ package database
 import (
 	"database/sql"
 	"iter"
+	"math/rand"
 	"seekourney/utils"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -13,11 +15,22 @@ const (
 	_INTO_       = "INTO"
 	_VALUES_     = "VALUES"
 	_SELECT_     = "SELECT"
+	_UPDATE_     = "UPDATE"
 	_FROM_       = "FROM"
 	_WHERE_      = "WHERE"
 	_AS_         = "AS"
+	_SET_        = "SET"
 	_JSON_VALUE_ = "JSON_VALUE"
 )
+
+type ObjectId = utils.ObjectId
+
+func GenerateId() ObjectId {
+	t := strconv.FormatInt(time.Now().Unix(), 10)
+	r := strconv.FormatInt(rand.Int63(), 16)[:4]
+
+	return ObjectId(t + r)
+}
 
 /// Scan
 
@@ -70,6 +83,7 @@ type SQLWrite interface {
 	SQLGetName() string
 
 	// SQLGetFields returns the fields of the tables rows
+	// NOTE: The first field is the primary key
 	SQLGetFields() []string
 
 	// SQLGetValues returns the values of a row
@@ -260,4 +274,32 @@ func RowAmount(db *sql.DB, table string) (int, error) {
 	}
 
 	return int(count), nil
+}
+
+/// Update
+
+// UpdateStatment is a type that represents a SQL UPDATE statement.
+type UpdateStatment string
+
+// UpdateSet is a type that represents a SQL UPDATE with a SET clause.
+type UpdateSet string
+
+// UpdateWhere is a type that represents a SQL UPDATE with a WHERE clause.
+type UpdateWhere string
+
+// Select returns SELECT as a SelectStatement.
+func Update(table string) UpdateStatment {
+	return UpdateStatment(_UPDATE_ + " " + table)
+}
+
+// Queries adds a list of queries to the SQL statement.
+func (s UpdateStatment) Set(KeyValue ...string) UpdateSet {
+	return UpdateSet(
+		string(s) + " " + _SET_ + " " + strings.Join(KeyValue, ", "),
+	)
+}
+
+// Where adds a WHERE clause to the SQL statement.
+func (s UpdateSet) Where(condition string) UpdateWhere {
+	return UpdateWhere(string(s) + " " + _WHERE_ + " " + condition)
 }
