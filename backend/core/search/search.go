@@ -13,78 +13,149 @@ import (
 	"strings"
 )
 
+type status int
+
+const (
+	_CONTINUELOOP_ = true
+	_STOPLOOP_     = false
+	_NOFILTER_     = status(0)
+	_INPLUS_       = status(1)
+	_INMINUS_      = status(2)
+	_INQUOTE_      = status(3)
+)
+
+// updateFilterStatus returns a new status
+// depending of a given character.
+func updateFilterStatus(character string) status {
+	if character == "+" {
+		return _INPLUS_
+	}
+
+	if character == "-" {
+		return _INMINUS_
+	}
+
+	if character == "\"" {
+		return _INQUOTE_
+	}
+
+	return _NOFILTER_
+}
+
+// updateModifiedQuery adds words to the filter slices
+// if certain condiations are satisfied.
+func updateModifiedQuery(
+	config *config.Config,
+	parsedQuery *utils.ParsedQuery,
+	currentByte string,
+	currentFilterString *string,
+	filterStatus status) (status, bool) {
+
+	newStatus := filterStatus
+
+	if (currentByte == " ") &&
+		((filterStatus == _INPLUS_) || (filterStatus == _INMINUS_)) {
+
+		normalizedWord := string(config.
+			Normalizer.
+			NormalizeWord(utils.Word(*currentFilterString)))
+
+		if filterStatus == _INPLUS_ {
+			parsedQuery.PlusWords = append(
+				parsedQuery.PlusWords,
+				normalizedWord,
+			)
+		} else {
+			parsedQuery.MinusWords = append(
+				parsedQuery.MinusWords,
+				normalizedWord,
+			)
+		}
+
+		newStatus = _NOFILTER_
+		*currentFilterString = ""
+	}
+
+	if (currentByte == "\"") && (filterStatus == _INQUOTE_) {
+		parsedQuery.Quotes = append(
+			parsedQuery.Quotes,
+			*currentFilterString,
+		)
+
+		newStatus = _NOFILTER_
+		*currentFilterString = ""
+		return newStatus, _STOPLOOP_
+	}
+
+	return newStatus, _CONTINUELOOP_
+}
+
 // Parses a query for filters and removes anything
 // that is part of the "-" and quote filters.
 // The return data is the query plus slices with words associated with the filters.
 // TODO: This implementation assumes correct syntax. E.g, 'terminal +dog -cat "bad"'
-func parseQuery(query utils.Query) utils.ParsedQuery {
+func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 	parsedQuery := utils.ParsedQuery{
 		ModifiedQuery: "",
 		PlusWords:     make([]string, 0),
 		MinusWords:    make([]string, 0),
 		Quotes:        make([]string, 0)}
 
-	currentFilterWord := ""
-	currentQuote := ""
-	inPlus := false
-	inMinus := false
-	inQuote := false
+	currentFilterString := ""
+
+	filterStatus := _NOFILTER_
+	var shouldContinue bool
 
 	for byteIndex := range query {
 		currentByte := string(query[byteIndex])
 
-		if currentByte == " " && inPlus {
-			parsedQuery.PlusWords = append(parsedQuery.PlusWords, currentFilterWord)
-			inPlus = false
-			currentFilterWord = ""
-		}
+		filterStatus, shouldContinue = updateModifiedQuery(
+			config,
+			&parsedQuery,
+			currentByte,
+			&currentFilterString,
+			filterStatus,
+		)
 
-		if currentByte == " " && inMinus {
-			parsedQuery.MinusWords = append(parsedQuery.MinusWords, currentFilterWord)
-			inMinus = false
-			currentFilterWord = ""
-		}
-
-		if currentByte == "_" && inQuote {
-			parsedQuery.Quotes = append(parsedQuery.Quotes, currentQuote)
-			inQuote = false
-			currentQuote = ""
+		if shouldContinue == _STOPLOOP_ {
 			continue
 		}
 
-		if currentByte == "+" && !inPlus && !inMinus && !inQuote {
-			inPlus = true
-			continue
+		if filterStatus == _NOFILTER_ {
+			filterStatus = updateFilterStatus(currentByte)
+
+			if filterStatus != _NOFILTER_ {
+				continue
+			}
 		}
 
-		if currentByte == "-" && !inPlus && !inMinus && !inQuote {
-			inMinus = true
-			continue
-		}
-
-		if currentByte == "_" && !inPlus && !inMinus {
-			inQuote = true
-			continue
-		}
-
-		if inPlus {
-			currentFilterWord += currentByte
+		if filterStatus == _INPLUS_ {
+			currentFilterString += currentByte
 			parsedQuery.ModifiedQuery += utils.Query(currentByte)
-		} else if inMinus {
-			currentFilterWord += currentByte
-		} else if inQuote {
-			currentQuote += currentByte
+		} else if (filterStatus == _INMINUS_) || (filterStatus == _INQUOTE_) {
+			currentFilterString += currentByte
 		} else {
 			parsedQuery.ModifiedQuery += utils.Query(currentByte)
 		}
 	}
 
-	if inPlus && len(currentFilterWord) > 0 {
-		parsedQuery.PlusWords = append(parsedQuery.PlusWords, currentFilterWord)
-	}
+	// When the last word in a query was a filter-word, add it
+	if len(currentFilterString) > 0 {
+		currentFilterString = string(config.
+			Normalizer.
+			NormalizeWord(utils.Word(currentFilterString)))
 
-	if inMinus && len(currentFilterWord) > 0 {
-		parsedQuery.MinusWords = append(parsedQuery.MinusWords, currentFilterWord)
+		if filterStatus == _INPLUS_ {
+			parsedQuery.PlusWords = append(
+				parsedQuery.PlusWords,
+				currentFilterString,
+			)
+		} else if filterStatus == _INMINUS_ {
+			parsedQuery.MinusWords = append(
+				parsedQuery.MinusWords,
+				currentFilterString,
+			)
+		}
 	}
 
 	return parsedQuery
@@ -120,7 +191,7 @@ func SqlSearch(
 		panic(err)
 	}
 
-	parsedQuery := parseQuery(query)
+	parsedQuery := parseQuery(config, query)
 
 	stringFromQuotes := strings.Join(
 		wordsFromQuotes(parsedQuery.Quotes),

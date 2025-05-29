@@ -19,6 +19,7 @@ import (
 	"seekourney/core/database"
 	"seekourney/core/document"
 	"seekourney/core/indexAPI"
+	"seekourney/core/modified_url"
 	"seekourney/core/search"
 	"seekourney/indexing"
 	"seekourney/utils"
@@ -54,7 +55,7 @@ const (
 	_INDEX_           string = "/index"
 	_PUSHCOLLECTION_  string = "/push/collection"
 	_PUSHINDEXER_     string = "/push/indexer"
-	_PUSHTEXT_	  string = "/push/text"
+	_PUSHTEXT_        string = "/push/text"
 	_LOG_             string = "/log"
 )
 
@@ -154,7 +155,7 @@ func Run(args []string) {
 	// Load config
 	conf = config.Load()
 
-	go startContainer()
+	//	go startContainer()
 
 	db := connectToDB()
 
@@ -181,7 +182,6 @@ func Run(args []string) {
 	queryHandler := func(writer http.ResponseWriter, request *http.Request) {
 		utils.EnableCORS(&writer)
 		serverParams := serverFuncParams{writer: writer, db: db}
-
 		switch html.EscapeString(request.URL.Path) {
 		case _ALL_:
 			handleAll(serverParams)
@@ -190,7 +190,8 @@ func Run(args []string) {
 		case _ALL_COLLECTIONS_:
 			handleAllCollections(serverParams)
 		case _SEARCH_:
-			handleSearchSQL(serverParams, request.URL.Query()["q"])
+			parsedQuery, _ := modifiedurl.ParseQuery(request.URL.RawQuery)
+			handleSearchSQL(serverParams, parsedQuery["q"])
 		case _PUSHPATHS_:
 			handlePushPaths(serverParams, request.URL.Query()["p"])
 		case _PUSHDOCS_:

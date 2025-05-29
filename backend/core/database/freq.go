@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"seekourney/utils"
-	"strings"
+	"strconv"
 
 	"github.com/lib/pq"
 )
@@ -49,55 +49,27 @@ func FreqMap(
 		pattern_string += currentQuote + "%"
 	}
 
-	// pattern := []string{pattern_string}
-	var q string
+	nextArgumentNumber := 2
 
-	// TODO: Make this not super ugly
-	// TODO: Use functions to generate the query
+	q := string(Select().Queries("D.path AS path", j).
+		From("document AS D, path_text AS P").
+		Where("D.words ?& $1"))
+
 	if len(minusWords) > 0 {
-		if len(quotes) > 0 {
-			q = strings.Join([]string{
-				"SELECT D.path AS path,",
-				j,
-				"FROM document AS D, path_text as P",
-				"WHERE D.words ?& $1",
-				"AND NOT D.words ?& $2",
-				"AND D.path = P.path",
-				"AND P.plain_text LIKE $3",
-			}, " ")
-		} else {
-			q = strings.Join([]string{
-				"SELECT D.path AS path,",
-				j,
-				"FROM document AS D",
-				"WHERE D.words ?& $1",
-				"AND NOT D.words ?& $2",
-			}, " ")
-		}
-	} else {
-		if len(quotes) > 0 {
-			q = strings.Join([]string{
-				"SELECT D.path AS path,",
-				j,
-				"FROM document AS D, path_text as P",
-				"WHERE D.words ?& $1",
-				"AND D.path = P.path",
-				"AND P.plain_text LIKE $2",
-			}, " ")
-		} else {
-			q = strings.Join([]string{
-				"SELECT D.path AS path,",
-				j,
-				"FROM document AS D",
-				"WHERE D.words ?& $1",
-			}, " ")
-		}
+		q += " AND NOT D.words ?& $" + strconv.Itoa(nextArgumentNumber)
+		nextArgumentNumber++
+	}
+
+	if len(quotes) > 0 {
+		q += " AND D.path = P.path AND P.plain_text LIKE $" +
+			strconv.Itoa(nextArgumentNumber)
+		nextArgumentNumber++
 	}
 
 	log.Println("Query: ", q)
 
-	requiredWords := []string(append(plusWords, wordStr))
-
+	requiredWords := append(plusWords, wordStr)
+	log.Println(requiredWords)
 	insert := func(res *utils.WordFrequencyMap, sqlRes sqlResult) {
 		(*res)[sqlRes.path] = sqlRes.score
 	}

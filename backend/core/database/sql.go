@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 	"iter"
-	"math/rand"
 	"log"
+	"math/rand"
 	"seekourney/utils"
 	"strconv"
 	"strings"
