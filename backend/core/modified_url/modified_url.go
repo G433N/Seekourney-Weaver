@@ -1,8 +1,12 @@
+// NOTE: This is a modified version of the package url.
+// The modification makes Query ignore "+" when parsing.
+// This is necessary because the "+" search filters uses the character "+"
+// and is therefore put in the URL.
+
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// NOTE: This is a modified version of the package url.
 // Package modifiedurl parses URLs and implements query escaping.
 package modifiedurl
 
@@ -116,7 +120,8 @@ func shouldEscape(c byte, mode encoding) bool {
 
 	if mode == encodeHost || mode == encodeZone {
 		// §3.2.2 Host allows
-		//	sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+		// sub-delims =
+		// "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
 		// as part of reg-name.
 		// We add : because we include :port as part of host.
 		// We add [ ] because we include [ipv6]:port as part of host.
@@ -125,7 +130,23 @@ func shouldEscape(c byte, mode encoding) bool {
 		// escape them (because hosts can't use %-encoding for
 		// ASCII bytes).
 		switch c {
-		case '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=', ':', '[', ']', '<', '>', '"':
+		case '!',
+			'$',
+			'&',
+			'\'',
+			'(',
+			')',
+			'*',
+			'+',
+			',',
+			';',
+			'=',
+			':',
+			'[',
+			']',
+			'<',
+			'>',
+			'"':
 			return false
 		}
 	}
@@ -134,7 +155,8 @@ func shouldEscape(c byte, mode encoding) bool {
 	case '-', '_', '.', '~': // §2.3 Unreserved characters (mark)
 		return false
 
-	case '$', '&', '+', ',', '/', ':', ';', '=', '?', '@': // §2.2 Reserved characters (reserved)
+	// §2.2 Reserved characters (reserved)
+	case '$', '&', '+', ',', '/', ':', ';', '=', '?', '@':
 		// Different sections of the URL allow a few of
 		// the reserved characters to appear unescaped.
 		switch mode {
@@ -238,13 +260,16 @@ func unescape(s string, mode encoding) (string, error) {
 			if mode == encodeZone {
 				// RFC 6874 says basically "anything goes" for zone identifiers
 				// and that even non-ASCII can be redundantly escaped,
-				// but it seems prudent to restrict %-escaped bytes here to those
-				// that are valid host name bytes in their unescaped form.
+				// but it seems prudent to restrict %-escaped bytes here
+				// to those that are valid host name bytes
+				// in their unescaped form.
 				// That is, you can use escaping in the zone identifier but not
 				// to introduce bytes you couldn't just write directly.
 				// But Windows puts spaces here! Yay.
 				v := unhex(s[i+1])<<4 | unhex(s[i+2])
-				if s[i:i+3] != "%25" && v != ' ' && shouldEscape(v, encodeHost) {
+				if s[i:i+3] != "%25" &&
+					v != ' ' &&
+					shouldEscape(v, encodeHost) {
 					return "", EscapeError(s[i : i+3])
 				}
 			}
@@ -253,7 +278,10 @@ func unescape(s string, mode encoding) (string, error) {
 			hasPlus = mode == encodeQueryComponent
 			i++
 		default:
-			if (mode == encodeHost || mode == encodeZone) && s[i] < 0x80 && shouldEscape(s[i], mode) {
+			if (mode == encodeHost ||
+				mode == encodeZone) &&
+				s[i] < 0x80 &&
+				shouldEscape(s[i], mode) {
 				return "", InvalidHostError(s[i : i+1])
 			}
 			i++
@@ -284,7 +312,8 @@ func QueryEscape(s string) string {
 	return escape(s, encodeQueryComponent)
 }
 
-// PathEscape escapes the string so it can be safely placed inside a [URL] path segment,
+// PathEscape escapes the string
+// so it can be safely placed inside a [URL] path segment,
 // replacing special characters (including /) with %XX sequences as needed.
 func PathEscape(s string) string {
 	return escape(s, encodePathSegment)
@@ -788,7 +817,8 @@ func (u *URL) setFragment(f string) error {
 
 // EscapedFragment returns the escaped form of u.Fragment.
 // In general there are multiple possible escaped forms of any fragment.
-// EscapedFragment returns u.RawFragment when it is a valid escaping of u.Fragment.
+// EscapedFragment returns u.RawFragment when
+// it is a valid escaping of u.Fragment.
 // Otherwise EscapedFragment ignores u.RawFragment and computes an escaped
 // form on its own.
 // The [URL.String] method uses EscapedFragment to construct its result.
@@ -889,12 +919,16 @@ func (u *URL) String() string {
 		}
 		if buf.Len() == 0 {
 			// RFC 3986 §4.2
-			// A path segment that contains a colon character (e.g., "this:that")
-			// cannot be used as the first segment of a relative-path reference, as
-			// it would be mistaken for a scheme name. Such a segment must be
-			// preceded by a dot-segment (e.g., "./this:that") to make a relative-
-			// path reference.
-			if segment, _, _ := strings.Cut(path, "/"); strings.Contains(segment, ":") {
+			// A path segment that contains a colon character
+			// (e.g., "this:that")
+			// cannot be used as the first segment of a
+			// relative-path reference,
+			// as it would be mistaken for a scheme name.
+			// Such a segment must be
+			// preceded by a dot-segment
+			// (e.g., "./this:that") to make a relative-path reference.
+			segment, _, _ := strings.Cut(path, "/")
+			if strings.Contains(segment, ":") {
 				buf.WriteString("./")
 			}
 		}
@@ -1233,7 +1267,8 @@ func splitHostPort(hostPort string) (host, port string) {
 }
 
 // Marshaling interface implementations.
-// Would like to implement MarshalText/UnmarshalText but that will change the JSON representation of URLs.
+// Would like to implement MarshalText/UnmarshalText
+// but that will change the JSON representation of URLs.
 
 func (u *URL) MarshalBinary() (text []byte, err error) {
 	return u.AppendBinary(nil)

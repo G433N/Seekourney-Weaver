@@ -150,12 +150,13 @@ func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 			Normalizer.
 			NormalizeWord(utils.Word(currentFilterString)))
 
-		if filterStatus == _INPLUS_ {
+		switch filterStatus {
+		case _INPLUS_:
 			parsedQuery.PlusWords = append(
 				parsedQuery.PlusWords,
 				currentFilterString,
 			)
-		} else if filterStatus == _INMINUS_ {
+		case _INMINUS_:
 			parsedQuery.MinusWords = append(
 				parsedQuery.MinusWords,
 				currentFilterString,
@@ -207,7 +208,6 @@ func SqlSearch(
 
 	for word := range words.WordsIter(string(parsedQuery.ModifiedQuery)) {
 		word = config.Normalizer.NormalizeWord(word)
-
 		freqMap, err := database.FreqMap(
 			db,
 			word,

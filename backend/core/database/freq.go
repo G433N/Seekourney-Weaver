@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"log"
 	"seekourney/utils"
 	"strconv"
 
@@ -49,28 +48,30 @@ func FreqMap(
 		pattern_string += currentQuote + "%"
 	}
 
-	nextArgumentNumber := 2
-
-	q := string(Select().Queries("D.path AS path", j).
-		From("document AS D, path_text AS P").
+	q := string(Select().Queries("D.path as path", j).
+		From("document AS D").
 		Where("D.words ?& $1"))
+
+	if len(quotes) > 0 {
+		q = string(Select().Queries("D.path as path", j).
+			From("document AS D, path_text AS P").
+			Where("D.words ?& $1"))
+	}
+
+	nextArgumentNumber := 2
 
 	if len(minusWords) > 0 {
 		q += " AND NOT D.words ?& $" + strconv.Itoa(nextArgumentNumber)
-		nextArgumentNumber += 1
+		nextArgumentNumber = 3
 	}
 
 	if len(quotes) > 0 {
 		q += " AND D.path = P.path AND P.plain_text LIKE $" +
 			strconv.Itoa(nextArgumentNumber)
-
-		nextArgumentNumber += 1
 	}
 
-	log.Println("Query: ", q)
-
 	requiredWords := append(plusWords, wordStr)
-	log.Println(requiredWords)
+
 	insert := func(res *utils.WordFrequencyMap, sqlRes sqlResult) {
 		(*res)[sqlRes.path] = sqlRes.score
 	}
