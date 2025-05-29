@@ -92,8 +92,10 @@ func updateModifiedQuery(
 
 // Parses a query for filters and removes anything
 // that is part of the "-" and quote filters.
-// The return data is the query plus slices with words associated with the filters.
-// TODO: This implementation assumes correct syntax. E.g, 'terminal +dog -cat "bad"'
+// The return data is the query plus
+// slices with words associated with the filters.
+// TODO: This implementation assumes correct syntax.
+// E.g, 'terminal +dog -cat "bad"'
 func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 	parsedQuery := utils.ParsedQuery{
 		ModifiedQuery: "",
@@ -117,7 +119,7 @@ func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 			filterStatus,
 		)
 
-		if shouldContinue == _STOPLOOP_ {
+		if !shouldContinue {
 			continue
 		}
 
@@ -129,12 +131,15 @@ func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 			}
 		}
 
-		if filterStatus == _INPLUS_ {
+		switch filterStatus {
+		case _INPLUS_:
 			currentFilterString += currentByte
 			parsedQuery.ModifiedQuery += utils.Query(currentByte)
-		} else if (filterStatus == _INMINUS_) || (filterStatus == _INQUOTE_) {
+		case _INMINUS_:
 			currentFilterString += currentByte
-		} else {
+		case _INQUOTE_:
+			currentFilterString += currentByte
+		default:
 			parsedQuery.ModifiedQuery += utils.Query(currentByte)
 		}
 	}

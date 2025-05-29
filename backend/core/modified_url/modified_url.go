@@ -29,8 +29,15 @@ type Error struct {
 	Err error
 }
 
-func (e *Error) Unwrap() error { return e.Err }
-func (e *Error) Error() string { return fmt.Sprintf("%s %q: %s", e.Op, e.URL, e.Err) }
+// Unwrap returns the error from a Error struct
+func (e *Error) Unwrap() error {
+	return e.Err
+}
+
+// Error reports an error and the operation and URL that caused it.
+func (e *Error) Error() string {
+	return fmt.Sprintf("%s %q: %s", e.Op, e.URL, e.Err)
+}
 
 func (e *Error) Timeout() bool {
 	t, ok := e.Err.(interface {
@@ -162,11 +169,15 @@ func shouldEscape(c byte, mode encoding) bool {
 	}
 
 	if mode == encodeFragment {
-		// RFC 3986 §2.2 allows not escaping sub-delims. A subset of sub-delims are
-		// included in reserved from RFC 2396 §2.2. The remaining sub-delims do not
-		// need to be escaped. To minimize potential breakage, we apply two restrictions:
-		// (1) we always escape sub-delims outside of the fragment, and (2) we always
-		// escape single quote to avoid breaking callers that had previously assumed that
+		// RFC 3986 §2.2 allows not escaping sub-delims.
+		// A subset of sub-delims are
+		// included in reserved from RFC 2396 §2.2.
+		// The remaining sub-delims do not
+		// need to be escaped. To minimize potential breakage,
+		// we apply two restrictions:
+		// (1) we always escape sub-delims outside of the fragment, and
+		// (2) we always escape single quote
+		// to avoid breaking callers that had previously assumed that
 		// single quotes would be escaped. See issue #19917.
 		switch c {
 		case '!', '(', ')', '*':
@@ -353,14 +364,16 @@ func escape(s string, mode encoding) string {
 // the host when necessary.
 //
 // Note that the Path field is stored in decoded form: /%47%6f%2f becomes /Go/.
-// A consequence is that it is impossible to tell which slashes in the Path were
-// slashes in the raw URL and which were %2f. This distinction is rarely important,
-// but when it is, the code should use the [URL.EscapedPath] method, which preserves
-// the original encoding of Path.
+// A consequence is that it is impossible to
+// tell which slashes in the Path were
+// slashes in the raw URL and which were %2f.
+// This distinction is rarely important,
+// but when it is, the code should use the [URL.EscapedPath] method,
+// which preserves the original encoding of Path.
 //
 // The RawPath field is an optional field which is only set when the default
-// encoding of Path is different from the escaped path. See the EscapedPath method
-// for more details.
+// encoding of Path is different from the escaped path.
+// See the EscapedPath method for more details.
 //
 // URL's String method uses the EscapedPath method to obtain the path.
 type URL struct {
@@ -546,15 +559,22 @@ func parse(rawURL string, viaRequest bool) (*URL, error) {
 		// See golang.org/issue/16822.
 		//
 		// RFC 3986, §3.3:
-		// In addition, a URI reference (Section 4.1) may be a relative-path reference,
-		// in which case the first path segment cannot contain a colon (":") character.
-		if segment, _, _ := strings.Cut(rest, "/"); strings.Contains(segment, ":") {
+		// In addition, a URI reference (Section 4.1)
+		// may be a relative-path reference, in which case
+		// the first path segment cannot contain a colon (":") character.
+		segment, _, _ := strings.Cut(rest, "/")
+		if strings.Contains(segment, ":") {
 			// First path segment has colon. Not allowed in relative URL.
-			return nil, errors.New("first path segment in URL cannot contain colon")
+			return nil, errors.New(
+				"first path segment in URL cannot contain colon")
 		}
 	}
 
-	if (url.Scheme != "" || !viaRequest && !strings.HasPrefix(rest, "///")) && strings.HasPrefix(rest, "//") {
+	if (url.Scheme != "" ||
+		!viaRequest &&
+			!strings.HasPrefix(rest, "///")) &&
+		strings.HasPrefix(rest, "//") {
+
 		var authority string
 		authority, rest = rest[2:], ""
 		if i := strings.Index(authority, "/"); i >= 0 {
@@ -1113,7 +1133,10 @@ func (u *URL) ResolveReference(ref *URL) *URL {
 		// The "absoluteURI" or "net_path" cases.
 		// We can ignore the error from setPath since we know we provided a
 		// validly-escaped path.
-		url.setPath(resolvePath(ref.EscapedPath(), ""))
+		err := url.setPath(resolvePath(ref.EscapedPath(), ""))
+		if err != nil {
+			fmt.Printf("Error in setPath: %s", err)
+		}
 		return &url
 	}
 	if ref.Opaque != "" {
@@ -1139,7 +1162,10 @@ func (u *URL) ResolveReference(ref *URL) *URL {
 	// The "abs_path" or "rel_path" cases.
 	url.Host = u.Host
 	url.User = u.User
-	url.setPath(resolvePath(u.EscapedPath(), ref.EscapedPath()))
+	err := url.setPath(resolvePath(u.EscapedPath(), ref.EscapedPath()))
+	if err != nil {
+		fmt.Printf("Error in setPath: %s", err)
+	}
 	return &url
 }
 
@@ -1246,7 +1272,10 @@ func (u *URL) JoinPath(elem ...string) *URL {
 		p += "/"
 	}
 	url := *u
-	url.setPath(p)
+	err := url.setPath(p)
+	if err != nil {
+		fmt.Printf("Error in setPath: %s", err)
+	}
 	return &url
 }
 

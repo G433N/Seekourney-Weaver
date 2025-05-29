@@ -57,13 +57,14 @@ func FreqMap(
 
 	if len(minusWords) > 0 {
 		q += " AND NOT D.words ?& $" + strconv.Itoa(nextArgumentNumber)
-		nextArgumentNumber++
+		nextArgumentNumber += 1
 	}
 
 	if len(quotes) > 0 {
 		q += " AND D.path = P.path AND P.plain_text LIKE $" +
 			strconv.Itoa(nextArgumentNumber)
-		nextArgumentNumber++
+
+		nextArgumentNumber += 1
 	}
 
 	log.Println("Query: ", q)

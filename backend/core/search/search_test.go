@@ -10,7 +10,8 @@ import (
 
 func TestParseQuery(t *testing.T) {
 	config := config.New()
-	query := utils.Query("test +at \"hello world\" -the +next \"hihi\" you -joke")
+	query :=
+		utils.Query("test +at \"hello world\" -the +next \"hihi\" you -joke")
 	parsedQuery := parseQuery(config, query)
 
 	// NOTE: Every quote and "-" filter adds one space in the modified quote
@@ -45,18 +46,29 @@ func TestParseQuery(t *testing.T) {
 }
 
 func TestWordsFromQuotes(t *testing.T) {
-	quotes := []string{"test1 test2  test3  ", "hello world!", "*^good??error(()"}
+	quotes := []string{
+		"test1 test2  test3  ",
+		"hello world!",
+		"*^good??error(()",
+	}
 
-	expextedWords := []string{"test1", "test2", "test3", "hello", "world", "good", "error"}
+	expextedWords := []string{
+		"test1",
+		"test2",
+		"test3",
+		"hello",
+		"world",
+		"good",
+		"error",
+	}
+
 	retrievedWords := wordsFromQuotes(quotes)
 
 	assert.Equal(t, expextedWords, retrievedWords)
 }
 
 func TestUpdateStatus(t *testing.T) {
-	filterStatus := _NOFILTER_
-
-	filterStatus = updateFilterStatus("+")
+	filterStatus := updateFilterStatus("+")
 	assert.Equal(t, _INPLUS_, filterStatus)
 
 	filterStatus = updateFilterStatus("-")

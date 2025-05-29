@@ -589,7 +589,10 @@ func handlePushText(serverParams serverFuncParams, request *http.Request) {
 	}
 
 	for _, pathText := range resp.Data.PathTexts {
-		inDatabase, err := document.DocumentExsitsDB(serverParams.db, pathText.Path)
+		inDatabase, err := document.DocumentExsitsDB(
+			serverParams.db,
+			pathText.Path,
+		)
 
 		if err != nil {
 			log.Print("error checking for document in function handlePushText")
@@ -597,10 +600,15 @@ func handlePushText(serverParams serverFuncParams, request *http.Request) {
 
 		errorRetries := 0
 		for !inDatabase && errorRetries < 100 {
-			inDatabase, err = document.DocumentExsitsDB(serverParams.db, pathText.Path)
+			inDatabase, err = document.DocumentExsitsDB(
+				serverParams.db,
+				pathText.Path,
+			)
 
 			if err != nil {
-				log.Print("error checking for document in function handlePushText")
+				log.Print(
+					"error checking for document in function handlePushText")
+
 				errorRetries += 1
 			}
 		}
