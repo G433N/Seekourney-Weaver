@@ -28,6 +28,7 @@ func NewDocument(
 	source utils.Source,
 	words utils.FrequencyMap,
 	collection indexing.CollectionID,
+	text string,
 	lastIndexed time.Time) Document {
 	return Document{
 		udoc: udoc{
@@ -35,6 +36,7 @@ func NewDocument(
 			Source:     source,
 			Words:      words,
 			Collection: collection,
+			RawText:    text,
 		},
 		LastIndexed: lastIndexed,
 	}
@@ -59,6 +61,7 @@ func Normalize(
 			Source:     doc.Source,
 			Words:      freqMap,
 			Collection: doc.Collection,
+			RawText:    doc.RawText,
 		},
 		LastIndexed: time.Now(),
 	}
@@ -117,7 +120,7 @@ func (doc Document) SQLGetName() string {
 
 // SQLGetFields returns the fields to be inserted into the database
 func (doc Document) SQLGetFields() []string {
-	return []string{"path", "type", "words", "last_indexed", "collection_id"}
+	return []string{"path", "type", "words", "last_indexed", "collection_id", "raw_text"}
 }
 
 // SQLGetValues returns the values to be inserted into the database
@@ -142,6 +145,7 @@ func (doc Document) SQLGetValues() []any {
 		bytes,
 		timeBytes,
 		doc.Collection,
+		doc.RawText,
 	}
 }
 
@@ -152,8 +156,9 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 	var words []byte
 	var timeBytes []byte
 	var collectionID indexing.CollectionID
+	var text string
 
-	err := rows.Scan(&path, &source, &words, &timeBytes, &collectionID)
+	err := rows.Scan(&path, &source, &words, &timeBytes, &collectionID, &text)
 	if err != nil {
 		return Document{}, err
 	}
@@ -179,6 +184,7 @@ func (doc Document) SQLScan(rows *sql.Rows) (Document, error) {
 			Source:     utils.SOURCE_LOCAL,
 			Words:      freqMap,
 			Collection: collectionID,
+			RawText:    text,
 		},
 		LastIndexed: lastIndexed,
 	}, nil

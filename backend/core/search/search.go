@@ -53,7 +53,7 @@ func updateModifiedQuery(
 
 	newStatus := filterStatus
 
-	if (currentByte == " ") &&
+	if (currentByte == " ") && *currentFilterString != "" &&
 		((filterStatus == _INPLUS_) || (filterStatus == _INMINUS_)) {
 
 		normalizedWord := string(config.
@@ -94,7 +94,7 @@ func updateModifiedQuery(
 // that is part of the "-" and quote filters.
 // The return data is the query plus
 // slices with words associated with the filters.
-// TODO: This implementation assumes correct syntax.
+// NOTE: This implementation assumes correct syntax.
 // E.g, 'terminal +dog -cat "bad"'
 func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 	parsedQuery := utils.ParsedQuery{
@@ -106,12 +106,12 @@ func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 	currentFilterString := ""
 
 	filterStatus := _NOFILTER_
-	var shouldContinue bool
+	var continueIteration bool
 
 	for byteIndex := range query {
 		currentByte := string(query[byteIndex])
 
-		filterStatus, shouldContinue = updateModifiedQuery(
+		filterStatus, continueIteration = updateModifiedQuery(
 			config,
 			&parsedQuery,
 			currentByte,
@@ -119,7 +119,7 @@ func parseQuery(config *config.Config, query utils.Query) utils.ParsedQuery {
 			filterStatus,
 		)
 
-		if !shouldContinue {
+		if !continueIteration {
 			continue
 		}
 

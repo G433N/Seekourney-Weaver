@@ -39,34 +39,28 @@ func FreqMap(
 	quotes []string) (utils.WordFrequencyMap, error) {
 
 	wordStr := string(word)
-	j := JsonValue("words", wordStr, "score")
+	json := JsonValue("words", wordStr, "score")
 
-	pattern_string := "%"
+	patternString := "%"
 
 	for quoteIndex := range quotes {
 		currentQuote := quotes[quoteIndex]
-		pattern_string += currentQuote + "%"
+		patternString += currentQuote + "%"
 	}
 
-	q := string(Select().Queries("D.path as path", j).
-		From("document AS D").
-		Where("D.words ?& $1"))
-
-	if len(quotes) > 0 {
-		q = string(Select().Queries("D.path as path", j).
-			From("document AS D, path_text AS P").
-			Where("D.words ?& $1"))
-	}
+	query := string(Select().Queries("path", json).
+		From("document").
+		Where("words ?& $1"))
 
 	nextArgumentNumber := 2
 
 	if len(minusWords) > 0 {
-		q += " AND NOT D.words ?& $" + strconv.Itoa(nextArgumentNumber)
+		query += " AND words ?& $" + strconv.Itoa(nextArgumentNumber)
 		nextArgumentNumber = 3
 	}
 
 	if len(quotes) > 0 {
-		q += " AND D.path = P.path AND P.plain_text LIKE $" +
+		query += " AND raw_text LIKE $" +
 			strconv.Itoa(nextArgumentNumber)
 	}
 
@@ -83,17 +77,17 @@ func FreqMap(
 		if len(quotes) > 0 {
 			err = ExecScan(
 				db,
-				string(q),
+				string(query),
 				&result,
 				insert,
 				pq.StringArray(requiredWords),
 				pq.StringArray(minusWords),
-				pattern_string,
+				patternString,
 			)
 		} else {
 			err = ExecScan(
 				db,
-				string(q),
+				string(query),
 				&result,
 				insert,
 				pq.StringArray(requiredWords),
@@ -104,16 +98,16 @@ func FreqMap(
 		if len(quotes) > 0 {
 			err = ExecScan(
 				db,
-				string(q),
+				string(query),
 				&result,
 				insert,
 				pq.StringArray(requiredWords),
-				pattern_string,
+				patternString,
 			)
 		} else {
 			err = ExecScan(
 				db,
-				string(q),
+				string(query),
 				&result,
 				insert,
 				pq.StringArray(requiredWords),

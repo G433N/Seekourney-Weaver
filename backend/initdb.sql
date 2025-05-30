@@ -26,10 +26,7 @@ CREATE TABLE document (
   type path_type NOT NULL,
   words jsonb DEFAULT '{}' NOT NULL,
   last_indexed text NOT NULL,
-  collection_id text REFERENCES collection(id)
+  collection_id text REFERENCES collection(id),
+  raw_text text NOT NULL
 );
 
-CREATE TABLE path_text (
-    path text PRIMARY KEY REFERENCES document(path),
-    plain_text text NOT NULL
-);

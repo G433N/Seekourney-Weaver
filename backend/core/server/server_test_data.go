@@ -14,6 +14,7 @@ func testDocument1() document.Document {
 		0,
 		utils.FrequencyMap{"key1": 1, "key2": 2},
 		indexing.CollectionID("1"),
+		"some text",
 		time.Date(2025, time.Month(1), 1, 1, 1, 1, 1, time.Now().Location()),
 	)
 }
@@ -24,6 +25,7 @@ func testDocument2() document.Document {
 		0,
 		utils.FrequencyMap{"key2": 3, "key3": 4},
 		indexing.CollectionID("1"),
+		"some other text",
 		time.Date(2024, time.Month(1), 1, 1, 1, 1, 1, time.Now().Location()),
 	)
 }

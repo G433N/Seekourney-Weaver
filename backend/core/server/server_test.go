@@ -35,10 +35,8 @@ func resetSQL(db *sql.DB) {
 	if db == nil {
 		return
 	}
-	_, err := db.Exec(`DROP TABLE path_text`)
-	panicOnError(err)
 
-	_, err = db.Exec(`DROP TABLE document`)
+	_, err := db.Exec(`DROP TABLE document`)
 	panicOnError(err)
 
 	_, err = db.Exec(`DROP TABLE collection`)
