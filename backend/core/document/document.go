@@ -120,7 +120,14 @@ func (doc Document) SQLGetName() string {
 
 // SQLGetFields returns the fields to be inserted into the database
 func (doc Document) SQLGetFields() []string {
-	return []string{"path", "type", "words", "last_indexed", "collection_id", "raw_text"}
+	return []string{
+		"path",
+		"type",
+		"words",
+		"last_indexed",
+		"collection_id",
+		"raw_text",
+	}
 }
 
 // SQLGetValues returns the values to be inserted into the database
