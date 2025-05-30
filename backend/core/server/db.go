@@ -18,7 +18,7 @@ type JSONString string
 const (
 	// _TYPEWEB_           PathType = "web"
 	// _TYPEFILE_          PathType = "file"
-	_CONNECTIONRETRIES_ int           = 10
+	_CONNECTIONRETRIES_ int           = 20
 	_RETRYDELAY_        time.Duration = 500 * time.Millisecond
 )
 
