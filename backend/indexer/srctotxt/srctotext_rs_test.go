@@ -5,7 +5,7 @@ import "github.com/tree-sitter/go-tree-sitter"
 import "slices"
 
 func TestRSGetFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn add(x: i32, y: i32) -> i32 {
                     x + y
                 }`
@@ -13,14 +13,14 @@ func TestRSGetFunction(t *testing.T) {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if string(slice[0]) != "fn add(x: i32, y: i32) -> i32" {
         t.Errorf("TestRSGetFunction failed want %q got %v", "fn add(x: i32, y: i32) -> i32", slice[0])
     }
 }
 
 func TestRSGetMultipleFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn sub(x: i32, y: i32) -> i32 {
                     x - y
                 }
@@ -32,7 +32,7 @@ func TestRSGetMultipleFunction(t *testing.T) {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if !slices.Contains(slice, "fn sub(x: i32, y: i32) -> i32") {
         t.Errorf("TestRSGetMultipleFunction failed want %q got %v", "fn sub(x: i32, y: i32) -> i32", slice)
     }
@@ -45,26 +45,26 @@ func TestRSGetMultipleFunction(t *testing.T) {
 }
 
 func TestRSGetNoFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := ``
     parser := tree_sitter.NewParser()
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if len(slice) != 0 {
         t.Errorf("TestRSGetNoFunction failed length wrong")
     }
 }
 
 func TestRSGetEmptyFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn test() {}`
     parser := tree_sitter.NewParser()
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if len(slice) != 1 {
         t.Errorf("TestRSGetEmptyFunction failed length wrong")
     }
@@ -74,7 +74,7 @@ func TestRSGetEmptyFunction(t *testing.T) {
 }
 
 func TestRSGetNestedFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn nested(x: i32) {
                     fn nested2(y: i32) -> i32 {
                         y
@@ -85,7 +85,7 @@ func TestRSGetNestedFunction(t *testing.T) {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if !slices.Contains(slice, "fn nested(x: i32)") {
         t.Errorf("TestRSGetNestedFunction failed want %q got %v", "fn nested(x: i32)", slice)
     }
@@ -98,7 +98,7 @@ func TestRSGetNestedFunction(t *testing.T) {
 }
 
 func TestRSGetFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn sub(x: i32, y: i32) -> i32 {
                     x - y
                 }`
@@ -106,14 +106,14 @@ func TestRSGetFunctionSignature(t *testing.T) {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if string(slice[0]) != "i32 i32 i32" {
         t.Errorf("TestRSGetFunctionSignature failed want %q got %v", "i32 i32 i32", slice[0])
     }
 }
 
 func TestRSGetMultipleFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn sub(x: i32, y: i32) -> i32 {
                     x - y
                 }
@@ -125,7 +125,7 @@ func TestRSGetMultipleFunctionSignature(t *testing.T) {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if !slices.Contains(slice, "i32 i32 i32") {
         t.Errorf("TestRSGetMultipleFunctionSignature failed want %q got %v", "i32 i32 i32", slice)
     }
@@ -138,26 +138,26 @@ func TestRSGetMultipleFunctionSignature(t *testing.T) {
 }
 
 func TestRSGetNoFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := ``
     parser := tree_sitter.NewParser()
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if len(slice) != 0 {
         t.Errorf("TestRSGetNoFunctionSignature failed length wrong")
     }
 }
 
 func TestRSGetEmptyFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn test() {}`
     parser := tree_sitter.NewParser()
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if len(slice) != 1 {
         t.Errorf("TestRSGetEmptyFunctionSignature failed length wrong")
     }
@@ -167,7 +167,7 @@ func TestRSGetEmptyFunctionSignature(t *testing.T) {
 }
 
 func TestRSGetNestedFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `fn nested(x: i32) {
                     fn nested2(y: i32) {
                         fn nested3(z: i32) -> String {
@@ -181,7 +181,7 @@ func TestRSGetNestedFunctionSignature(t *testing.T) {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if !slices.Contains(slice, "i32 void") {
         t.Errorf("TestRSGetNestedFunctionSignature failed want %q got %v", "i32 void", slice)
     }
@@ -194,7 +194,7 @@ func TestRSGetNestedFunctionSignature(t *testing.T) {
 }
 
 func TestRSGetClass(t *testing.T) {
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `struct Person {
 					name: String,
 					age: i32,
@@ -209,14 +209,14 @@ func TestRSGetClass(t *testing.T) {
 	conf := config[".rs"]
 lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if !slices.Contains(slice, "Person String i32 Person") {
 		t.Errorf("TestRSGetClass failed want %q got %v", "Person String i32 Person", slice)
 	}
 }
 
 func TestRSGetReceiver(t *testing.T) {
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `struct Person {
 					name: String,
 					age: i32,
@@ -231,14 +231,14 @@ func TestRSGetReceiver(t *testing.T) {
 	conf := config[".rs"]
 lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if !slices.Contains(slice, "Person &mut self i32 Person") {
 		t.Errorf("TestRSGetReceiver failed want %q got %v", "Person &mut self i32 Person", slice)
 	}
 }
 
 func TestRSGetDocs(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `/* Adds two numbers.
 
 # Arguments
@@ -257,7 +257,7 @@ fn add(x: i32, y: i32) -> i32 {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
     if !slices.Contains(slice, `/* Adds two numbers.
 
 # Arguments
@@ -277,7 +277,7 @@ The sum of x and y.
 }
 
 func TestRSGetLineDocs(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `/// Adds two numbers.
 ///
 /// * x - An integer.
@@ -289,7 +289,7 @@ fn add(x: i32, y: i32) -> i32 {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
     if slice[0] != 
 `/// Adds two numbers.
 ///
@@ -304,7 +304,7 @@ fn add(x: i32, y: i32) -> i32 {
 }
 
 func TestRSGetMultipleDocs(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `/// Adds two numbers.
 /// 
 /// * x - An integer.
@@ -324,7 +324,7 @@ fn sub(x: i32, y: i32) -> i32 {
     conf := config[".rs"]
     lang, _ := getLanguageFileExt(".rs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
     if !slices.Contains(slice, 
 `/// Adds two numbers.
 /// 

@@ -6,7 +6,7 @@ import "slices"
 //import "fmt"
 
 func TestTSGetFunction(t *testing.T) {
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function add(x: int, y:int):int{
 					return x + y;
 				}`
@@ -14,14 +14,14 @@ func TestTSGetFunction(t *testing.T) {
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(string(slice[0]) != "function add(x: int, y:int):int"){
 		t.Errorf("TestTSGetFunction failed want %q got %v","function add(x: int, y:int):int", slice[0])
 	}
 }
 
 func TestTSGetMultipleFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function sub(x: int, y: int): int{
 					return x - y;
 				}
@@ -33,7 +33,7 @@ func TestTSGetMultipleFunction(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, "function sub(x: int, y: int): int")){
 		t.Errorf("TestTSGetMultipleFunction failed want %q got %v","function sub(x: int, y: int): int", slice)
 	}
@@ -46,26 +46,26 @@ func TestTSGetMultipleFunction(t *testing.T){
 }
 
 func TestTSGetNoFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := ``
 	parser := tree_sitter.NewParser()
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(len(slice) != 0){
 		t.Errorf("TestTSGetNoFunction failed length wrong")
 	}
 }
 
 func TestTSGetEmptyFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function test(){}`
 	parser := tree_sitter.NewParser()
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(len(slice) != 1){
 		t.Errorf("TestTSGetEmptyFunction failed length wrong")
 	}
@@ -75,7 +75,7 @@ func TestTSGetEmptyFunction(t *testing.T){
 }
 
 func TestTSGetNestedFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function nested(x: int){
 					function nested2(y: int):int{
 						return y;
@@ -86,7 +86,7 @@ func TestTSGetNestedFunction(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, "function nested(x: int)")){
 		t.Errorf("TestTSGetNestedFunction failed want %q got %v","function nested(x: int)", slice)
 	}
@@ -99,7 +99,7 @@ func TestTSGetNestedFunction(t *testing.T){
 }
 
 func TestTSGetFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function sub(x: int, y: int):int{
 					return x-y;
 				}`
@@ -107,14 +107,14 @@ func TestTSGetFunctionSignature(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(string(slice[0]) != ": int : int :int"){
 		t.Errorf("TestTSGetFunctionSignature failed want %q got %v","int int int", slice[0])
 	}
 }
 
 func TestTSGetMultipleFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function sub(x: int, y: int): int{
 					return x-y;
 				}
@@ -126,7 +126,7 @@ func TestTSGetMultipleFunctionSignature(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, ": int : int : int")){
 		t.Errorf("TestTSGetMultipleFunctionSignature failed want %q got %v","int int int", slice)
 	}
@@ -139,26 +139,26 @@ func TestTSGetMultipleFunctionSignature(t *testing.T){
 }
 
 func TestTSGetNoFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := ``
 	parser := tree_sitter.NewParser()
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(len(slice) != 0){
 		t.Errorf("TestTSGetNoFunctionSignature failed length wrong")
 	}
 }
 
 func TestTSGetEmptyFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function test(){}`
 	parser := tree_sitter.NewParser()
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(len(slice) != 1){
 		t.Errorf("TestTSGetEmptyFunctionSignature failed length wrong")
 	}
@@ -168,7 +168,7 @@ func TestTSGetEmptyFunctionSignature(t *testing.T){
 }
 
 func TestTSGetNestedFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `function nested(x: int){
 					function nested2(y: int){
 						function nested3(z: int):string{
@@ -182,7 +182,7 @@ func TestTSGetNestedFunctionSignature(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, ": int void")){
 		t.Errorf("TestTSGetNestedFunctionSignature failed want %q got %v",": int void", slice)
 	}
@@ -195,7 +195,7 @@ func TestTSGetNestedFunctionSignature(t *testing.T){
 }
 
 func TestTSGetClass(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `class Test{
 					function test():string{
 						return "hello";
@@ -205,7 +205,7 @@ func TestTSGetClass(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, "Test :string")){
 		t.Errorf("TestTSGetClass failed want %q got %v", "Test :string", slice)
 	}
@@ -215,7 +215,7 @@ func TestTSGetClass(t *testing.T){
 }
 
 func TestTSGetDocs(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `/*add
 @param x an int
 @returns an int
@@ -227,7 +227,7 @@ func TestTSGetDocs(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, `/*add
 @param x an int
 @returns an int
@@ -240,7 +240,7 @@ func TestTSGetDocs(t *testing.T){
 }
 
 func TestTSGetLineDocs(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `
 //add
 //@param x an int
@@ -253,7 +253,7 @@ func TestTSGetLineDocs(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
 	if(slice[0] != 
 `//add
 //@param x an int//@returns an int//`){
@@ -265,7 +265,7 @@ func TestTSGetLineDocs(t *testing.T){
 }
 
 func TestTSGetMultipleDocs(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `
 //add
 //@param x an int
@@ -287,7 +287,7 @@ func TestTSGetMultipleDocs(t *testing.T){
 	conf := config[".ts"]
 	lang, _ := getLanguageFileExt(".ts", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice,
 `//add
 //@param x an int//@returns an int//`)){

@@ -5,7 +5,7 @@ import "github.com/tree-sitter/go-tree-sitter"
 import "slices"
 
 func TestGetFunction(t *testing.T) {
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func sub(x int, y int) int{
 					return x-y
 				}`
@@ -13,14 +13,14 @@ func TestGetFunction(t *testing.T) {
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(string(slice[0]) != "func sub(x int, y int) int"){
 		t.Errorf("TestGetFunction failed want %q got %v","func sub(x int, y int) int", slice[0])
 	}
 }
 
 func TestGetMultipleFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func sub(x int, y int) int{
 					return x-y
 				}
@@ -32,7 +32,7 @@ func TestGetMultipleFunction(t *testing.T){
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, "func sub(x int, y int) int")){
 		t.Errorf("TestGetMultipleFunction failed want %q got %v","func sub(x int, y int) int", slice)
 	}
@@ -45,26 +45,26 @@ func TestGetMultipleFunction(t *testing.T){
 }
 
 func TestGetNoFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := ``
 	parser := tree_sitter.NewParser()
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(len(slice) != 0){
 		t.Errorf("TestGetNoFunction failed length wrong")
 	}
 }
 
 func TestGetEmptyFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func test(){}`
 	parser := tree_sitter.NewParser()
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(len(slice) != 1){
 		t.Errorf("TestGeEmptyFunction failed length wrong")
 	}
@@ -74,7 +74,7 @@ func TestGetEmptyFunction(t *testing.T){
 }
 
 func TestGetNestedFunction(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func nested(x int){
 					var nested2 func(y int)
 					nested2 = func(y int){
@@ -86,7 +86,7 @@ func TestGetNestedFunction(t *testing.T){
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, "func nested(x int)")){
 		t.Errorf("TestGetMultipleFunction failed want %q got %v","func nested(x int)", slice)
 	}
@@ -99,7 +99,7 @@ func TestGetNestedFunction(t *testing.T){
 }
 
 func TestGetFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func sub(x int, y int) int{
 					return x-y
 				}`
@@ -107,14 +107,14 @@ func TestGetFunctionSignature(t *testing.T){
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(string(slice[0]) != "int int int"){
 		t.Errorf("TestGetFunction failed want %q got %v","int int int", slice[0])
 	}
 }
 
 func TestGetMultipleFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func sub(x int, y int) int{
 					return x-y
 				}
@@ -126,7 +126,7 @@ func TestGetMultipleFunctionSignature(t *testing.T){
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, "int int int")){
 		t.Errorf("TestGetMultipleFunction failed want %q got %v","int int int", slice)
 	}
@@ -139,26 +139,26 @@ func TestGetMultipleFunctionSignature(t *testing.T){
 }
 
 func TestGetNoFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := ``
 	parser := tree_sitter.NewParser()
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(len(slice) != 0){
 		t.Errorf("TestGetNoFunctionSignature failed length wrong")
 	}
 }
 
 func TestGetEmptyFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func test(){}`
 	parser := tree_sitter.NewParser()
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(len(slice) != 1){
 		t.Errorf("TestGeEmptyFunction failed length wrong")
 	}
@@ -168,7 +168,7 @@ func TestGetEmptyFunctionSignature(t *testing.T){
 }
 
 func TestGetNestedFunctionSignature(t *testing.T){
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `func nested(x int){
 					var nested2 func(y int)
 					nested2 = func(y int){
@@ -184,7 +184,7 @@ func TestGetNestedFunctionSignature(t *testing.T){
 	conf := config[".go"]
 	lang, _ := getLanguageFileExt(".go", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if(!slices.Contains(slice, "int void")){
 		t.Errorf("TestGetMultipleFunction failed want %q got %v","int void", slice)
 	}
