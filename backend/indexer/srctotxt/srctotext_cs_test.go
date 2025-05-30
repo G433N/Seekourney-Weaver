@@ -6,7 +6,7 @@ import "slices"
 //import "fmt"
 
 func TestCSGetFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `public int Add(int x, int y) {
                     return x + y;
                 }`
@@ -14,7 +14,7 @@ func TestCSGetFunction(t *testing.T) {
     conf := config[".cs"]
 	lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if len(slice) != 1 {
 		t.Errorf("TestCSGetFunction failed length wrong")
 	}
@@ -24,7 +24,7 @@ func TestCSGetFunction(t *testing.T) {
 }
 
 func TestCSGetMultipleFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `public int Subtract(int x, int y) {
                     return x - y;
                 }
@@ -36,7 +36,7 @@ func TestCSGetMultipleFunction(t *testing.T) {
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if !slices.Contains(slice, "public int Subtract(int x, int y)") {
         t.Errorf("TestCSGetMultipleFunction failed want %q got %v", "public int Subtract(int x, int y)", slice)
     }
@@ -49,26 +49,26 @@ func TestCSGetMultipleFunction(t *testing.T) {
 }
 
 func TestCSGetNoFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := ``
     parser := tree_sitter.NewParser()
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if len(slice) != 0 {
         t.Errorf("TestCSGetNoFunction failed length wrong")
     }
 }
 
 func TestCSGetEmptyFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `public void Test() {}`
     parser := tree_sitter.NewParser()
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if len(slice) != 1 {
         t.Errorf("TestCSGetEmptyFunction failed length wrong")
     }
@@ -78,13 +78,13 @@ func TestCSGetEmptyFunction(t *testing.T) {
 }
 
 func testCSEmptyFile(t *testing.T) {
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := ``
 	parser := tree_sitter.NewParser()
 	conf := config[".cs"]
 	lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
 	if len(slice) != 0 {
 		t.Errorf("TestCSEmptyFile failed length wrong")
 	}
@@ -92,7 +92,7 @@ func testCSEmptyFile(t *testing.T) {
 }
 
 func TestCSGetNestedFunction(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `public void Nested(int x) {
                     void Nested2(int y) {
                         Console.WriteLine(y);
@@ -103,7 +103,7 @@ func TestCSGetNestedFunction(t *testing.T) {
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncs([]byte(testcode), parser, conf)
+    slice,_ := FindFuncs([]byte(testcode), parser, conf)
     if !slices.Contains(slice, "public void Nested(int x)") {
         t.Errorf("TestCSGetNestedFunction failed want %q got %v", "public void Nested(int x)", slice)
     }
@@ -116,7 +116,7 @@ func TestCSGetNestedFunction(t *testing.T) {
 }
 
 func TestCSGetFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `public int Subtract(int x, int y) {
                     return x - y;
                 }`
@@ -124,14 +124,14 @@ func TestCSGetFunctionSignature(t *testing.T) {
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if string(slice[0]) != "int int int" {
         t.Errorf("TestCSGetFunctionSignature failed want %q got %v", "int int int", slice[0])
     }
 }
 
 func TestCSGetMultipleFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `public int Subtract(int x, int y) {
                     return x - y;
                 }
@@ -143,7 +143,7 @@ func TestCSGetMultipleFunctionSignature(t *testing.T) {
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if !slices.Contains(slice, "int int int") {
         t.Errorf("TestCSGetMultipleFunctionSignature failed want %q got %v", "int int int", slice)
     }
@@ -156,26 +156,26 @@ func TestCSGetMultipleFunctionSignature(t *testing.T) {
 }
 
 func TestCSGetNoFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := ``
     parser := tree_sitter.NewParser()
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if len(slice) != 0 {
         t.Errorf("TestCSGetNoFunctionSignature failed length wrong")
     }
 }
 
 func TestCSGetEmptyFunctionSignature(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `public void Test() {}`
     parser := tree_sitter.NewParser()
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
     if len(slice) != 1 {
         t.Errorf("TestCSGetEmptyFunctionSignature failed length wrong")
     }
@@ -185,7 +185,7 @@ func TestCSGetEmptyFunctionSignature(t *testing.T) {
 }
 
 func TestCSGetDocs(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `
 /* <summary>
 Adds two numbers.
@@ -200,7 +200,7 @@ public int Add(int x, int y) {
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
     if !slices.Contains(slice, `/* <summary>
 Adds two numbers.
 </summary>
@@ -215,7 +215,7 @@ Adds two numbers.
 }
 
 func TestCSGetClass(t *testing.T) {
-	initsrcToText(Test())
+	InitsrcToText(Test())
 	testcode := `public class Test {
 		public int Add(int x, int y) {
 			return x + y;
@@ -228,7 +228,7 @@ func TestCSGetClass(t *testing.T) {
 	conf := config[".cs"]
 	lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findFuncSignature([]byte(testcode), parser, conf)
+    slice,_ := FindFuncSignature([]byte(testcode), parser, conf)
 	if !slices.Contains(slice, "Test int int int"){
 		t.Errorf("TestCSGetClass failed want %q got %v", "Test int int int", slice)}
 	if len(slice) != 2 {
@@ -237,7 +237,7 @@ func TestCSGetClass(t *testing.T) {
 }
 
 func TestCSGetLineDocs(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `/// Adds two numbers.
 /// <param name="x">An integer.</param>
 /// <param name="y">Another integer.</param>
@@ -249,7 +249,7 @@ public int Add(int x, int y) {
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
     if slices.Contains(slice,`/// Adds two numbers.
 /// <param name="x">An integer.</param>
 /// <param name="y">Another integer.</param>` ){
@@ -261,7 +261,7 @@ public int Add(int x, int y) {
 }
 
 func TestCSGetMultipleDocs(t *testing.T) {
-    initsrcToText(Test())
+    InitsrcToText(Test())
     testcode := `/// Adds two numbers.
 /// <param name="x">An integer.</param>
 /// <param name="y">Another integer.</param>
@@ -280,7 +280,7 @@ public int Subtract(int x, int y) {
     conf := config[".cs"]
     lang, _ := getLanguageFileExt(".cs", conf)
     parser.SetLanguage(lang)
-    slice,_ := findDocs([]byte(testcode), parser, conf)
+    slice,_ := FindDocs([]byte(testcode), parser, conf)
     if slices.Contains(slice,`/// Adds two numbers.
 /// <param name="x">An integer.</param>
 /// <param name="y">Another integer.</param>` ){

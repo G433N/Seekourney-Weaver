@@ -2,7 +2,6 @@ package srctotxt
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"seekourney/utils"
@@ -13,7 +12,6 @@ import (
 )
 
 type FileExtension string
-type Function string
 
 type TreeSitterConf struct {
 	grammarPath utils.Path
@@ -33,11 +31,15 @@ type ExtensionMap map[FileExtension]TreeSitterConf
 
 var config ExtensionMap
 
-func initsrcToText(newConfig ExtensionMap){
+//InitsrcToText
+//Initializes a configuration for the src to text conversion
+func InitsrcToText(newConfig ExtensionMap){
 	config = newConfig
 }
 
-func getLanguage(path utils.Path, conf TreeSitterConf)(*tree_sitter.Language, error){
+//GetLanguage
+//Gets the programming language of a given file
+func GetLanguage(path utils.Path, conf TreeSitterConf)(*tree_sitter.Language, error){
 	fileExtension := filepath.Ext(string(path))
 	pathSO := config[FileExtension(fileExtension)].grammarPath
 
@@ -79,14 +81,15 @@ func contains(str string, lst []string) bool{
 	return false
 }
 
-
-func findFuncs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf) ([]Function, error){
+//FindFuncs
+//Extracts all functions from a given sourcecode
+func FindFuncs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf) ([]string, error){
     defer parser.Close()
     tree := parser.Parse(sourceCode, nil)
     defer tree.Close()
 
 	rootNode := tree.RootNode()
-	var funcs []Function
+	var funcs []string
 
 	var findFuncsHelper func(node tree_sitter.Node) error
 	findFuncsHelper = func(node tree_sitter.Node) error{
@@ -98,7 +101,7 @@ func findFuncs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf
 				return errors.New("function declaration invalid")
 			}
 			functionSignature := sourceCode[node.StartByte():node.Child(node.ChildCount() - 2).EndByte()] //take out body by checking all the children - 2 (since last child node is usually function body)
-			funcs = append(funcs, Function(functionSignature))
+			funcs = append(funcs, string(functionSignature))
 		}
 		for i := uint(0); i < node.NamedChildCount(); i++ {
 			findFuncsHelper(*node.NamedChild(i))
@@ -135,7 +138,7 @@ func findClass(node *tree_sitter.Node, sourceCode []byte, conf TreeSitterConf) s
 
 //getSrcCode
 //gets the sourcecode of a file from a given path
-func getSrcCode(path utils.Path) ([]byte, error){
+func GetSrcCode(path utils.Path) ([]byte, error){
 	sourceCode, err := os.ReadFile(string(path))
 	if err != nil{
 		return nil, err
@@ -146,14 +149,14 @@ func getSrcCode(path utils.Path) ([]byte, error){
 //toTree
 //Gets a parser and config for a given file on a file path
 //errors if the file is not found or the language is not supported
-func toTree(path utils.Path)(*tree_sitter.Parser, TreeSitterConf, error){
+func ToTree(path utils.Path)(*tree_sitter.Parser, TreeSitterConf, error){
 	currentLang := FileExtension(filepath.Ext(string(path)))
 	conf, exists := config[currentLang]
 	if(!exists){
 		return nil, conf, errors.New("language not found")
 	}
 	parser := tree_sitter.NewParser()
-	language, err := getLanguage(path, conf)
+	language, err := GetLanguage(path, conf)
 	if err != nil {
 		return nil, conf, err
 	}
@@ -166,13 +169,13 @@ func toTree(path utils.Path)(*tree_sitter.Parser, TreeSitterConf, error){
 
 //findFuncSignature
 //Extracts all function signatures from a given sourcecode
-func findFuncSignature(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf)([]Function, error){
+func FindFuncSignature(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf)([]string, error){
     defer parser.Close()
     tree := parser.Parse(sourceCode, nil)
     defer tree.Close()
 
 	rootNode := tree.RootNode()
-	var funcs []Function
+	var funcs []string
 
 	var findFuncsHelper func(node tree_sitter.Node) error
 	findFuncsHelper = func(node tree_sitter.Node) error{
@@ -249,7 +252,7 @@ func findFuncSignature(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSi
 					}
 				}
 			}
-			funcs = append(funcs, Function(currentSignature))
+			funcs = append(funcs, string(currentSignature))
 		}
 		for i := uint(0); i < node.NamedChildCount(); i++ {
 			findFuncsHelper(*node.NamedChild(i))
@@ -286,7 +289,9 @@ func isNested(node *tree_sitter.Node, searchFor []string, searchLimit int, child
 	return false
 }
 
-func findDocs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf) ([]string, error){
+//FindDocs
+//Extracts all documentation comments from a given sourcecode
+func FindDocs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf) ([]string, error){
     defer parser.Close()
     tree := parser.Parse(sourceCode, nil)
     defer tree.Close()
@@ -331,14 +336,4 @@ func findDocs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf)
 	var acc string
 	findDocsHelper(*rootNode, acc)
 	return docs, nil
-}
-
-
-
-
-func Run(){
-	initsrcToText(Default())
-	parser, conf,_ := toTree("./srctotxt/testfiles/test1.go")
-	sourceCode, _ := getSrcCode("./srctotxt/testfiles/test1.go")
-	fmt.Println(findFuncSignature(sourceCode, parser, conf))
 }
