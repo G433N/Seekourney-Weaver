@@ -155,7 +155,7 @@ func Run(args []string) {
 	// Load config
 	conf = config.Load()
 
-	//	go startContainer()
+	go startContainer()
 
 	db := connectToDB()
 
