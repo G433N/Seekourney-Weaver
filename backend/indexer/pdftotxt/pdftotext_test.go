@@ -43,6 +43,9 @@ func TestPDFtoimgMultiplePages(t *testing.T) {
 
 func TestImgtotext(t *testing.T) {
 	// Test with a single image
+	if(testing.Short()){
+		t.Skip("skipping long test")
+	}
 	pdftoimg("./pdf/sample.pdf", "./covpdf/sample")
 	text, err := imagesToText("", utils.Path("./covpdf/sample/"))
 	if err != nil {
@@ -54,26 +57,3 @@ func TestImgtotext(t *testing.T) {
 	fmt.Printf("Extracted text from single image: %s\n", text)
 	clearOutputDir("./covpdf/sample/")
 }
-
-/*
-func TestImgtotextNoImg(t *testing.T){
-}
-
-func TestImgtotextNoText(t *testing.T){
-}
-
-func testImgTotextMultipledifferentimages(t *testing.T){
-
-}
-
-func TestImagestotextOneImage(t *testing.T){
-}
-
-func TestImagestotextNoImage(t *testing.T){
-}
-
-func TestImagestotextMultipleImages(t *testing.T){
-
-}
-*/
-
