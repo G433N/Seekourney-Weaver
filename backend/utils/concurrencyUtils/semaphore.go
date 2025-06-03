@@ -16,12 +16,12 @@ type Semaphore struct {
 	syncLock sync.Mutex
 
 	/*
-		Signal
+		signal
 		Increments the semaphores value.
 		If it was 0 it will unblock any blocked Wait thread.
 		If bounded, it will block if the value is currently the maximum value.
 	*/
-	Signal func()
+	signal func()
 
 	/*
 		Wait
@@ -29,21 +29,21 @@ type Semaphore struct {
 		It will block if the value is currently 0.
 		If bounded, it will unblock any blocked Signal thread.
 	*/
-	Wait func()
+	wait func()
 
 	/*
 		TryWait
 		Tries to decrement the semaphore’s value and return sucess/true.
 		If the value is 0 it will return false.
 	*/
-	TryWait func() bool
+	tryWait func() bool
 
 	/*
 		TrySignal
 		Tries to increment the semaphore’s value and return sucess/true.
 		If the value is currently the maximum value it will return false.
 	*/
-	TrySignal func() bool
+	trySignal func() bool
 
 	// the maximum value of the semaphore
 	maxValue int
@@ -74,20 +74,20 @@ func NewSemaphore(arg ...int) *Semaphore {
 	var initialValue int
 	maxValue := math.MaxInt
 	semaphore := Semaphore{}
-	semaphore.Signal = semaphore.defaultSignal
-	semaphore.Wait = semaphore.defaultWait
-	semaphore.TryWait = semaphore.defaultTryWait
-	semaphore.TrySignal = semaphore.defaultTrySignal
+	semaphore.signal = semaphore.defaultSignal
+	semaphore.wait = semaphore.defaultWait
+	semaphore.tryWait = semaphore.defaultTryWait
+	semaphore.trySignal = semaphore.defaultTrySignal
 	switch len(arg) {
 	case 2:
 		maxValue = arg[1]
 		if maxValue < 1 {
 			log.Fatalln("maxValue must be greater than 0")
 		}
-		semaphore.Signal = semaphore.boundedSignal
-		semaphore.Wait = semaphore.boundedWait
-		semaphore.TryWait = semaphore.boundedTryWait
-		semaphore.TrySignal = semaphore.boundedTrySignal
+		semaphore.signal = semaphore.boundedSignal
+		semaphore.wait = semaphore.boundedWait
+		semaphore.tryWait = semaphore.boundedTryWait
+		semaphore.trySignal = semaphore.boundedTrySignal
 		fallthrough
 	case 1:
 		initialValue = arg[0]
@@ -115,6 +115,44 @@ func NewSemaphore(arg ...int) *Semaphore {
 		semaphore.signalingGroup.Add(1)
 	}
 	return &semaphore
+}
+
+/*
+signal
+Increments the semaphores value.
+If it was 0 it will unblock any blocked Wait thread.
+If bounded, it will block if the value is currently the maximum value.
+*/
+func (semaphore *Semaphore) Signal() {
+	semaphore.signal()
+}
+
+/*
+Wait
+Decrement the semaphore’s value.
+It will block if the value is currently 0.
+If bounded, it will unblock any blocked Signal thread.
+*/
+func (semaphore *Semaphore) Wait() {
+	semaphore.wait()
+}
+
+/*
+TryWait
+Tries to decrement the semaphore’s value and return sucess/true.
+If the value is 0 it will return false.
+*/
+func (semaphore *Semaphore) TryWait() bool {
+	return semaphore.tryWait()
+}
+
+/*
+TrySignal
+Tries to increment the semaphore’s value and return sucess/true.
+If the value is currently the maximum value it will return false.
+*/
+func (semaphore *Semaphore) TrySignal() bool {
+	return semaphore.trySignal()
 }
 
 /*
