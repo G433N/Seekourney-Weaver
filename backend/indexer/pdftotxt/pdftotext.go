@@ -1,13 +1,13 @@
-package pdftotext
+package main
 
 import (
 	"fmt"
+	"github.com/gen2brain/go-fitz"
 	"github.com/tiagomelo/go-ocr/ocr"
+	"image/jpeg"
 	"os"
 	"path/filepath"
 	"regexp"
-	"github.com/gen2brain/go-fitz"
-	"image/jpeg"
 	"seekourney/utils"
 )
 
@@ -18,7 +18,7 @@ type Text string
 pdftoimg
 Converts a pdf to a series of jpegs where each page is its own image using mupdf
 */
-func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error{
+func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error {
 	doc, err := fitz.New(string(pdfpath))
 	if err != nil {
 		return err
@@ -53,19 +53,18 @@ func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error{
 	return nil
 }
 
-
 /*
 clearOutputDir
 Clears an output directory of all files with prefix + "page-" in them.
 */
-func clearOutputDir(outputDir utils.Path) error{
+func clearOutputDir(outputDir utils.Path) error {
 	toRemove, err := filepath.Glob(string(outputDir) + "*page-*")
-	if(err != nil) {
+	if err != nil {
 		return err
 	}
 	for _, file := range toRemove {
 		err = os.Remove(file)
-		if(err != nil){
+		if err != nil {
 			return err
 		}
 	}
@@ -110,7 +109,7 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 	}
 	ocrEngine, err = ocrInit()
 	if err != nil {
-		return txt, err	
+		return txt, err
 	}
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
@@ -119,13 +118,13 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 		}
 	}
 	walkHelper := func(path string, info os.FileInfo, err error) error {
-		if(info == nil) {
+		if info == nil {
 			return fmt.Errorf("file info is nil for path: %s", path)
 		}
 		if regex.MatchString(info.Name()) {
 			var newText Text
 			newText, err = imgToText(utils.Path(path))
-			if(err != nil) {
+			if err != nil {
 				return err
 			}
 			txt = append(txt, newText)
@@ -157,7 +156,7 @@ func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, error
 	}
 	ocrEngine, err = ocrInit()
 	if err != nil {
-		return txt, err	
+		return txt, err
 	}
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
@@ -171,12 +170,12 @@ func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, error
 
 	walkHelper := func(path string, info os.FileInfo, err error) error {
 		if regex.MatchString(info.Name()) {
-			go func(path string){
+			go func(path string) {
 				var newText Text
 				newText, err = imgToText(utils.Path(path))
 				channel <- utils.Result[Text]{
 					Value: newText,
-					Err: err,
+					Err:   err,
 				}
 			}(path)
 
