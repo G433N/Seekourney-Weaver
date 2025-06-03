@@ -62,52 +62,52 @@ func benchSemaphore[C semaphoreInterface](sem C,
 	wg.Wait()
 }
 
-func _BenchmarkSemaphoreChanelBasic10(b *testing.B) {
+func BenchmarkSemaphoreChanelBasic10(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(chanSem(make(chan bool, 1000)), 10, 10)
 	}
 
 }
 
-func _BenchmarkSemaphoreNewBasic10(b *testing.B) {
+func BenchmarkSemaphoreNewBasic10(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(concurrencyUtils.NewSemaphore(), 10, 10)
 	}
 }
 
-func _BenchmarkSemaphoreChanelBasic10000_100(b *testing.B) {
+func BenchmarkSemaphoreChanelBasic10000_100(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(chanSem(make(chan bool, 10000000)), 10000, 100)
 	}
 
 }
 
-func _BenchmarkSemaphoreNewBasic10000_100(b *testing.B) {
+func BenchmarkSemaphoreNewBasic10000_100(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(concurrencyUtils.NewSemaphore(), 10000, 100)
 	}
 }
 
-func _BenchmarkSemaphoreNewBoundedBasic10000_100(b *testing.B) {
+func BenchmarkSemaphoreNewBoundedBasic10000_100(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(concurrencyUtils.NewSemaphore(0, 10000000), 10000, 100)
 	}
 }
 
-func _BenchmarkSemaphoreChanelSmallBuffer1000_4000(b *testing.B) {
+func BenchmarkSemaphoreChanelSmallBuffer1000_4000(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(chanSem(make(chan bool, 20)), 1000, 4000)
 	}
 
 }
 
-func _BenchmarkSemaphoreNewSmallbuffer1000_4000(b *testing.B) {
+func BenchmarkSemaphoreNewSmallbuffer1000_4000(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(concurrencyUtils.NewSemaphore(0, 20), 1000, 4000)
 	}
 }
 
-func _BenchmarkSemaphoreNewNobuffer1000_4000(b *testing.B) {
+func BenchmarkSemaphoreNewNobuffer1000_4000(b *testing.B) {
 	for b.Loop() {
 		benchSemaphore(concurrencyUtils.NewSemaphore(), 1000, 4000)
 	}
