@@ -38,17 +38,20 @@ func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error {
 			return err
 		}
 
-		f, err := os.Create(filepath.Join(string(outputDir), fmt.Sprintf("page-%d.jpeg", n+1)))
+		file, err := os.Create(filepath.Join(string(outputDir), fmt.Sprintf("page-%d.jpeg", n+1)))
+
 		if err != nil {
+			file.Close()
 			return err
 		}
 
-		err = jpeg.Encode(f, img, &jpeg.Options{jpeg.DefaultQuality})
+		err = jpeg.Encode(file, img, &jpeg.Options{Quality: jpeg.DefaultQuality})
 		if err != nil {
+			file.Close()
 			return err
 		}
 
-		f.Close()
+		file.Close()
 	}
 	return nil
 }
@@ -170,14 +173,14 @@ func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, error
 
 	walkHelper := func(path string, info os.FileInfo, err error) error {
 		if regex.MatchString(info.Name()) {
-			go func(path string) {
+			go func() {
 				var newText Text
 				newText, err = imgToText(utils.Path(path))
 				channel <- utils.Result[Text]{
 					Value: newText,
 					Err:   err,
 				}
-			}(path)
+			}()
 
 			amount++
 		}
@@ -200,14 +203,4 @@ func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, error
 	}
 
 	return txt, nil
-}
-
-func Run() {
-	prefix := "pdftotxt/"
-	pdftoimg(utils.Path(prefix+"pdf/EXAMPLE.pdf"), utils.Path(prefix+"covpdf/")) //kör pdftoimg först på din pdf, lägg pdf i pdf folder och byt ut "EXAMPLE" med dess namn
-	// test := imgToText("covpdf/page-1.png")
-	// imagesToText("", prefix+"covpdf/")
-	imagesToTextParallel("", utils.Path(prefix+"covpdf/"))
-	// fmt.Println(test)
-	// clearOutputDir(prefix + "/covpdf/")
 }
