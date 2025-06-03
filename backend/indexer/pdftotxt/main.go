@@ -13,7 +13,12 @@ func f(cxt indexing.Context, set indexing.Settings) {
 
 	cxt.Log("Converting to image: %s", path)
 
-	pdftoimg(path, _OUTDIR_)
+	err := pdftoimg(path, _OUTDIR_)
+
+	if( err != nil) {
+		cxt.Log("Error converting PDF to images: %v", err)
+		return
+	}
 
 	cxt.Log("Converting images to text...")
 
