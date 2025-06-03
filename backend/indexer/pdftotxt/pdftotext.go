@@ -26,7 +26,8 @@ func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error {
 	defer doc.Close()
 	_, err = os.Stat(string(outputDir))
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
+		err = os.MkdirAll(string(outputDir), 0777) 
+		//0777 is the file permission for the directory created
 		if err != nil {
 			return err
 		}
@@ -38,14 +39,16 @@ func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error {
 			return err
 		}
 
-		file, err := os.Create(filepath.Join(string(outputDir), fmt.Sprintf("page-%d.jpeg", n+1)))
+		file, err := os.Create(filepath.Join(string(outputDir), 
+		fmt.Sprintf("page-%d.jpeg", n+1)))
 
 		if err != nil {
 			file.Close()
 			return err
 		}
 
-		err = jpeg.Encode(file, img, &jpeg.Options{Quality: jpeg.DefaultQuality})
+		err = jpeg.Encode(file, img, 
+						  &jpeg.Options{Quality: jpeg.DefaultQuality})
 		if err != nil {
 			file.Close()
 			return err
@@ -115,7 +118,8 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 		return txt, err
 	}
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
+		err = os.MkdirAll(string(outputDir), 0777) 
+		//0777 is the file permission for the directory created
 		if err != nil {
 			return txt, err
 		}
@@ -150,7 +154,8 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 imagesToTextParallel
 Converts multiple images from a directory to text in parallel.
 */
-func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, error) {
+func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, 
+																   error) {
 
 	regex, err := regexp.Compile(string(image) + "page-.*")
 	var txt []Text
@@ -162,7 +167,8 @@ func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, error
 		return txt, err
 	}
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(string(outputDir), 0777) //0777 is the file permission for the directory created
+		err = os.MkdirAll(string(outputDir), 0777)
+		 //0777 is the file permission for the directory created
 		if err != nil {
 			return txt, err
 		}

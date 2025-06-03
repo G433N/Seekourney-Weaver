@@ -14,11 +14,17 @@ func TestPDFtoimgOnePage(t *testing.T) {
 	if !slices.Contains(file_exists, "./covpdf/sample/page-1.jpeg") || err != nil {
 		t.Errorf(`pdftoimg = %q, %v, want "./covpdf/page-1.jpeg", error`, file_exists, err)
 	}
-	clearOutputDir("./covpdf/sample/")
+	err = clearOutputDir("./covpdf/sample_multiple_pages/")
+	if err != nil {
+		t.Errorf("clearOutputDir failed: %v", err)
+	}
 }
 
 func TestPDFtoimgNoPDF(t *testing.T) {
-	pdftoimg("./pdf/doesntexist.pdf", "./covpdf/")
+	err := pdftoimg("./pdf/doesntexist.pdf", "./covpdf/")
+	if err == nil {
+		t.Errorf("pdftoimg should have returned an error for non-existent PDF")
+	}
 	file_exists, err := filepath.Glob("./covpdf/page*")
 	if slices.Contains(file_exists, "covpdf/page*") || err != nil {
 		t.Errorf(`pdftoimg = %q, %v, want "", error`, file_exists, err)
@@ -37,8 +43,10 @@ func TestPDFtoimgMultiplePages(t *testing.T) {
 	if !slices.Contains(file_exists, "covpdf/sample_multiple_pages/page-3.jpeg") {
 		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-3.jpeg", error`, file_exists, err)
 	}
-	clearOutputDir("./covpdf/sample_multiple_pages/")
-
+	err = clearOutputDir("./covpdf/sample_multiple_pages/")
+	if err != nil {
+		t.Errorf("clearOutputDir failed: %v", err)
+	}
 }
 
 func TestImgtotext(t *testing.T) {
@@ -55,5 +63,8 @@ func TestImgtotext(t *testing.T) {
 		t.Error("imgToText returned empty text")
 	}
 	fmt.Printf("Extracted text from single image: %s\n", text)
-	clearOutputDir("./covpdf/sample/")
+	err = clearOutputDir("./covpdf/sample_multiple_pages/")
+	if err != nil {
+		t.Errorf("clearOutputDir failed: %v", err)
+	}
 }
