@@ -31,9 +31,9 @@ describe('/+page.svelte', () => {
 		const mockResults = {
 			Query: 'test',
 			Results: [
-				{ Path: 'local/path/to/file.txt', Score: 0.90, Source: 2 },
-				{ Path: 'http://website.com/webpage', Score: 0.79, Source: 1 },
-			],
+				{ Path: 'local/path/to/file.txt', Score: 0.9, Source: 2 },
+				{ Path: 'http://website.com/webpage', Score: 0.79, Source: 1 }
+			]
 		};
 
 		// mock fetch response
@@ -49,10 +49,9 @@ describe('/+page.svelte', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
-		
 		await waitFor(() => {
 			expect(screen.getByText('file.txt')).toBeInTheDocument();
-			expect(screen.getByRole('button', { name: /download/i})).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: /download/i })).toBeInTheDocument();
 		});
 	});
 
@@ -86,7 +85,7 @@ describe('/+page.svelte', () => {
 
 		await waitFor(() => {
 			expect(fetch).not.toHaveBeenCalled();
-		})
+		});
 	});
 
 	test('search input focused on mount', async () => {
@@ -99,9 +98,7 @@ describe('/+page.svelte', () => {
 	test('tests file download', async () => {
 		const mockResults = {
 			Query: 'test',
-			Results: [
-				{ Path: 'local/file.pdf', Score: 0.90, Source: 2 },
-			],
+			Results: [{ Path: 'local/file.pdf', Score: 0.9, Source: 2 }]
 		};
 
 		const blob = new Blob(['dummy content']);
@@ -111,7 +108,7 @@ describe('/+page.svelte', () => {
 		(globalThis.fetch as any) = vi
 			.fn()
 			.mockResolvedValueOnce({ json: async () => mockResults }) //search
-			.mockResolvedValueOnce({ blob: async () => blob }) //download
+			.mockResolvedValueOnce({ blob: async () => blob }); //download
 
 		globalThis.URL.createObjectURL = createObjectURL;
 		globalThis.URL.revokeObjectURL = revokeObjectURL;
@@ -130,7 +127,10 @@ describe('/+page.svelte', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /download/i }));
 
 		await waitFor(() => {
-			expect(fetch).toHaveBeenCalledWith('http://localhost:8080/download?q=local/file.pdf', expect.objectContaining({ method: 'GET' }));
+			expect(fetch).toHaveBeenCalledWith(
+				'http://localhost:8080/download?q=local/file.pdf',
+				expect.objectContaining({ method: 'GET' })
+			);
 			expect(createObjectURL).toHaveBeenCalled();
 			expect(revokeObjectURL).toHaveBeenCalled();
 		});
@@ -144,5 +144,5 @@ describe('Settings page', () => {
 		expect(screen.getByRole('checkbox', { name: /Files/i })).toBeInTheDocument();
 		expect(screen.getByRole('checkbox', { name: /Webpages/i })).toBeInTheDocument();
 		expect(screen.getByRole('checkbox', { name: /Show all results/i })).toBeInTheDocument();
-	})
-})
+	});
+});

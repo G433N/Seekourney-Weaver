@@ -9,4 +9,6 @@ export const cpuDefault = writable(true);
 export const maxCores = writable(8);
 export const cpuCores = writable(4);
 
-export const indexerList = writable<{ ID: number; Name: string; ExecPath: string; Args: string[]; Port: number }[]>([]);
+export const indexerList = writable<
+	{ ID: number; Name: string; ExecPath: string; Args: string[]; Port: number }[]
+>([]);

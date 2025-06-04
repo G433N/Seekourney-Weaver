@@ -29,9 +29,7 @@
 			let filteredResults = json.Results;
 
 			filteredResults = filteredResults.filter(
-				(res) =>
-					(res.Source === 1 && get(showWebpages)) ||
-					(res.Source !== 1 && get(showFiles))
+				(res) => (res.Source === 1 && get(showWebpages)) || (res.Source !== 1 && get(showFiles))
 			);
 
 			if (!get(showAllResults)) {
@@ -84,14 +82,12 @@
 			bind:this={searchInput}
 			type="text"
 			placeholder="Write your search here!"
-			on:keyup={ search }
+			on:keyup={search}
 		/>
 
 		<button on:click={search} id="searchButton"> Search </button>
 
-		<button on:click={refreshSearch} class="round-button" title="Refresh results">
-			↻
-		</button>
+		<button on:click={refreshSearch} class="round-button" title="Refresh results"> ↻ </button>
 	</div>
 
 	{#if searched == true && results.length > 0}

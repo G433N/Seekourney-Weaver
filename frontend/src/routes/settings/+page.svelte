@@ -29,7 +29,6 @@
 	const optionsCollections: string[] = ['File', 'Folder', 'Webpage'];
 	let selectedIndexerID: string = $state('Select an indexer');
 	let indexerDropdownOpen: boolean = $state(false);
-	
 
 	async function fetchIndexers(): Promise<void> {
 		try {
@@ -62,15 +61,15 @@
 
 	async function addCollection(): Promise<void> {
 		const sourceMap = {
-			'File': 0,
-			'Folder': 1, 
-			'Webpage': 2
+			File: 0,
+			Folder: 1,
+			Webpage: 2
 		} as const;
 
 		let sourceType: number = sourceMap[selectedCollections as keyof typeof sourceMap] ?? -1;
-		
+
 		if (!collectionPath || !selectedIndexerID || sourceType === -1) {
-			console.error("missing required fields");
+			console.error('missing required fields');
 			return;
 		}
 
@@ -114,7 +113,6 @@
 	onMount(() => {
 		fetchIndexers();
 	});
-
 </script>
 
 <main style="max-width: 600px;">
@@ -136,7 +134,7 @@
 			<input type="checkbox" bind:checked={$showAllResults} />
 			Show all results
 		</label>
-		
+
 		<label class="max-label" class:disabled-label={$showAllResults}>
 			<div class="inputDiv">
 				Max results shown:
@@ -150,7 +148,7 @@
 		<span class="tooltip-wrapper">
 			<span class="info-icon">?</span>
 			<span class="tooltip-text">
-				CPU usage determines how much of the CPU the system is allowed to use. More cores means 
+				CPU usage determines how much of the CPU the system is allowed to use. More cores means
 				faster searching but may make other processes running on your device slower.
 			</span>
 		</span>
@@ -162,7 +160,14 @@
 		</label>
 		<div class="slider">
 			<label for="cpuSlider" class:disabled-label={$cpuDefault}>CPU cores used:</label>
-			<input id="cpuSlider" type="range" min="1" max={$maxCores} bind:value={$cpuCores} disabled={$cpuDefault}/>
+			<input
+				id="cpuSlider"
+				type="range"
+				min="1"
+				max={$maxCores}
+				bind:value={$cpuCores}
+				disabled={$cpuDefault}
+			/>
 			<span class:disabled-label={$cpuDefault}>{$cpuCores}</span>
 		</div>
 	</div>
@@ -172,17 +177,17 @@
 		<span class="tooltip-wrapper">
 			<span class="info-icon">?</span>
 			<span class="tooltip-text">
-				An indexer is a small program that looks through files or websites and creates a list of what they contain,
-				 like words in documents, so you can search and find things quickly.
-				<br>
-				<br>
+				An indexer is a small program that looks through files or websites and creates a list of
+				what they contain, like words in documents, so you can search and find things quickly.
+				<br />
+				<br />
 				How to use:
-				<br>
+				<br />
 				1. Enter the absolute path in the search field, the indexer must be located among your files.
-				<br>
+				<br />
 				2. Click "Add" - this will register your indexer and start using it automatically
-				<br>
-				<br>
+				<br />
+				<br />
 				You can add multiple indexers to handle different kinds of data.
 			</span>
 		</span>
@@ -190,12 +195,18 @@
 	<div class="box column">
 		<div class="indexer-div">
 			<p>
-				You can add your own custom indexer by providing the absolute path to a local executable on your device.
+				You can add your own custom indexer by providing the absolute path to a local executable on
+				your device.
 			</p>
 			<div class="indexerInputDiv">
 				Indexer path:
-				<br>
-				<input id="InputIndexer" type="text" bind:value={indexerInput} placeholder="/user/example/custom-indexer" />
+				<br />
+				<input
+					id="InputIndexer"
+					type="text"
+					bind:value={indexerInput}
+					placeholder="/user/example/custom-indexer"
+				/>
 				<button class="indexerButton" onclick={() => addIndexer()}> Add </button>
 			</div>
 		</div>
@@ -217,14 +228,13 @@
 	<div class="box column">
 		<div class="indexer-div">
 			<p>
-				You can add a new file, folder or webpage to search through by providing the absolute path or URL to it, 
-				selecting the type and selecting what indexer to use.
-
+				You can add a new file, folder or webpage to search through by providing the absolute path
+				or URL to it, selecting the type and selecting what indexer to use.
 			</p>
-			
+
 			<div id="collectionDropdowns">
 				<div class="dropdown">
-					<button class="dropdownToggle" onclick={() => sourceDropdownOpen = !sourceDropdownOpen}>
+					<button class="dropdownToggle" onclick={() => (sourceDropdownOpen = !sourceDropdownOpen)}>
 						{selectedCollections}
 					</button>
 					{#if sourceDropdownOpen}
@@ -240,8 +250,11 @@
 					{/if}
 				</div>
 
-				<div class="dropdown"> 
-					<button class="dropdownToggle" onclick={() => indexerDropdownOpen = !indexerDropdownOpen}>
+				<div class="dropdown">
+					<button
+						class="dropdownToggle"
+						onclick={() => (indexerDropdownOpen = !indexerDropdownOpen)}
+					>
 						{selectedIndexerID}
 					</button>
 					{#if indexerDropdownOpen}
@@ -260,11 +273,15 @@
 
 			<div class="indexerInputDiv">
 				Path to file/folder/URL:
-				<br>
-				<input id="inputCollection" type="text" bind:value={collectionPath} placeholder="/user/example/folder-to-search" />
+				<br />
+				<input
+					id="inputCollection"
+					type="text"
+					bind:value={collectionPath}
+					placeholder="/user/example/folder-to-search"
+				/>
 				<button class="indexerButton" onclick={addCollection}>Add</button>
 			</div>
-			
 		</div>
 	</div>
 </main>
@@ -338,11 +355,11 @@
 	.inputDiv {
 		display: flex;
 		align-items: center;
-		gap: 4rem; 
+		gap: 4rem;
 	}
 
 	.inputDiv input {
-		margin-left: auto; 
+		margin-left: auto;
 	}
 
 	.indexerButton {
@@ -357,27 +374,27 @@
 
 	.tooltip-wrapper {
 		position: relative;
-  		display: inline-flex;
-  		align-items: center;
-  		justify-content: center;
-  		cursor: help;
-  		width: 1.2em;
-  		height: 1.2em;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: help;
+		width: 1.2em;
+		height: 1.2em;
 	}
 
 	.info-icon {
-	  	font-size: 0.7em;
-  		width: 1.1em;
-  		height: 1.1em;
-  		border-radius: 50%;
-  		background-color: white;
-  		border: 2px solid black;
-  		color: black;
-  		font-weight: bold;
-  		display: flex;
-  		align-items: center;
-  		justify-content: center;
-  		line-height: 1;
+		font-size: 0.7em;
+		width: 1.1em;
+		height: 1.1em;
+		border-radius: 50%;
+		background-color: white;
+		border: 2px solid black;
+		color: black;
+		font-weight: bold;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
 	}
 
 	.tooltip-text {
@@ -451,7 +468,6 @@
 		padding: 0;
 		margin: 0;
 		background: #aec6df;
-
 	}
 
 	.menu li button {
@@ -480,11 +496,10 @@
 
 	.dropdown .menu li button {
 		font-size: 1rem;
-	}	
+	}
 
 	.indexerInputDiv {
 		font-family: 'Jost', sans-serif;
 		font-weight: 500;
 	}
-
 </style>
