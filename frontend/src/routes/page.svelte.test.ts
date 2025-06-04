@@ -105,7 +105,7 @@ describe('/+page.svelte', () => {
 		const createObjectURL = vi.fn(() => 'blob:dummy-url');
 		const revokeObjectURL = vi.fn();
 
-		(globalThis.fetch as any) = vi
+		globalThis.fetch = vi
 			.fn()
 			.mockResolvedValueOnce({ json: async () => mockResults }) //search
 			.mockResolvedValueOnce({ blob: async () => blob }); //download

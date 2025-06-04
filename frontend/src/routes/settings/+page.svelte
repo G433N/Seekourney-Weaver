@@ -10,8 +10,6 @@
 		indexerList
 	} from '../../lib/stores/settings';
 
-	import { get } from 'svelte/store';
-
 	import { onMount } from 'svelte';
 
 	interface IndexerResult {
