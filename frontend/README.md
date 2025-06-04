@@ -11,3 +11,4 @@ Start the server and automatically open the app in a new browser tab with
 `npm run dev -- --open`
 
 See README in backend folder for starting up the main server.
+
