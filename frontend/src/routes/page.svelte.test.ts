@@ -146,3 +146,4 @@ describe('Settings page', () => {
 		expect(screen.getByRole('checkbox', { name: /Show all results/i })).toBeInTheDocument();
 	});
 });
+
