@@ -9,12 +9,15 @@ import (
 )
 
 func TestPDFtoimgOnePage(t *testing.T) {
-	pdftoimg("./pdf/sample.pdf", "./covpdf/sample")
+	err := pdftoimg("./pdf/sample.pdf", "./covpdf/sample")
+	if err != nil {
+		t.Errorf("pdftoimg failed: %v", err)
+	}
 	file_exists, err := filepath.Glob("./covpdf/sample/page-1.jpeg")
 	if !slices.Contains(file_exists, "./covpdf/sample/page-1.jpeg") ||
-	 err != nil {
-		t.Errorf(`pdftoimg = %q, %v, want "./covpdf/page-1.jpeg", error`, 
-		file_exists, err)
+		err != nil {
+		t.Errorf(`pdftoimg = %q, %v, want "./covpdf/page-1.jpeg", error`,
+			file_exists, err)
 	}
 	err = clearOutputDir("./covpdf/sample_multiple_pages/")
 	if err != nil {
@@ -34,23 +37,26 @@ func TestPDFtoimgNoPDF(t *testing.T) {
 }
 
 func TestPDFtoimgMultiplePages(t *testing.T) {
-	pdftoimg("./pdf/sample_multiple_pages.pdf", 
-	"./covpdf/sample_multiple_pages")
+	err := pdftoimg("./pdf/sample_multiple_pages.pdf",
+		"./covpdf/sample_multiple_pages")
+	if err != nil {
+		t.Errorf("pdftoimg failed: %v", err)
+	}
 	file_exists, err := filepath.Glob("./covpdf/sample_multiple_pages/page*")
-	if !slices.Contains(file_exists, 
+	if !slices.Contains(file_exists,
 		"covpdf/sample_multiple_pages/page-1.jpeg") || err != nil {
-		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-1.jpeg", error`, 
-		file_exists, err)
+		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-1.jpeg", error`,
+			file_exists, err)
 	}
-	if !slices.Contains(file_exists, 
+	if !slices.Contains(file_exists,
 		"covpdf/sample_multiple_pages/page-2.jpeg") {
-		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-2.jpeg", error`, 
-		file_exists, err)
+		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-2.jpeg", error`,
+			file_exists, err)
 	}
-	if !slices.Contains(file_exists, 
+	if !slices.Contains(file_exists,
 		"covpdf/sample_multiple_pages/page-3.jpeg") {
-		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-3.jpeg", error`, 
-		file_exists, err)
+		t.Errorf(`pdftoimg = %q, %v, want "covpdf/page-3.jpeg", error`,
+			file_exists, err)
 	}
 	err = clearOutputDir("./covpdf/sample_multiple_pages/")
 	if err != nil {
@@ -60,10 +66,13 @@ func TestPDFtoimgMultiplePages(t *testing.T) {
 
 func TestImgtotext(t *testing.T) {
 	// Test with a single image
-	if(testing.Short()){
+	if testing.Short() {
 		t.Skip("skipping long test")
 	}
-	pdftoimg("./pdf/sample.pdf", "./covpdf/sample")
+	err := pdftoimg("./pdf/sample.pdf", "./covpdf/sample")
+	if err != nil {
+		t.Errorf("pdftoimg failed: %v", err)
+	}
 	text, err := imagesToText("", utils.Path("./covpdf/sample/"))
 	if err != nil {
 		t.Errorf("imgToText failed: %v", err)

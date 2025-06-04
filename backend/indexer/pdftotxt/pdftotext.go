@@ -23,12 +23,15 @@ func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error {
 	if err != nil {
 		return err
 	}
-	defer doc.Close()
 	_, err = os.Stat(string(outputDir))
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(string(outputDir), 0777) 
+		err = os.MkdirAll(string(outputDir), 0777)
 		//0777 is the file permission for the directory created
 		if err != nil {
+			err2 := doc.Close()
+			if err2 != nil {
+				return err2
+			}
 			return err
 		}
 	}
@@ -36,25 +39,54 @@ func pdftoimg(pdfpath utils.Path, outputDir utils.Path) error {
 	for n := 0; n < doc.NumPage(); n++ {
 		img, err := doc.Image(n)
 		if err != nil {
+			err2 := doc.Close()
+			if err2 != nil {
+				return err2
+			}
 			return err
 		}
 
-		file, err := os.Create(filepath.Join(string(outputDir), 
-		fmt.Sprintf("page-%d.jpeg", n+1)))
+		file, err := os.Create(filepath.Join(string(outputDir),
+			fmt.Sprintf("page-%d.jpeg", n+1)))
 
 		if err != nil {
-			file.Close()
+			err2 := file.Close()
+			if err2 != nil {
+				return err2
+			}
+			err2 = doc.Close()
+			if err2 != nil {
+				return err2
+			}
 			return err
 		}
 
-		err = jpeg.Encode(file, img, 
-						  &jpeg.Options{Quality: jpeg.DefaultQuality})
+		err = jpeg.Encode(file, img,
+			&jpeg.Options{Quality: jpeg.DefaultQuality})
 		if err != nil {
-			file.Close()
+			err2 := file.Close()
+			if err2 != nil {
+				return err2
+			}
+			err2 = doc.Close()
+			if err2 != nil {
+				return err2
+			}
 			return err
 		}
 
-		file.Close()
+		err = file.Close()
+		if err != nil {
+			err2 := doc.Close()
+			if err2 != nil {
+				return err2
+			}
+			return err
+		}
+	}
+	err2 := doc.Close()
+	if err2 != nil {
+		return err2
 	}
 	return nil
 }
@@ -118,7 +150,7 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 		return txt, err
 	}
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(string(outputDir), 0777) 
+		err = os.MkdirAll(string(outputDir), 0777)
 		//0777 is the file permission for the directory created
 		if err != nil {
 			return txt, err
@@ -154,8 +186,8 @@ func imagesToText(inputDir utils.Path, outputDir utils.Path) ([]Text, error) {
 imagesToTextParallel
 Converts multiple images from a directory to text in parallel.
 */
-func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text, 
-																   error) {
+func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text,
+	error) {
 
 	regex, err := regexp.Compile(string(image) + "page-.*")
 	var txt []Text
@@ -168,7 +200,7 @@ func imagesToTextParallel(image utils.Path, outputDir utils.Path) ([]Text,
 	}
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(string(outputDir), 0777)
-		 //0777 is the file permission for the directory created
+		//0777 is the file permission for the directory created
 		if err != nil {
 			return txt, err
 		}

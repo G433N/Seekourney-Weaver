@@ -15,14 +15,20 @@ func f(cxt indexing.Context, set indexing.Settings) {
 
 	err := pdftoimg(path, _OUTDIR_)
 
-	if( err != nil) {
+	if err != nil {
 		cxt.Log("Error converting PDF to images: %v", err)
 		return
 	}
 
 	cxt.Log("Converting images to text...")
 
-	texts, err := imagesToText("", _OUTDIR_)
+	var texts []Text
+	if set.Parrallel {
+		texts, err = imagesToTextParallel("", _OUTDIR_)
+	} else {
+		texts, err = imagesToText("", _OUTDIR_)
+	}
+
 	if err != nil {
 		cxt.Log("Error converting images to text: %v", err)
 		return
