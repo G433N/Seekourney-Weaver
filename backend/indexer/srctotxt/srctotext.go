@@ -121,8 +121,8 @@ func FindFuncs(
 			}
 			//take out body by checking all the children - 2
 			//(since last child node is usually function body)
-			functionSignature := sourceCode[node.StartByte():
-			node.Child(node.ChildCount()-2).EndByte()]
+			en := node.Child(node.ChildCount() - 2)
+			functionSignature := sourceCode[node.StartByte():en.EndByte()]
 			funcs = append(funcs, string(functionSignature))
 		}
 		for i := uint(0); i < node.NamedChildCount(); i++ {
@@ -249,7 +249,7 @@ func FindFuncSignature(
 						} else {
 							if len(sourceCode) < int(paramType.EndByte()) {
 								return "", paramIndex,
-								errors.New("source code smaller than node byte")
+									errors.New("source code too small")
 							}
 							parameters += string(sourceCode[paramType.
 								StartByte():paramType.EndByte()]) + " "
@@ -260,13 +260,13 @@ func FindFuncSignature(
 						if node.NamedChild(i).ChildCount() < 1 {
 							continue
 						}
-						typeNode := node.NamedChild(i).NamedChild(0)
-						if len(sourceCode) < int(typeNode.EndByte()) {
+						n := node.NamedChild(i).NamedChild(0)
+						if len(sourceCode) < int(n.EndByte()) {
 							return "", paramIndex,
 								errors.New("source code smaller than node byte")
 						}
-						parameters += string(sourceCode[typeNode.StartByte():
-						typeNode.EndByte()]) + " "
+						parameters += string(
+							sourceCode[n.StartByte():n.EndByte()]) + " "
 					}
 				}
 				return parameters, paramIndex, nil
@@ -294,27 +294,28 @@ func FindFuncSignature(
 			) + currentSignature
 			if conf.rightSideReturn {
 				nodes := node.NamedChildCount() - 2
+				cn := node.NamedChild(nodes)
 				//compare to see that return and parameters arent the same
 				if paramIndex > nodes {
 					currentSignature += "void"
-				} else if contains(node.NamedChild(nodes).GrammarName(),
+				} else if contains(cn.GrammarName(),
 					conf.returnType) {
-					if len(sourceCode) < int(node.NamedChild(nodes).EndByte()) {
+					if len(sourceCode) < int(cn.EndByte()) {
 						return errors.New("source code smaller than node byte")
 					}
 					currentSignature +=
-						string(sourceCode[node.NamedChild(nodes).StartByte():
-						node.NamedChild(nodes).EndByte()])
+						string(
+							sourceCode[cn.StartByte():cn.EndByte()])
 				} else {
 					currentSignature += "void"
 				}
 			} else {
 				for i := uint(0); i < node.NamedChildCount(); i++ {
-					if contains(node.NamedChild(i).GrammarName(),
+					cn := node.NamedChild(i)
+					if contains(cn.GrammarName(),
 						conf.returnType) {
 						currentSignature +=
-							string(sourceCode[node.NamedChild(i).StartByte():
-							node.NamedChild(i).EndByte()])
+							string(sourceCode[cn.StartByte():cn.EndByte()])
 						break
 					}
 				}
@@ -382,7 +383,8 @@ func FindDocs(
 	findDocsHelper = func(node tree_sitter.Node, acc string) (string, error) {
 		if node.GrammarName() == conf.blockComment ||
 			node.GrammarName() == conf.lineComment {
-			if node.NextNamedSibling() != nil {
+			ns := node.NextNamedSibling()
+			if ns != nil {
 				if acc != "" {
 					if isNested(
 						node.NextNamedSibling(),
@@ -392,14 +394,14 @@ func FindDocs(
 					) {
 						docs = append(docs, acc)
 						return "", nil
-					} else if node.NextSibling().GrammarName() !=
+					} else if ns.GrammarName() !=
 						conf.lineComment {
 						return "", nil
 					}
 					if len(
 						sourceCode,
 					) < int(
-						node.NextNamedSibling().EndByte(),
+						ns.EndByte(),
 					) { //this has never happened in my tests, but just in case,
 						//this is an issue with tree-sitter if it happens.
 						return "", errors.New(
@@ -407,25 +409,23 @@ func FindDocs(
 						)
 					}
 					return acc + string(
-						sourceCode[node.NextNamedSibling().StartByte():
-						node.NextNamedSibling().EndByte()],
+						sourceCode[ns.StartByte():ns.EndByte()],
 					), nil
 				}
-				if node.NextNamedSibling().GrammarName() == conf.lineComment {
+				if ns.GrammarName() == conf.lineComment {
 					if len(
 						sourceCode,
 					) < int(
-						node.NextNamedSibling().EndByte(),
+						ns.EndByte(),
 					) {
 						return "", errors.New(
 							"source code smaller than node byte",
 						)
 					}
 					return acc + string(
-						sourceCode[node.StartByte():
-						node.NextNamedSibling().EndByte()],
+						sourceCode[node.StartByte():ns.EndByte()],
 					), nil
-				} else if isNested(node.NextNamedSibling(),
+				} else if isNested(ns,
 					conf.functionDeclaration, 5, 10) {
 					//five is how many layers deep our search is
 					//allowed to go, 10 is how many children is
@@ -435,8 +435,9 @@ func FindDocs(
 						return "",
 							errors.New("source code smaller than node byte")
 					}
-					docs = append(docs, string(sourceCode[node.StartByte():
-					node.EndByte()]))
+					docs = append(
+						docs,
+						string(sourceCode[node.StartByte():node.EndByte()]))
 				}
 			}
 		}
