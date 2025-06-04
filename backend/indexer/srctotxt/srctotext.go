@@ -14,145 +14,174 @@ import (
 type FileExtension string
 
 type TreeSitterConf struct {
-	grammarPath utils.Path
-	libFunc string
-	parameters string
+	grammarPath         utils.Path
+	libFunc             string
+	parameters          string
 	functionDeclaration []string
-	classDeclaration []string
-	rightSideTypeParam bool
-	rightSideReturn bool
-	receiver string
-	returnType []string
-	blockComment string
-	lineComment string
+	classDeclaration    []string
+	rightSideTypeParam  bool
+	rightSideReturn     bool
+	receiver            string
+	returnType          []string
+	blockComment        string
+	lineComment         string
 }
 
 type ExtensionMap map[FileExtension]TreeSitterConf
 
 var config ExtensionMap
 
-//InitsrcToText
-//Initializes a configuration for the src to text conversion
-func InitsrcToText(newConfig ExtensionMap){
+// InitsrcToText
+// Initializes a configuration for the src to text conversion
+func InitsrcToText(newConfig ExtensionMap) {
 	config = newConfig
 }
 
-//GetLanguage
-//Gets the programming language of a given file
-func GetLanguage(path utils.Path, conf TreeSitterConf)(*tree_sitter.Language, error){
+// GetLanguage
+// Gets the programming language of a given file
+func GetLanguage(
+	path utils.Path,
+	conf TreeSitterConf,
+) (*tree_sitter.Language, error) {
 	fileExtension := filepath.Ext(string(path))
 	pathSO := config[FileExtension(fileExtension)].grammarPath
 
-	lib, err := purego.Dlopen(string(pathSO), purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	lib, err := purego.Dlopen(
+		string(pathSO),
+		purego.RTLD_NOW|purego.RTLD_GLOBAL,
+	)
 	if err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	var language func() uintptr
 	purego.RegisterLibFunc(&language, lib, conf.libFunc)
 	sitterLanguage := tree_sitter.NewLanguage(unsafe.Pointer(language()))
-	if(sitterLanguage == nil){
+	if sitterLanguage == nil {
 		return nil, errors.New("tree sitter language not found")
 	}
 	return sitterLanguage, nil
 }
 
-func getLanguageFileExt(fileExtension FileExtension, conf TreeSitterConf)(*tree_sitter.Language, error){
+func getLanguageFileExt(
+	fileExtension FileExtension,
+	conf TreeSitterConf,
+) (*tree_sitter.Language, error) {
 	pathSO := config[fileExtension].grammarPath
-	lib, err := purego.Dlopen(string(pathSO), purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	lib, err := purego.Dlopen(
+		string(pathSO),
+		purego.RTLD_NOW|purego.RTLD_GLOBAL,
+	)
 	if err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 	var language func() uintptr
 	purego.RegisterLibFunc(&language, lib, conf.libFunc)
 	sitterLanguage := tree_sitter.NewLanguage(unsafe.Pointer(language()))
-	if(sitterLanguage == nil){
+	if sitterLanguage == nil {
 		return nil, errors.New("tree sitter language not found")
 	}
 	return sitterLanguage, nil
 }
 
-func contains(str string, lst []string) bool{
-	for i := 0; i < len(lst); i++{
-		if(str == lst[i]){
+func contains(str string, lst []string) bool {
+	for i := 0; i < len(lst); i++ {
+		if str == lst[i] {
 			return true
 		}
 	}
 	return false
 }
 
-//FindFuncs
-//Extracts all functions from a given sourcecode
-func FindFuncs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf) ([]string, error){
-    defer parser.Close()
-    tree := parser.Parse(sourceCode, nil)
-    defer tree.Close()
+// FindFuncs
+// Extracts all functions from a given sourcecode
+func FindFuncs(
+	sourceCode []byte,
+	parser *tree_sitter.Parser,
+	conf TreeSitterConf,
+) ([]string, error) {
+	defer parser.Close()
+	tree := parser.Parse(sourceCode, nil)
+	defer tree.Close()
 
 	rootNode := tree.RootNode()
 	var funcs []string
 
 	var findFuncsHelper func(node tree_sitter.Node) error
-	findFuncsHelper = func(node tree_sitter.Node) error{
-		if(node.NamedChildCount() == 0){
+	findFuncsHelper = func(node tree_sitter.Node) error {
+		if node.NamedChildCount() == 0 {
 			return nil
 		}
-		if (contains(node.GrammarName(), conf.functionDeclaration)) { //check if we have a function declaration
-			if(node.ChildCount() < 2){
+		if contains(
+			node.GrammarName(),
+			conf.functionDeclaration,
+		) { //check if we have a function declaration
+			if node.ChildCount() < 2 {
 				return errors.New("function declaration invalid")
 			}
-			functionSignature := sourceCode[node.StartByte():node.Child(node.ChildCount() - 2).EndByte()] //take out body by checking all the children - 2 (since last child node is usually function body)
+			//take out body by checking all the children - 2
+			//(since last child node is usually function body)
+			functionSignature := sourceCode[node.StartByte():
+			node.Child(node.ChildCount()-2).EndByte()]
 			funcs = append(funcs, string(functionSignature))
 		}
 		for i := uint(0); i < node.NamedChildCount(); i++ {
-			findFuncsHelper(*node.NamedChild(i))
+			err := findFuncsHelper(*node.NamedChild(i))
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	}
-	if(rootNode == nil || rootNode == &tree_sitter.Node{}){
+	if (rootNode == nil || rootNode == &tree_sitter.Node{}) {
 		return funcs, nil
 	}
 	err := findFuncsHelper(*rootNode)
-	if(err != nil){
+	if err != nil {
 		return nil, err
 	}
 	return funcs, nil
 }
 
-//findClass
-//Helper function that finds the class of a given function
-func findClass(node *tree_sitter.Node, sourceCode []byte, conf TreeSitterConf) string{
+// findClass
+// Helper function that finds the class of a given function
+func findClass(
+	node *tree_sitter.Node,
+	sourceCode []byte,
+	conf TreeSitterConf,
+) string {
 	for node.Parent() != nil {
 		node = node.Parent()
-		if(contains(node.GrammarName(), conf.classDeclaration)){
+		if contains(node.GrammarName(), conf.classDeclaration) {
 			for i := uint(0); node.NamedChildCount() > i; i++ {
-				if(node.NamedChild(i).GrammarName() == "identifier"){
+				if node.NamedChild(i).GrammarName() == "identifier" {
 					node = node.NamedChild(i)
 					break
 				}
-			} 
+			}
 			return string(sourceCode[node.StartByte():node.EndByte()]) + " "
 		}
 	}
 	return ""
 }
 
-//getSrcCode
-//gets the sourcecode of a file from a given path
-func GetSrcCode(path utils.Path) ([]byte, error){
+// getSrcCode
+// gets the sourcecode of a file from a given path
+func GetSrcCode(path utils.Path) ([]byte, error) {
 	sourceCode, err := os.ReadFile(string(path))
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	return sourceCode, nil
 }
 
-//toTree
-//Gets a parser and config for a given file on a file path
-//errors if the file is not found or the language is not supported
-func ToTree(path utils.Path)(*tree_sitter.Parser, TreeSitterConf, error){
+// toTree
+// Gets a parser and config for a given file on a file path
+// errors if the file is not found or the language is not supported
+func ToTree(path utils.Path) (*tree_sitter.Parser, TreeSitterConf, error) {
 	currentLang := FileExtension(filepath.Ext(string(path)))
 	conf, exists := config[currentLang]
-	if(!exists){
+	if !exists {
 		return nil, conf, errors.New("language not found")
 	}
 	parser := tree_sitter.NewParser()
@@ -160,94 +189,132 @@ func ToTree(path utils.Path)(*tree_sitter.Parser, TreeSitterConf, error){
 	if err != nil {
 		return nil, conf, err
 	}
-    err = parser.SetLanguage(language)
-	if( err != nil) {
+	err = parser.SetLanguage(language)
+	if err != nil {
 		return nil, conf, err
 	}
 	return parser, conf, nil
 }
 
-//findFuncSignature
-//Extracts all function signatures from a given sourcecode
-func FindFuncSignature(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf)([]string, error){
-    defer parser.Close()
-    tree := parser.Parse(sourceCode, nil)
-    defer tree.Close()
+// findFuncSignature
+// Extracts all function signatures from a given sourcecode
+func FindFuncSignature(
+	sourceCode []byte,
+	parser *tree_sitter.Parser,
+	conf TreeSitterConf,
+) ([]string, error) {
+	defer parser.Close()
+	tree := parser.Parse(sourceCode, nil)
+	defer tree.Close()
 
 	rootNode := tree.RootNode()
 	var funcs []string
 
 	var findFuncsHelper func(node tree_sitter.Node) error
-	findFuncsHelper = func(node tree_sitter.Node) error{
-		var findParameters func(node tree_sitter.Node, paramIndex uint) (string, uint, error)
-		findParameters = func(node tree_sitter.Node, paramIndex uint) (string, uint, error){
-			if node.NextNamedSibling() == nil{
+	findFuncsHelper = func(node tree_sitter.Node) error {
+		var findParameters func(node tree_sitter.Node, paramIndex uint) (string,
+			uint,
+			error)
+		findParameters = func(node tree_sitter.Node, paramIndex uint) (string,
+			uint,
+			error) {
+			if node.NextNamedSibling() == nil {
 				return "", paramIndex, nil
 			}
-			if node.GrammarName() == conf.parameters{
+			if node.GrammarName() == conf.parameters {
 				var parameters string
-				if(conf.rightSideTypeParam){
+				if conf.rightSideTypeParam {
 					for i := uint(0); i < node.NamedChildCount(); i++ {
-						if(node.NamedChild(i).ChildCount() < 2){
+						if node.NamedChild(i).ChildCount() < 2 {
 							continue
 						}
 						paramType := node.NamedChild(i).NamedChild(1)
-						if(paramType == nil){
+						if paramType == nil {
 							paramType = node.NamedChild(i).NamedChild(0)
 						}
-						if(node.NamedChild(i).GrammarName() == conf.receiver){
-							if(len(sourceCode) < int(node.NamedChild(i).Child(0).EndByte())){
-								return "", paramIndex, errors.New("source code smaller than node byte")
+						if node.NamedChild(i).GrammarName() == conf.receiver {
+							if len(
+								sourceCode,
+							) < int(
+								node.NamedChild(i).Child(0).EndByte(),
+							) {
+								return "", paramIndex, errors.New(
+									"source code smaller than node byte",
+								)
 							}
-							parameters += string(sourceCode[node.NamedChild(i).Child(0).StartByte():paramType.EndByte()]) + " "
-						}else {
-							if(len(sourceCode) < int(paramType.EndByte())){
-								return "", paramIndex, errors.New("source code smaller than node byte")
+							parameters += string(
+								sourceCode[node.NamedChild(i).
+									Child(0).StartByte():paramType.EndByte()],
+							) + " "
+						} else {
+							if len(sourceCode) < int(paramType.EndByte()) {
+								return "", paramIndex,
+								errors.New("source code smaller than node byte")
 							}
-							parameters += string(sourceCode[paramType.StartByte():paramType.EndByte()]) + " "
+							parameters += string(sourceCode[paramType.
+								StartByte():paramType.EndByte()]) + " "
 						}
 					}
-				}else{
+				} else {
 					for i := uint(0); i < node.NamedChildCount(); i++ {
-						if(node.NamedChild(i).ChildCount() < 1){
+						if node.NamedChild(i).ChildCount() < 1 {
 							continue
 						}
 						typeNode := node.NamedChild(i).NamedChild(0)
-						if(len(sourceCode) < int(typeNode.EndByte())){
-							return "", paramIndex, errors.New("source code smaller than node byte")
+						if len(sourceCode) < int(typeNode.EndByte()) {
+							return "", paramIndex,
+								errors.New("source code smaller than node byte")
 						}
-						parameters +=  string(sourceCode[typeNode.StartByte():typeNode.EndByte()]) + " "
+						parameters += string(sourceCode[typeNode.StartByte():
+						typeNode.EndByte()]) + " "
 					}
 				}
 				return parameters, paramIndex, nil
 			}
-			return findParameters(*node.NextNamedSibling(), paramIndex + 1)
+			return findParameters(*node.NextNamedSibling(), paramIndex+1)
 		}
-		if(node.NamedChildCount() == 0){
+		if node.NamedChildCount() == 0 {
 			return nil
 		}
-		if (contains(node.GrammarName(), conf.functionDeclaration)) { //check if we have a function declaration
-			currentSignature, paramIndex, err := findParameters(*node.Child(0), 0) //params + where the parameters begin
-			if(err != nil){
+		if contains(
+			node.GrammarName(),
+			conf.functionDeclaration,
+		) { //check if we have a function declaration
+			currentSignature, paramIndex, err := findParameters(
+				*node.Child(0),
+				0,
+			) //params + where the parameters begin
+			if err != nil {
 				return err
 			}
-			currentSignature = findClass(&node, sourceCode, conf) + currentSignature
-			if(conf.rightSideReturn){
+			currentSignature = findClass(
+				&node,
+				sourceCode,
+				conf,
+			) + currentSignature
+			if conf.rightSideReturn {
 				nodes := node.NamedChildCount() - 2
-				if(paramIndex > nodes){ //compare to see that return and parameters arent the same
+				//compare to see that return and parameters arent the same
+				if paramIndex > nodes {
 					currentSignature += "void"
-				} else if(contains(node.NamedChild(nodes).GrammarName(), conf.returnType)){
-					if(len(sourceCode) < int(node.NamedChild(nodes).EndByte())){
+				} else if contains(node.NamedChild(nodes).GrammarName(),
+					conf.returnType) {
+					if len(sourceCode) < int(node.NamedChild(nodes).EndByte()) {
 						return errors.New("source code smaller than node byte")
 					}
-					currentSignature += string(sourceCode[node.NamedChild(nodes).StartByte():node.NamedChild(nodes).EndByte()])
+					currentSignature +=
+						string(sourceCode[node.NamedChild(nodes).StartByte():
+						node.NamedChild(nodes).EndByte()])
 				} else {
 					currentSignature += "void"
 				}
 			} else {
-				for i:= uint(0);i<node.NamedChildCount();i++{
-					if(contains(node.NamedChild(i).GrammarName(), conf.returnType)){
-						currentSignature += string(sourceCode[node.NamedChild(i).StartByte():node.NamedChild(i).EndByte()])
+				for i := uint(0); i < node.NamedChildCount(); i++ {
+					if contains(node.NamedChild(i).GrammarName(),
+						conf.returnType) {
+						currentSignature +=
+							string(sourceCode[node.NamedChild(i).StartByte():
+							node.NamedChild(i).EndByte()])
 						break
 					}
 				}
@@ -255,85 +322,137 @@ func FindFuncSignature(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSi
 			funcs = append(funcs, string(currentSignature))
 		}
 		for i := uint(0); i < node.NamedChildCount(); i++ {
-			findFuncsHelper(*node.NamedChild(i))
+			err := findFuncsHelper(*node.NamedChild(i))
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	}
-	if(rootNode == nil || rootNode == &tree_sitter.Node{}){
+	if (rootNode == nil || rootNode == &tree_sitter.Node{}) {
 		return funcs, nil
 	}
 	err := findFuncsHelper(*rootNode)
-	if(err != nil){
+	if err != nil {
 		return nil, err
 	}
 
 	return funcs, nil
 }
 
-func isNested(node *tree_sitter.Node, searchFor []string, searchLimit int, childLimit int)bool{
-	if(searchLimit < 1){
+func isNested(
+	node *tree_sitter.Node,
+	searchFor []string,
+	searchLimit int,
+	childLimit int,
+) bool {
+	if searchLimit < 1 {
 		return false
 	}
 	childrenAmount := node.NamedChildCount()
-	if(childrenAmount>uint(childLimit)){
+	if childrenAmount > uint(childLimit) {
 		return false
 	}
-	for i := uint(0); i<childrenAmount;i++{
-		if contains(node.GrammarName(), searchFor){
+	for i := uint(0); i < childrenAmount; i++ {
+		if contains(node.GrammarName(), searchFor) {
 			return true
 		}
 		if isNested(node.NamedChild(i), searchFor, searchLimit-1, childLimit) {
-            return true
-        }
+			return true
+		}
 	}
 	return false
 }
 
-//FindDocs
-//Extracts all documentation comments from a given sourcecode
-func FindDocs(sourceCode[]byte, parser *tree_sitter.Parser, conf TreeSitterConf) ([]string, error){
-    defer parser.Close()
-    tree := parser.Parse(sourceCode, nil)
-    defer tree.Close()
+// FindDocs
+// Extracts all documentation comments from a given sourcecode
+func FindDocs(
+	sourceCode []byte,
+	parser *tree_sitter.Parser,
+	conf TreeSitterConf,
+) ([]string, error) {
+	defer parser.Close()
+	tree := parser.Parse(sourceCode, nil)
+	defer tree.Close()
 
 	rootNode := tree.RootNode()
 	var docs []string
 
 	var findDocsHelper func(node tree_sitter.Node, acc string) (string, error)
-	findDocsHelper = func(node tree_sitter.Node, acc string) (string, error){
-		if(node.GrammarName() == conf.blockComment || node.GrammarName() == conf.lineComment){
-			if(node.NextNamedSibling() != nil){
-				if(acc != ""){
-					if(isNested(node.NextNamedSibling(), conf.functionDeclaration, 3, 5)){
+	findDocsHelper = func(node tree_sitter.Node, acc string) (string, error) {
+		if node.GrammarName() == conf.blockComment ||
+			node.GrammarName() == conf.lineComment {
+			if node.NextNamedSibling() != nil {
+				if acc != "" {
+					if isNested(
+						node.NextNamedSibling(),
+						conf.functionDeclaration,
+						3,
+						5,
+					) {
 						docs = append(docs, acc)
 						return "", nil
-					} else if node.NextSibling().GrammarName() != conf.lineComment{
+					} else if node.NextSibling().GrammarName() !=
+						conf.lineComment {
 						return "", nil
 					}
-					if(len(sourceCode) < int(node.NextNamedSibling().EndByte())){ //this has never happened in my tests, but just in case, this is an issue with tree-sitter if it happens.
-						return "", errors.New("source code smaller than node byte")
+					if len(
+						sourceCode,
+					) < int(
+						node.NextNamedSibling().EndByte(),
+					) { //this has never happened in my tests, but just in case,
+						//this is an issue with tree-sitter if it happens.
+						return "", errors.New(
+							"source code smaller than node byte",
+						)
 					}
-					return acc + string(sourceCode[node.NextNamedSibling().StartByte():node.NextNamedSibling().EndByte()]), nil
+					return acc + string(
+						sourceCode[node.NextNamedSibling().StartByte():
+						node.NextNamedSibling().EndByte()],
+					), nil
 				}
-				if(node.NextNamedSibling().GrammarName() == conf.lineComment){
-					if(len(sourceCode) < int(node.NextNamedSibling().EndByte())){
-						return "", errors.New("source code smaller than node byte")
+				if node.NextNamedSibling().GrammarName() == conf.lineComment {
+					if len(
+						sourceCode,
+					) < int(
+						node.NextNamedSibling().EndByte(),
+					) {
+						return "", errors.New(
+							"source code smaller than node byte",
+						)
 					}
-					return acc + string(sourceCode[node.StartByte():node.NextNamedSibling().EndByte()]), nil
-				} else if isNested(node.NextNamedSibling(), conf.functionDeclaration, 5, 10){ //five is how many layers deep our search is allowed to go, 10 is how many children is max before we consider it not a functon declaration
-					if(len(sourceCode) < int(node.EndByte())){
-						return "", errors.New("source code smaller than node byte")
+					return acc + string(
+						sourceCode[node.StartByte():
+						node.NextNamedSibling().EndByte()],
+					), nil
+				} else if isNested(node.NextNamedSibling(),
+					conf.functionDeclaration, 5, 10) {
+					//five is how many layers deep our search is
+					//allowed to go, 10 is how many children is
+					// max before we consider it not a functon
+					// declaration
+					if len(sourceCode) < int(node.EndByte()) {
+						return "",
+							errors.New("source code smaller than node byte")
 					}
-					docs = append(docs, string(sourceCode[node.StartByte():node.EndByte()]))
+					docs = append(docs, string(sourceCode[node.StartByte():
+					node.EndByte()]))
 				}
 			}
 		}
 		for i := uint(0); i < node.ChildCount(); i++ {
-			acc,_ = findDocsHelper(*node.Child(i), acc)
+			var err error
+			acc, err = findDocsHelper(*node.Child(i), acc)
+			if err != nil {
+				return "", err
+			}
 		}
 		return acc, nil
 	}
 	var acc string
-	findDocsHelper(*rootNode, acc)
+	_, err := findDocsHelper(*rootNode, acc)
+	if err != nil {
+		return nil, err
+	}
 	return docs, nil
 }

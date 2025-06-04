@@ -15,21 +15,25 @@ func f(cxt indexing.Context, set indexing.Settings) {
 	cxt.Log("Finding functions: %s", path)
 
 	parser, conf, err := srctotxt.ToTree(path)
-	if( err != nil) {
+	if err != nil {
 		cxt.Log("Error creating parser: %s", err)
 		return
 	}
 	lang, err := srctotxt.GetLanguage(path, conf)
-	if( err != nil) {
+	if err != nil {
 		cxt.Log("Error finding language: %s", err)
 		return
 	}
 	src, err := srctotxt.GetSrcCode(path)
-	if( err != nil) {
+	if err != nil {
 		cxt.Log("Error getting sourcecode: %s", err)
 		return
 	}
-	parser.SetLanguage(lang)
+	err = parser.SetLanguage(lang)
+	if err != nil {
+		cxt.Log("Error failed to set language: %v", err)
+		return
+	}
 
 	var text []string
 
