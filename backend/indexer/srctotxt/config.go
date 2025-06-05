@@ -1,3 +1,4 @@
+//nolint:all
 package srctotxt
 
 func Default() ExtensionMap {

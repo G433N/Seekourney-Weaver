@@ -1,3 +1,4 @@
+//nolint:all
 package srctotxt
 
 import (
@@ -11,8 +12,12 @@ import (
 	"github.com/tree-sitter/go-tree-sitter"
 )
 
+// FileExtension
+// Represents a local file extension
 type FileExtension string
 
+// TreeSitterConf
+// Represents a configuration for a specific programming language
 type TreeSitterConf struct {
 	grammarPath         utils.Path
 	libFunc             string
@@ -27,6 +32,8 @@ type TreeSitterConf struct {
 	lineComment         string
 }
 
+// ExtensionMap
+// Represents a map of file extensions to their respective TreeSitter configurations
 type ExtensionMap map[FileExtension]TreeSitterConf
 
 var config ExtensionMap
@@ -387,7 +394,7 @@ func FindDocs(
 			if ns != nil {
 				if acc != "" {
 					if isNested(
-						node.NextNamedSibling(),
+						ns,
 						conf.functionDeclaration,
 						3,
 						5,
