@@ -15,5 +15,8 @@ in their respective folders.
 # Required programs
 
 Docker and Go version 1.24.2 need to be installed to run.
+
+To run the included PDF-indexer, Tesseract must be installed.
+
 Docker must be runnable without using `sudo`.
 See a [Docker documentation guide](https://docs.docker.com/engine/install/linux-postinstall/) on this.
