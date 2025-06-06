@@ -4,7 +4,7 @@ package srctotxt
 func Default() ExtensionMap {
 	return ExtensionMap{
 		".go": {
-			grammarPath: "./srctotxt/grammarlibs/libtree-sitter-go.so",
+			grammarPath: "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-go.so",
 			libFunc:     "tree_sitter_go",
 			parameters:  "parameter_list",
 			functionDeclaration: []string{
@@ -21,7 +21,7 @@ func Default() ExtensionMap {
 			lineComment:        "comment",
 		},
 		".ts": {
-			grammarPath: "./srctotxt/grammarlibs/libtree-sitter-typescript.so",
+			grammarPath: "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-typescript.so",
 			libFunc:     "tree_sitter_typescript",
 			parameters:  "formal_parameters",
 			functionDeclaration: []string{
@@ -40,7 +40,7 @@ func Default() ExtensionMap {
 			lineComment:  "comment",
 		},
 		".cs": {
-			grammarPath: "./srctotxt/grammarlibs/libtree-sitter-c-sharp.so",
+			grammarPath: "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-c-sharp.so",
 			libFunc:     "tree_sitter_c_sharp",
 			parameters:  "parameter_list",
 			functionDeclaration: []string{"method_declaration",
@@ -64,7 +64,7 @@ func Default() ExtensionMap {
 			lineComment:  "comment",
 		},
 		".rs": {
-			grammarPath:         "./srctotxt/grammarlibs/libtree-sitter-rust.so",
+			grammarPath:         "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-rust.so",
 			libFunc:             "tree_sitter_rust",
 			parameters:          "parameters",
 			functionDeclaration: []string{"function_item"},
