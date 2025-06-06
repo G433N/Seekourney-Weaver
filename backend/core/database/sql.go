@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"iter"
+	"log"
 	"math/rand"
 	"seekourney/utils"
 	"strconv"
@@ -47,6 +48,7 @@ type SQLScan[Self any] interface {
 // scan is a helper function that scans a SQL row into an object of type T.
 func scan[T SQLScan[T]](rows *sql.Rows) (T, error) {
 	var obj T
+
 	return obj.SQLScan(rows)
 }
 
@@ -227,8 +229,11 @@ func ExecScan[T SQLScan[T], U any](
 	}
 
 	defer func() {
+
+		log.Println("awa closing rows:", err)
 		err = rows.Close()
 		if resErr != nil {
+			log.Println("Error closing rows:", err)
 			resErr = err
 		}
 	}()

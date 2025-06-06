@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { showFiles, showWebpages, showAllResults, maxResults } from '$lib/stores/settings';
+	import { get } from 'svelte/store';
 
 	interface SearchResult {
 		Path: string;
@@ -24,31 +26,30 @@
 			submittedQuery = query;
 			const res = await fetch(`http://localhost:8080/search?q=${query}`);
 			const json = (await res.json()) as SearchResponse;
-			results = json.Results;
+			let filteredResults = json.Results;
+
+			filteredResults = filteredResults.filter(
+				(res) => (res.Source === 1 && get(showWebpages)) || (res.Source !== 1 && get(showFiles))
+			);
+
+			if (!get(showAllResults)) {
+				filteredResults = filteredResults.slice(0, get(maxResults));
+			}
 			console.log(results);
-			// results = [
-			// 	{
-			// 		title: 'result 1',
-			// 		path: 'https://en.wikipedia.org/wiki/Bear',
-			// 		type: 'File',
-			// 		source: 'OSPP',
-			// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
-			// 	},
-			// 	{
-			// 		title: 'result 2',
-			// 		path: 'https://en.wikipedia.org/wiki/Bear',
-			// 		type: 'Webbsite',
-			// 		source: 'Wikipedia',
-			// 		desc: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden'
-			// 	}
-			// ];
+			results = filteredResults;
 			searched = true;
 		} else {
 			searched = false;
 		}
 	}
 
-	// TODO: test if it works with branch search-and-download
+	async function refreshSearch(): Promise<void> {
+		if (submittedQuery.length > 0) {
+			query = submittedQuery;
+			await search();
+		}
+	}
+
 	async function downloadFile(path: string): Promise<void> {
 		fetch(`http://localhost:8080/download?q=${path}`, {
 			method: 'GET'
@@ -81,9 +82,12 @@
 			bind:this={searchInput}
 			type="text"
 			placeholder="Write your search here!"
+			on:keyup={search}
 		/>
 
 		<button on:click={search} id="searchButton"> Search </button>
+
+		<button on:click={refreshSearch} class="round-button" title="Refresh results"> ↻ </button>
 	</div>
 
 	{#if searched == true && results.length > 0}
@@ -107,7 +111,6 @@
 								Relevance: {res.Score.toFixed(4)}
 							</p>
 						</div>
-						<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 					</div>
 				</a>
 			{:else}
@@ -126,7 +129,6 @@
 							Relevance: {res.Score.toFixed(4)}
 						</p>
 					</div>
-					<!-- <p style="color: #4E4E4E;">{res.desc}</p> -->
 				</div>
 			{/if}
 		{/each}
@@ -140,6 +142,7 @@
 		display: flex;
 		gap: 0.5rem;
 		margin-bottom: 2rem;
+		align-items: center;
 	}
 
 	#searchButton {
@@ -180,4 +183,22 @@
 		font-size: rem;
 		margin: 0;
 	}
+
+	.round-button {
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 50%;
+		background-color: #f0eeee;
+		cursor: pointer;
+		font-size: 1.2rem;
+		line-height: 1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.round-button:hover {
+		background-color: #e2e2e2;
+	}
 </style>
+

@@ -2,6 +2,8 @@
 
 **Note that `indexing` package implements all of the indexing side of the API.
 A small amount of boiler-plate needs to be imported for it to run.
+Only the step of converting a given file to a text string,
+needs to be provided (if the indexer is indexing local files).
 The purpose of this file is for documentation and for those who wish to
 write an indexer in a language besides Go.**
 
@@ -20,20 +22,27 @@ Adding trailing commas in JSON responses may cause the parser to fail.
 
 Only absolute file paths are used for requests.
 
-While the main server starts up an indexer, it will check `stderr`.
-If the initial ping-request is not able to be responded to,
-an error message should be written to `stderr`.
-
 
 ## Ports
 
 Allowed port numbers for indexers are any non-occupied port in the range [39 000, 39 499].
 
 The port for a given indexer is calculated dynamically and sent as
-command-line argument when starting up indexer.
+command-line argument when starting up the indexer.
 
 
 ## Possible requests and responses
+
+When registering a new indexer, a request to get the name of the indexer
+used to display to users on fronend clients will be sent.
+```
+GET /name
+```
+Indexer must respond with:
+```
+INDEXERNAME
+```
+as a plain-text string.
 
 A ping request will be send to the indexer shortly after attempted startup
 as part of checking status.
@@ -51,8 +60,16 @@ Indexer must respond with:
 ```
 
 Request for indexing of a folder or file takes the form:
-```
-POST /index/FILE_OR_FOLDERPATH
+with body:
+```json
+POST /index
+{
+    "path":           "PATHTODATA", // E.g. filepath
+    "type":           0,            // Source type, e.g. local file
+    "collectionid":   "102983472",        // This is a generated hash
+    "recursive":      true,         // Bool, the indexer defines what this means
+    "parrallel":      true,         // Bool, the indexer defines what this means
+}
 ```
 Indexer must respond with:
 ```json
@@ -73,7 +90,7 @@ Alternatively, if indexing request cannot be handled:
 }
 ```
 The indexer then runs indexing on the given path and sends its own HTTP request
-to Core:
+to the main server:
 ```
 POST /push/docs
 to localhost port 8080
@@ -87,29 +104,22 @@ With request:
             {
                 "path": "FILEPATH",
                 "source": 0,
+                "collectionid": "102983472",
                 "words": {
                     "SOMEWORD": 42,
                     "ANOTHER-WORD": 5,
                 }
             },
             {
-                "path": "PATHFORSOMEWEB",
+                "path": "PATHFORSOMEWEBSITE",
                 "source": 1,
+                "collectionid": "102983472",
                 "words": {
                     ...
                 }
             },
             ...
         ],
-    }
-}
-```
-Alternatively, if indexing failed:
-```json
-{
-    "status": "fail",
-    "data": {
-        "message": "HUMAN-READABLE ERROR MESSAGE",
     }
 }
 ```
@@ -123,7 +133,7 @@ For consistency, an array with the same key is
 still used in the response when indexing a single file.
 
 
-A shutdown request may be sent to the indexer from Core (main server).
+A shutdown request may be sent to the indexer from the main server.
 ```
 GET /shutdown
 ```
@@ -137,62 +147,3 @@ Indexer must respond with:
 }
 ```
 And immediately exit all it's associated processes.
-
-# Changelog Server
-
-# /all/indexers
-Response body
-```json
-[
-  {
-    "ID": "1747669102342c",
-    "Name": "LocalText\n",
-    "ExecPath": "go",
-    "Args": [
-      "run",
-      "indexer/localtext/main.go",
-      "indexer/localtext/localtext.go"
-    ],
-    "Port": 39000
-  },
-]
-```
-# /all/collections
-Response body
-``` json
-[
-  {
-    "Path": "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
-    "IndexerID": "17479209612f6f",
-    "SourceType": 0,
-    "Recursive": true,
-    "RespectLastModified": false,
-    "Normalfunc": 1,
-    "ID": "17479209635f16"
-  },
-]
-```
-
-# /push/paths
-should be removed fron the API
-# /push/docs
-unormalised documment struct has changed, see struct def
-# /index
-takes a settings struct a body not a path in the url
-# /push/collection
-takes a UnregisteredCollection struct as a body
-```json
-{
-    "Path": "/home/carbon/Projects/go_indexer/backend/test_data/docs.gl/todo.md",
-    "IndexerID": "17478382672209",
-    "SourceType": 0,
-    "Recursive": true,
-    "RespectLastModified": false,
-    "Normalfunc": 0,
-  }
-```
-# /push/indexer
-takes a path to indexer or command for indexer, as body
-
-# Changlog Indexer
-See Client.go
