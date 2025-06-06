@@ -63,7 +63,9 @@ func index(
 	if f != nil {
 		(*f)(doc)
 	}
+
 	client.channel <- doc
+
 }
 
 // DocBuilder represents a partally completed document

@@ -35,9 +35,15 @@ func resetSQL(db *sql.DB) {
 	if db == nil {
 		return
 	}
+
 	_, err := db.Exec(`DROP TABLE document`)
 	panicOnError(err)
 
+	_, err = db.Exec(`DROP TABLE collection`)
+	panicOnError(err)
+
+	_, err = db.Exec(`DROP TABLE indexer`)
+	panicOnError(err)
 	err = exec.Command(
 		"docker",
 		"exec",
@@ -146,7 +152,13 @@ func TestServer(test *testing.T) {
 func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
 	panicOnError(err)
 
 	jsonData, err := json.Marshal([]document.Document{testDocument1()})
@@ -161,8 +173,15 @@ func testHandleAllSingle(test *testing.T, serverParams serverFuncParams) {
 func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 	var expected bytes.Buffer
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
 	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
+
 	_, err = database.InsertInto(serverParams.db, testDocument2())
 	panicOnError(err)
 
@@ -180,7 +199,13 @@ func testHandleAllMultiple(test *testing.T, serverParams serverFuncParams) {
 func testHandleSearchSQLSingle(test *testing.T, serverParams serverFuncParams) {
 	var response utils.SearchResponse
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
 	panicOnError(err)
 
 	handleSearchSQL(serverParams, []string{"key1"})
@@ -201,7 +226,13 @@ func testHandleSearchSQLInvalid(
 ) {
 	var response utils.SearchResponse
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
 	panicOnError(err)
 
 	handleSearchSQL(serverParams, []string{"badkey"})
@@ -220,12 +251,19 @@ func testHandleSearchSQLMultiple(
 ) {
 	var response utils.SearchResponse
 
-	_, err := database.InsertInto(serverParams.db, testDocument1())
+	_, err := database.InsertInto(serverParams.db, testIndexer())
 	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testCollection())
+	panicOnError(err)
+
+	_, err = database.InsertInto(serverParams.db, testDocument1())
+	panicOnError(err)
+
 	_, err = database.InsertInto(serverParams.db, testDocument2())
 	panicOnError(err)
 
-	// key1 is unique to testDocument2
+	// key1 is unique to testDocument1
 	handleSearchSQL(serverParams, []string{"key1"})
 
 	err = json.Unmarshal([]byte(buffer.Bytes()), &response)

@@ -21,3 +21,4 @@ docker run --rm \
     -p 5433:5432 \
     $PERSISTENT_DATA \
     postgres -E
+
