@@ -1,10 +1,20 @@
 //nolint:all
 package srctotxt
 
+import (
+	"os"
+	"path/filepath"
+	"seekourney/utils"
+)
+
 func Default() ExtensionMap {
+	homeDirectory, err := os.UserHomeDir()
+	if err != nil {
+		panic("Error getting home directory: " + err.Error())
+	}
 	return ExtensionMap{
 		".go": {
-			grammarPath: "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-go.so",
+			grammarPath: utils.Path(filepath.Join(homeDirectory, ".config/seekourney-weaver/grammarlibs/libtree-sitter-go.so")),
 			libFunc:     "tree_sitter_go",
 			parameters:  "parameter_list",
 			functionDeclaration: []string{
@@ -21,7 +31,7 @@ func Default() ExtensionMap {
 			lineComment:        "comment",
 		},
 		".ts": {
-			grammarPath: "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-typescript.so",
+			grammarPath: utils.Path(filepath.Join(homeDirectory, ".config/seekourney-weaver/grammarlibs/libtree-sitter-typescript.so")),
 			libFunc:     "tree_sitter_typescript",
 			parameters:  "formal_parameters",
 			functionDeclaration: []string{
@@ -40,7 +50,7 @@ func Default() ExtensionMap {
 			lineComment:  "comment",
 		},
 		".cs": {
-			grammarPath: "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-c-sharp.so",
+			grammarPath: utils.Path(filepath.Join(homeDirectory, ".config/seekourney-weaver/grammarlibs/libtree-sitter-c-sharp.so")),
 			libFunc:     "tree_sitter_c_sharp",
 			parameters:  "parameter_list",
 			functionDeclaration: []string{"method_declaration",
@@ -64,7 +74,7 @@ func Default() ExtensionMap {
 			lineComment:  "comment",
 		},
 		".rs": {
-			grammarPath:         "~/.config/seekourney-weaver/grammarlibs/libtree-sitter-rust.so",
+			grammarPath:         utils.Path(filepath.Join(homeDirectory, ".config/seekourney-weaver/grammarlibs/libtree-sitter-c-rust.so")),
 			libFunc:             "tree_sitter_rust",
 			parameters:          "parameters",
 			functionDeclaration: []string{"function_item"},
