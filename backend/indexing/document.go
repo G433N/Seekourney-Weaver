@@ -14,6 +14,7 @@ type UnnormalizedDocument struct {
 	Words utils.FrequencyMap
 
 	Collection CollectionID
+	RawText    string
 }
 
 // DocNew creates a new document.
@@ -39,6 +40,7 @@ func DocFromText(
 ) UnnormalizedDocument {
 	doc := DocNew(path, source, collection)
 	doc.Words = IndexString(text)
+	doc.RawText = text
 	return doc
 }
 
@@ -51,6 +53,7 @@ func DocFromBytes(
 ) UnnormalizedDocument {
 	doc := DocNew(path, source, collection)
 	doc.Words = IndexBytes(bytes)
+	doc.RawText = string(bytes)
 	return doc
 }
 
