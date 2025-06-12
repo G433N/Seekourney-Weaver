@@ -6,14 +6,20 @@ import "github.com/tree-sitter/go-tree-sitter"
 import "slices"
 
 func TestGetFunction(t *testing.T) {
-	InitsrcToText(Test())
+	InitsrcToText(Default())
 	testcode := `func sub(x int, y int) int{
 					return x-y
 				}`
 	parser := tree_sitter.NewParser()
 	conf := config[".go"]
-	lang, _ := getLanguageFileExt(".go", conf)
-	parser.SetLanguage(lang)
+	lang, err := getLanguageFileExt(".go", conf)
+	if(err != nil) {
+		t.Errorf("TestGetFunction failed to set language: %v", err)
+	}
+	err = parser.SetLanguage(lang)
+	if(err != nil) {
+		t.Errorf("TestGetFunction failed to set language: %v", err)
+	}
 	slice, _ := FindFuncs([]byte(testcode), parser, conf)
 	if string(slice[0]) != "func sub(x int, y int) int" {
 		t.Errorf(
@@ -239,20 +245,4 @@ func TestGetNestedFunctionSignature(t *testing.T) {
 	if len(slice) != 3 {
 		t.Errorf("TestGetMultipleFunction failed length wrong")
 	}
-}
-
-func TestGetFunctionReceiver(t *testing.T) {
-	//cooked
-}
-
-func TestGetDocs(t *testing.T) {
-
-}
-
-func TestGetMultipleDocs(t *testing.T) {
-
-}
-
-func TestGetDocsComments(t *testing.T) {
-
 }

@@ -5,8 +5,6 @@ import "testing"
 import "github.com/tree-sitter/go-tree-sitter"
 import "slices"
 
-//import "fmt"
-
 func TestTSGetFunction(t *testing.T) {
 	InitsrcToText(Test())
 	testcode := `function add(x: int, y:int):int{

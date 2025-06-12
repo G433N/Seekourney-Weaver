@@ -5,8 +5,6 @@ import "testing"
 import "github.com/tree-sitter/go-tree-sitter"
 import "slices"
 
-//import "fmt"
-
 func TestCSGetFunction(t *testing.T) {
 	InitsrcToText(Test())
 	testcode := `public int Add(int x, int y) {
@@ -323,49 +321,3 @@ public int Add(int x, int y) {
 		t.Errorf("TestCSGetLineDocs failed length wrong")
 	}
 }
-
-/*
-func TestCSGetMultipleDocs(t *testing.T) {
-	InitsrcToText(Test())
-	testcode := `/// Adds two numbers.
-/// <param name="x">An integer.</param>
-/// <param name="y">Another integer.</param>
-public int Add(int x, int y) {
-    return x + y;
-}
-
-/// Subtracts two numbers.
-/// <param name="x">An integer.</param>
-/// <param name="y">Another integer.</param>
-public int Subtract(int x, int y) {
-	return x - y;
-}
-`
-	parser := tree_sitter.NewParser()
-	conf := config[".cs"]
-	lang, _ := getLanguageFileExt(".cs", conf)
-	parser.SetLanguage(lang)
-	slice, _ := FindDocs([]byte(testcode), parser, conf)
-	if slices.Contains(slice, `/// Adds two numbers.
-/// <param name="x">An integer.</param>
-/// <param name="y">Another integer.</param>`) {
-		t.Errorf(
-			"TestCSGetMultipleDocs failed want %q got %v",
-			"/// Adds two numbers...",
-			slice,
-		)
-	}
-	if !slices.Contains(slice, `/// Subtracts two numbers.
-/// <param name="x">An integer.</param>/// <param name="y">Another
-// /// integer.</param>`) {
-		t.Errorf(
-			"TestCSGetMultipleDocs failed want %q got %v",
-			"/// Subtracts two numbers...",
-			slice,
-		)
-	}
-	if len(slice) != 2 {
-		t.Errorf("TestCSGetMultipleDocs failed length wrong")
-	}
-}
-*/

@@ -25,9 +25,11 @@ func main() {
 			fmt.Println("Error getting home directory:", err)
 		}
 		configDir := filepath.Join(homeDirectory, ".config")
-		err = exec.Command("mv", "./build/seekourney-weaver", configDir).Run()
+		err = exec.Command("cp", "-u", "-r", "./build/seekourney-weaver",
+			configDir).
+			Run()
 		if err != nil {
-			fmt.Println("Error executing mv: ", err)
+			fmt.Println("Error executing cp: ", err)
 		}
 	}
 	// check commandline args to run server or client
